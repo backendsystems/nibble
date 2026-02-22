@@ -19,11 +19,6 @@ demo: nibble
 	@TERM=xterm-256color COLORTERM=truecolor VHS_NO_SANDBOX=1 vhs demo.tape
 	@echo "Generated demo.gif"
 
-update:
-	@echo "Downloading IEEE OUI database..."
-	@curl -sL "https://standards-oui.ieee.org/oui/oui.csv" -o internal/scan/oui.csv
-	@echo "Updated $$(wc -l < internal/scan/oui.csv) entries"
-
 pip:
 	@cd python-package && \
 	if python3 -m venv .venv >/dev/null 2>&1; then \

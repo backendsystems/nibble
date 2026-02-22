@@ -1,46 +1,14 @@
-package scan
+package ip4
 
 import (
 	"net"
-	"net/netip"
 	"runtime"
 	"strings"
-	"time"
 
-	"github.com/backendsystems/nibble/internal/scan/linux"
-	"github.com/backendsystems/nibble/internal/scan/macos"
-	"github.com/backendsystems/nibble/internal/scan/windows"
-
-	"github.com/mdlayher/arp"
+	"github.com/backendsystems/nibble/internal/scanner/ip4/linux"
+	"github.com/backendsystems/nibble/internal/scanner/ip4/macos"
+	"github.com/backendsystems/nibble/internal/scanner/ip4/windows"
 )
-
-// resolveMac does an ARP resolve for a single IP and returns the MAC string
-func resolveMac(ifaceName string, targetIP net.IP) string {
-	netIface, err := net.InterfaceByName(ifaceName)
-	if err != nil {
-		return ""
-	}
-
-	client, err := arp.Dial(netIface)
-	if err != nil {
-		return ""
-	}
-	defer client.Close()
-
-	client.SetDeadline(time.Now().Add(portDialTimeout))
-
-	addr, ok := netip.AddrFromSlice(targetIP.To4())
-	if !ok {
-		return ""
-	}
-
-	mac, err := client.Resolve(addr)
-	if err != nil {
-		return ""
-	}
-
-	return mac.String()
-}
 
 // lookupMacFromCache reads the OS ARP cache to find a MAC without needing root
 // Linux reads /proc/net/arp, macOS reads routing table entries, Windows reads IP helper table entries

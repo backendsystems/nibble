@@ -7,7 +7,7 @@ import (
 	"net/netip"
 	"syscall"
 
-	"github.com/backendsystems/nibble/internal/scan/shared"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"golang.org/x/net/route"
 )
 

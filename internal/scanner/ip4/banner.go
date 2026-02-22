@@ -1,4 +1,4 @@
-package scan
+package ip4
 
 import (
 	"fmt"

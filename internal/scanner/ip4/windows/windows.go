@@ -8,7 +8,7 @@ import (
 	"net/netip"
 	"unsafe"
 
-	"github.com/backendsystems/nibble/internal/scan/shared"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 	syswin "golang.org/x/sys/windows"
 )
 

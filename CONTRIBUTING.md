@@ -29,10 +29,12 @@ Fork the repository on GitHub.
 ```
 main.go              Entry point
 internal/
-  scan/              Port scanning and banner grabbing
+  scanner/
+    demo/            Demo mode scanner
+    ip4/             Real IPv4 scanner
+    shared/          Shared types: Scanner interface, progress, results
   ports/             Port list management
   tui/               Bubble Tea UI (views, models, rendering)
-  demo/              Demo mode code
 ```
 
 ## Submitting a PR

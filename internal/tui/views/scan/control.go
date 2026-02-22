@@ -4,7 +4,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/backendsystems/nibble/internal/scanner"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -39,7 +39,7 @@ const (
 )
 
 type ProgressMsg struct {
-	Update scanner.ProgressUpdate
+	Update shared.ProgressUpdate
 }
 
 type CompleteMsg struct{}
@@ -65,7 +65,7 @@ func HandleKey(scanning bool, scanComplete bool, key string) Action {
 	return ActionQuit
 }
 
-func ListenForProgress(progressChan <-chan scanner.ProgressUpdate) tea.Cmd {
+func ListenForProgress(progressChan <-chan shared.ProgressUpdate) tea.Cmd {
 	return func() tea.Msg {
 		progress, ok := <-progressChan
 		if !ok {
@@ -75,7 +75,7 @@ func ListenForProgress(progressChan <-chan scanner.ProgressUpdate) tea.Cmd {
 	}
 }
 
-func PerformScan(networkScanner scanner.Scanner, ifaceName, targetAddr string, progressChan chan scanner.ProgressUpdate) tea.Cmd {
+func PerformScan(networkScanner shared.Scanner, ifaceName, targetAddr string, progressChan chan shared.ProgressUpdate) tea.Cmd {
 	return func() tea.Msg {
 		go networkScanner.ScanNetwork(ifaceName, targetAddr, progressChan)
 		return ListenForProgress(progressChan)()
@@ -94,7 +94,7 @@ func (m Model) Start(iface net.Interface, addrs []net.Addr, totalHosts int, targ
 	m.ScannedCount = 0
 	m.NeighborSeen = 0
 	m.NeighborTotal = 0
-	m.ProgressChan = make(chan scanner.ProgressUpdate, 256)
+	m.ProgressChan = make(chan shared.ProgressUpdate, 256)
 	m = m.RefreshResults(false)
 	return m, PerformScan(m.NetworkScan, iface.Name, targetAddr, m.ProgressChan)
 }
@@ -123,7 +123,7 @@ func (m Model) Update(msg tea.Msg) Result {
 		result.Handled = true
 		hostAdded := false
 		switch p := typed.Update.(type) {
-		case scanner.NeighborProgress:
+		case shared.NeighborProgress:
 			if p.TotalHosts > 0 {
 				result.Model.TotalHosts = p.TotalHosts
 			}
@@ -134,7 +134,7 @@ func (m Model) Update(msg tea.Msg) Result {
 				result.Model.FoundHosts = appendIfNew(result.Model.FoundHosts, p.Host)
 				hostAdded = len(result.Model.FoundHosts) > before
 			}
-		case scanner.SweepProgress:
+		case shared.SweepProgress:
 			if p.TotalHosts > 0 {
 				result.Model.TotalHosts = p.TotalHosts
 			}

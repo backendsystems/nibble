@@ -1,12 +1,12 @@
-package scan
+package ip4
 
 import (
 	"net"
 	"net/netip"
 )
 
-// DiscoverInterfaces returns active non-loopback interfaces with at least one IPv4 address.
-func DiscoverInterfaces() ([]net.Interface, map[string][]net.Addr, error) {
+// GetInterfaces returns active non-loopback interfaces with at least one IPv4 address.
+func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error) {
 	sysIfaces, err := net.Interfaces()
 	if err != nil {
 		return nil, nil, err

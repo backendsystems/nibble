@@ -1,6 +1,6 @@
 package portsview
 
-import "github.com/backendsystems/nibble/internal/scanner"
+import "github.com/backendsystems/nibble/internal/scanner/shared"
 
 type Model struct {
 	ShowHelp      bool
@@ -9,5 +9,5 @@ type Model struct {
 	CustomCursor  int
 	PortConfigLoc string
 	ErrorMsg      string
-	NetworkScan   scanner.Scanner
+	NetworkScan   shared.Scanner
 }

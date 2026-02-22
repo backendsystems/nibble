@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/backendsystems/nibble/internal/scanner"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -110,13 +110,13 @@ func ResolveScanSelection(interfaces []net.Interface, cursor int, addrsByIface m
 		return ScanSelection{}, fmt.Errorf("interface %s has no IP addresses", selection.Iface.Name)
 	}
 
-	selection.TargetAddr = scanner.FirstIp4(selection.Addrs)
+	selection.TargetAddr = shared.FirstIp4(selection.Addrs)
 	if selection.TargetAddr == "" {
 		return ScanSelection{}, fmt.Errorf("interface %s has no valid IPv4 addresses", selection.Iface.Name)
 	}
 
 	_, ipnet, _ := net.ParseCIDR(selection.TargetAddr)
-	selection.TotalHosts = scanner.TotalScanHosts(ipnet)
+	selection.TotalHosts = shared.TotalScanHosts(ipnet)
 
 	return selection, nil
 }

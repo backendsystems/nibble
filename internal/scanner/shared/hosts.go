@@ -1,4 +1,4 @@
-package scanner
+package shared
 
 import (
 	"net"
@@ -6,33 +6,33 @@ import (
 	"strings"
 )
 
-// TotalScanHosts returns the number of IPv4 hosts that will actually be scanned.
+// TotalScanHosts returns the number of IPv4 hosts that will actually be scanned
 func TotalScanHosts(ipnet *net.IPNet) int {
 	ones, bits := ipnet.Mask.Size()
 	hostBits := bits - ones
 
-	// non-ip4 fallback keeps prior behavior.
+	// non-ip4 fallback keeps prior behavior
 	if bits != 32 {
 		return 1 << uint(hostBits)
 	}
 
-	// /32 has one host.
+	// /32 has one host
 	if hostBits <= 0 {
 		return 1
 	}
 
 	totalHosts := 1 << uint(hostBits)
 
-	// /31 keeps both addresses as usable hosts.
+	// /31 keeps both addresses as usable hosts
 	if hostBits == 1 {
 		return totalHosts
 	}
 
-	// Larger subnets skip network and broadcast addresses.
+	// Larger subnets skip network and broadcast addresses
 	return totalHosts - 2
 }
 
-// FirstIp4 returns the first IPv4 CIDR string from interface addresses.
+// FirstIp4 returns the first IPv4 CIDR string from interface addresses
 func FirstIp4(addrs []net.Addr) string {
 	for _, addr := range addrs {
 		addrText := addr.String()
@@ -41,7 +41,7 @@ func FirstIp4(addrs []net.Addr) string {
 			continue
 		}
 
-		// Normalize plain IPv4 values for ParseCIDR callers.
+		// Normalize plain IPv4 values for ParseCIDR callers
 		if strings.Contains(addrText, "/") {
 			return addrText
 		}

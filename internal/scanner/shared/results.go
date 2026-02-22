@@ -1,24 +1,24 @@
-package scanner
+package shared
 
 import (
 	"fmt"
 	"strings"
 )
 
-// PortInfo holds a port number and its service banner.
+// PortInfo holds a port number and its service banner
 type PortInfo struct {
 	Port   int
 	Banner string
 }
 
-// HostResult holds all scan info for a single host.
+// HostResult holds all scan info for a single host
 type HostResult struct {
 	IP       string
 	Hardware string
 	Ports    []PortInfo
 }
 
-// FormatHost renders a HostResult into the display string.
+// FormatHost renders a HostResult into the display string
 func FormatHost(h HostResult) string {
 	var lines []string
 	if h.Hardware != "" {

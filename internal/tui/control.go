@@ -5,10 +5,10 @@ import (
 	"net"
 	"os"
 
-	"github.com/backendsystems/nibble/internal/demo"
+	"github.com/backendsystems/nibble/internal/scanner/demo"
+	"github.com/backendsystems/nibble/internal/scanner/ip4"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/ports"
-	"github.com/backendsystems/nibble/internal/scan"
-	"github.com/backendsystems/nibble/internal/scanner"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	scanview "github.com/backendsystems/nibble/internal/tui/views/scan"
@@ -35,7 +35,7 @@ type model struct {
 	scan    scanview.Model
 }
 
-func Run(networkScanner scanner.Scanner, ifaces []net.Interface, addrsByIface map[string][]net.Addr) error {
+func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map[string][]net.Addr) error {
 	cfg, _ := ports.LoadConfig()
 	pack := cfg.Mode
 	if pack == "" || !ports.IsValidPack(pack) {
@@ -43,9 +43,9 @@ func Run(networkScanner scanner.Scanner, ifaces []net.Interface, addrsByIface ma
 	}
 	if resolvedPorts, err := ports.Resolve(pack, cfg.Custom, ""); err == nil {
 		switch typed := networkScanner.(type) {
-		case *scan.NetScanner:
+		case *ip4.Scanner:
 			typed.Ports = resolvedPorts
-		case *demo.DemoScanner:
+		case *demo.Scanner:
 			typed.Ports = resolvedPorts
 		}
 	}

@@ -3,13 +3,13 @@ package scanview
 import (
 	"net"
 
-	"github.com/backendsystems/nibble/internal/scanner"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/viewport"
 )
 
 type Model struct {
-	NetworkScan      scanner.Scanner
+	NetworkScan      shared.Scanner
 	SelectedIface    net.Interface
 	SelectedAddrs    []net.Addr
 	Scanning         bool
@@ -21,7 +21,7 @@ type Model struct {
 	TotalHosts       int
 	NeighborSeen     int
 	NeighborTotal    int
-	ProgressChan     chan scanner.ProgressUpdate
+	ProgressChan     chan shared.ProgressUpdate
 	Progress         progress.Model
 	Results          viewport.Model
 }

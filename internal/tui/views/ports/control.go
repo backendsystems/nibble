@@ -3,9 +3,9 @@ package portsview
 import (
 	"strings"
 
-	"github.com/backendsystems/nibble/internal/demo"
+	"github.com/backendsystems/nibble/internal/scanner/demo"
+	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/ports"
-	"github.com/backendsystems/nibble/internal/scan"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -188,9 +188,9 @@ func applyConfig(m Model) (Model, bool) {
 		return m, false
 	}
 	switch typed := m.NetworkScan.(type) {
-	case *scan.NetScanner:
+	case *ip4.Scanner:
 		typed.Ports = resolvedPorts
-	case *demo.DemoScanner:
+	case *demo.Scanner:
 		typed.Ports = resolvedPorts
 	}
 	m.ErrorMsg = ""

@@ -1,11 +1,11 @@
-package scan
+package ip4
 
 import (
 	"net"
 	"sync"
 	"sync/atomic"
 
-	"github.com/backendsystems/nibble/internal/scanner"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
 const (
@@ -15,11 +15,11 @@ const (
 
 // neighborDiscovery emits hosts already visible in neighbor tables
 // and returns IPs that should be skipped in the full sweep
-func (s *NetScanner) neighborDiscovery(ifaceName string, subnet *net.IPNet, totalHosts int, progressChan chan<- scanner.ProgressUpdate) map[string]struct{} {
+func (s *Scanner) neighborDiscovery(ifaceName string, subnet *net.IPNet, totalHosts int, progressChan chan<- shared.ProgressUpdate) map[string]struct{} {
 	neighbors := visibleNeighbors(ifaceName, subnet)
 	skipIPs := buildSkipMap(neighbors)
 	if len(neighbors) == 0 {
-		emitNeighborProgress(progressChan, scanner.NeighborProgress{TotalHosts: totalHosts})
+		emitNeighborProgress(progressChan, shared.NeighborProgress{TotalHosts: totalHosts})
 		return skipIPs
 	}
 
@@ -53,7 +53,7 @@ func (s *NetScanner) neighborDiscovery(ifaceName string, subnet *net.IPNet, tota
 }
 
 // subnetSweep scans the subnet and skips hosts found in neighbor discovery
-func (s *NetScanner) subnetSweep(ifaceName string, subnet *net.IPNet, totalHosts int, skipIPs map[string]struct{}, progressChan chan<- scanner.ProgressUpdate) {
+func (s *Scanner) subnetSweep(ifaceName string, subnet *net.IPNet, totalHosts int, skipIPs map[string]struct{}, progressChan chan<- shared.ProgressUpdate) {
 	ports := s.ports()
 	jobs := make(chan string, sweepPhaseMaxWorkers)
 	var wg sync.WaitGroup
@@ -81,7 +81,7 @@ func (s *NetScanner) subnetSweep(ifaceName string, subnet *net.IPNet, totalHosts
 	wg.Wait()
 }
 
-func processNeighborJob(ifaceName string, neighbor NeighborEntry, ports []int, totalHosts, totalNeighbors int, seenCount *atomic.Int64, progressChan chan<- scanner.ProgressUpdate) {
+func processNeighborJob(ifaceName string, neighbor NeighborEntry, ports []int, totalHosts, totalNeighbors int, seenCount *atomic.Int64, progressChan chan<- shared.ProgressUpdate) {
 	hostInfo := scanHostMac(ifaceName, neighbor.IP, neighbor.MAC, ports)
 	if hostInfo == "" {
 		hostInfo = formatHost(neighbor)
@@ -89,7 +89,7 @@ func processNeighborJob(ifaceName string, neighbor NeighborEntry, ports []int, t
 
 	currentSeen := int(seenCount.Add(1))
 
-	emitNeighborProgress(progressChan, scanner.NeighborProgress{
+	emitNeighborProgress(progressChan, shared.NeighborProgress{
 		Host:       hostInfo,
 		TotalHosts: totalHosts,
 		Seen:       currentSeen,
@@ -97,7 +97,7 @@ func processNeighborJob(ifaceName string, neighbor NeighborEntry, ports []int, t
 	})
 }
 
-func processSweepJob(ifaceName, currentIP string, ports []int, skipIPs map[string]struct{}, totalHosts int, scanned *atomic.Int64, progressChan chan<- scanner.ProgressUpdate) {
+func processSweepJob(ifaceName, currentIP string, ports []int, skipIPs map[string]struct{}, totalHosts int, scanned *atomic.Int64, progressChan chan<- shared.ProgressUpdate) {
 	hostInfo := ""
 	if len(ports) > 0 {
 		if _, alreadyFound := skipIPs[currentIP]; !alreadyFound {
@@ -107,7 +107,7 @@ func processSweepJob(ifaceName, currentIP string, ports []int, skipIPs map[strin
 
 	currentScanned := int(scanned.Add(1))
 
-	progressChan <- scanner.SweepProgress{
+	progressChan <- shared.SweepProgress{
 		Host:       hostInfo,
 		TotalHosts: totalHosts,
 		Scanned:    currentScanned,
@@ -124,13 +124,13 @@ func buildSkipMap(neighbors []NeighborEntry) map[string]struct{} {
 }
 
 func formatHost(neighbor NeighborEntry) string {
-	return scanner.FormatHost(scanner.HostResult{
+	return shared.FormatHost(shared.HostResult{
 		IP:       neighbor.IP,
-		Hardware: VendorFromMac(neighbor.MAC),
+		Hardware: shared.VendorFromMac(neighbor.MAC),
 	})
 }
 
-func emitNeighborProgress(progressChan chan<- scanner.ProgressUpdate, progress scanner.NeighborProgress) {
+func emitNeighborProgress(progressChan chan<- shared.ProgressUpdate, progress shared.NeighborProgress) {
 	select {
 	case progressChan <- progress:
 	default:

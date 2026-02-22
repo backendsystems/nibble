@@ -4,7 +4,7 @@ package demo
 import "net"
 
 // GetInterfaces returns fake interfaces used by demo mode.
-func GetInterfaces() ([]net.Interface, map[string][]net.Addr, error) {
+func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error) {
 	specs := []struct {
 		name string
 		cidr string

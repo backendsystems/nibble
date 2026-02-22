@@ -4,24 +4,23 @@ import (
 	"net"
 	"time"
 
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/ports"
-	"github.com/backendsystems/nibble/internal/scan"
-	"github.com/backendsystems/nibble/internal/scanner"
 )
 
-// DemoScanner simulates a scan with fake host data.
-type DemoScanner struct {
+// Scanner simulates a scan with fake host data.
+type Scanner struct {
 	Ports []int
 }
 
-func (s *DemoScanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- scanner.ProgressUpdate) {
+func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shared.ProgressUpdate) {
 	_, ipnet, err := net.ParseCIDR(subnet)
 	if err != nil {
 		close(progressChan)
 		return
 	}
 
-	totalHosts := scanner.TotalScanHosts(ipnet)
+	totalHosts := shared.TotalScanHosts(ipnet)
 	selected := selectedPorts(s.Ports)
 	selectedSet := make(map[int]struct{}, len(selected))
 	for _, p := range selected {
@@ -32,28 +31,25 @@ func (s *DemoScanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- 
 	neighborDelay, sweepDelay := demoDelaysForInterface(ifaceName)
 
 	// Pick which demo hosts belong to this subnet.
-	var subnetHosts []scanner.HostResult
+	var subnetHosts []shared.HostResult
 	for _, h := range hosts {
 		ip := net.ParseIP(h.IP)
 		if ip == nil || !ipnet.Contains(ip) {
 			continue
 		}
-		resolved := scanner.HostResult{
+		resolved := shared.HostResult{
 			IP:       h.IP,
-			Hardware: scan.VendorFromMac(h.Hardware),
+			Hardware: shared.VendorFromMac(h.Hardware),
 		}
 		if !hostOnly {
 			for _, p := range h.Ports {
 				if _, ok := selectedSet[p.Port]; !ok {
 					continue
 				}
-				resolved.Ports = append(resolved.Ports, scanner.PortInfo{
+				resolved.Ports = append(resolved.Ports, shared.PortInfo{
 					Port:   p.Port,
 					Banner: p.Banner,
 				})
-			}
-			if len(resolved.Ports) == 0 {
-				continue
 			}
 		}
 		subnetHosts = append(subnetHosts, resolved)
@@ -72,15 +68,15 @@ func (s *DemoScanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- 
 	remaining := subnetHosts[neighborCount:]
 	for i, h := range neighbors {
 		time.Sleep(neighborDelay)
-		progressChan <- scanner.NeighborProgress{
-			Host:       scanner.FormatHost(h),
+		progressChan <- shared.NeighborProgress{
+			Host:       shared.FormatHost(h),
 			TotalHosts: totalHosts,
 			Seen:       i + 1,
 			Total:      neighborCount,
 		}
 	}
 	if neighborCount == 0 {
-		progressChan <- scanner.NeighborProgress{
+		progressChan <- shared.NeighborProgress{
 			TotalHosts: totalHosts,
 			Seen:       0,
 			Total:      0,
@@ -99,11 +95,11 @@ func (s *DemoScanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- 
 
 		host := ""
 		if hostInterval > 0 && hostIdx < len(remaining) && i == hostInterval*(hostIdx+1) {
-			host = scanner.FormatHost(remaining[hostIdx])
+			host = shared.FormatHost(remaining[hostIdx])
 			hostIdx++
 		}
 
-		progressChan <- scanner.SweepProgress{
+		progressChan <- shared.SweepProgress{
 			Host:       host,
 			TotalHosts: totalHosts,
 			Scanned:    i,

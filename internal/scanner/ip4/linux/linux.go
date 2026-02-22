@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/backendsystems/nibble/internal/scan/shared"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
 type Neighbor struct {

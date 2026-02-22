@@ -1,32 +1,32 @@
-package scan
+package ip4
 
 import (
 	"net"
 
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/ports"
-	"github.com/backendsystems/nibble/internal/scanner"
 )
 
-// NetScanner performs real network scanning (TCP connect, ARP, banner grab)
-type NetScanner struct {
+// Scanner performs real network scanning (TCP connect, ARP, banner grab)
+type Scanner struct {
 	Ports []int
 }
 
 // ScanNetwork scans a real subnet with controlled concurrency for smooth progress
-func (s *NetScanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- scanner.ProgressUpdate) {
+func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shared.ProgressUpdate) {
 	_, ipnet, err := net.ParseCIDR(subnet)
 	if err != nil {
 		return
 	}
 
-	totalHosts := scanner.TotalScanHosts(ipnet)
+	totalHosts := shared.TotalScanHosts(ipnet)
 	skipIPs := s.neighborDiscovery(ifaceName, ipnet, totalHosts, progressChan)
 	s.subnetSweep(ifaceName, ipnet, totalHosts, skipIPs, progressChan)
 
 	close(progressChan)
 }
 
-func (s *NetScanner) ports() (out []int) {
+func (s *Scanner) ports() (out []int) {
 	out = ports.DefaultPorts()
 	if s.Ports != nil {
 		out = s.Ports

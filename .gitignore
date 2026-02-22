@@ -6,6 +6,7 @@ nibble.exe
 .artifacts/
 *.mp4
 *.txt
+*.csv
 post.md
 
 .gocache/
