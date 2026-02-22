@@ -39,10 +39,11 @@ type ResetMsg struct {
 
 // Stopwatch is the model for the stopwatch component.
 type Stopwatch struct {
-	d       time.Duration
-	id      int
-	tag     int
-	running bool
+	d         time.Duration
+	id        int
+	tag       int
+	startTime time.Time
+	running   bool
 
 	// How long to wait before every tick. Defaults to 1 second.
 	Interval time.Duration
@@ -114,6 +115,12 @@ func (m Stopwatch) Update(msg tea.Msg) (Stopwatch, tea.Cmd) {
 			return m, nil
 		}
 		m.running = msg.running
+		if m.running {
+			m.startTime = time.Now()
+			m.tag++
+			return m, tick(m.id, m.tag, m.Interval)
+		}
+		m.d += time.Since(m.startTime)
 	case ResetMsg:
 		if msg.ID != m.id {
 			return m, nil
@@ -124,14 +131,10 @@ func (m Stopwatch) Update(msg tea.Msg) (Stopwatch, tea.Cmd) {
 			break
 		}
 
-		// If a tag is set, and it's not the one we expect, reject the message.
-		// This prevents the stopwatch from receiving too many messages and
-		// thus ticking too fast.
-		if msg.tag > 0 && msg.tag != m.tag {
+		if msg.tag != m.tag {
 			return m, nil
 		}
 
-		m.d += m.Interval
 		m.tag++
 		return m, tick(m.id, m.tag, m.Interval)
 	}
@@ -141,12 +144,15 @@ func (m Stopwatch) Update(msg tea.Msg) (Stopwatch, tea.Cmd) {
 
 // Elapsed returns the time elapsed.
 func (m Stopwatch) Elapsed() time.Duration {
+	if m.running {
+		return m.d + time.Since(m.startTime)
+	}
 	return m.d
 }
 
 // View of the timer component.
 func (m Stopwatch) View() string {
-	return m.d.String()
+	return m.Elapsed().Truncate(10 * time.Millisecond).String()
 }
 
 func tick(id int, tag int, d time.Duration) tea.Cmd {
