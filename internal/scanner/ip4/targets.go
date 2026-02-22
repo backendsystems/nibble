@@ -11,6 +11,10 @@ import (
 
 var maxWorkers = newMaxWorkers()
 
+const (
+	maxConcurrentHostScans = 24
+)
+
 func newMaxWorkers() int {
 	switch runtime.GOOS {
 	case "windows":
@@ -61,7 +65,7 @@ func (s *Scanner) neighborDiscovery(ifaceName string, subnet *net.IPNet, totalHo
 // subnetSweep scans the subnet and skips hosts found in neighbor discovery
 func (s *Scanner) subnetSweep(ifaceName string, subnet *net.IPNet, totalHosts int, skipIPs map[string]struct{}, progressChan chan<- shared.ProgressUpdate) {
 	ports := s.ports()
-	workerCount := max(1, maxWorkers/max(1, len(ports)))
+	workerCount := min(maxConcurrentHostScans, max(1, maxWorkers/max(1, len(ports))))
 	jobs := make(chan string, workerCount)
 	var wg sync.WaitGroup
 	var scanned atomic.Int64
