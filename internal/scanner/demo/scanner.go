@@ -103,7 +103,6 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 			Host:       host,
 			TotalHosts: totalHosts,
 			Scanned:    i,
-			Total:      totalHosts,
 		}
 	}
 

@@ -111,7 +111,6 @@ func processSweepJob(ifaceName, currentIP string, ports []int, skipIPs map[strin
 		Host:       hostInfo,
 		TotalHosts: totalHosts,
 		Scanned:    currentScanned,
-		Total:      totalHosts,
 	}
 }
 
