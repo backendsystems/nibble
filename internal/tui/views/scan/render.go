@@ -28,6 +28,8 @@ func Render(m Model, maxWidth int) string {
 
 	b.WriteString(statsStyle.Render(fmt.Sprintf("Subnet sweep %d/%d", m.ScannedCount, m.TotalHosts)) + "\n")
 
+	b.WriteString(statsStyle.Render(fmt.Sprintf("Elapsed: %s", m.Stopwatch.View())) + "\n")
+
 	sweepPercent := 0.0
 	if m.TotalHosts > 0 {
 		sweepPercent = float64(m.ScannedCount) / float64(m.TotalHosts)

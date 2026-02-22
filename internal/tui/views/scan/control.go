@@ -3,6 +3,7 @@ package scanview
 import (
 	"net"
 	"strings"
+	"time"
 
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 
@@ -95,68 +96,23 @@ func (m Model) Start(iface net.Interface, addrs []net.Addr, totalHosts int, targ
 	m.NeighborSeen = 0
 	m.NeighborTotal = 0
 	m.ProgressChan = make(chan shared.ProgressUpdate, 256)
+	m.Stopwatch = NewWithInterval(10 * time.Millisecond)
 	m = m.RefreshResults(false)
-	return m, PerformScan(m.NetworkScan, iface.Name, targetAddr, m.ProgressChan)
+	return m, tea.Batch(m.Stopwatch.Start(), PerformScan(m.NetworkScan, iface.Name, targetAddr, m.ProgressChan))
 }
 
 func (m Model) Update(msg tea.Msg) Result {
 	result := Result{Model: m}
+
 	switch typed := msg.(type) {
+	case TickMsg, StartStopMsg, ResetMsg:
+		return handleStopwatchMsg(m, typed)
 	case tea.KeyMsg:
-		result.Handled = true
-		switch HandleKey(m.Scanning, m.ScanComplete, typed.String()) {
-		case ActionQuitAndComplete:
-			result.Model = prepareForExit(result.Model, true)
-			result.Model.Scanning = false
-			result.Model.ScanComplete = true
-			result.Cmd = sendQuitMsg()
-			return result
-		case ActionQuit:
-			result.Cmd = sendQuitMsg()
-			return result
-		}
-		var cmd tea.Cmd
-		result.Model.Results, cmd = m.Results.Update(typed)
-		result.Cmd = cmd
-		return result
+		return handleKeyMsg(m, typed)
 	case ProgressMsg:
-		result.Handled = true
-		hostAdded := false
-		switch p := typed.Update.(type) {
-		case shared.NeighborProgress:
-			if p.TotalHosts > 0 {
-				result.Model.TotalHosts = p.TotalHosts
-			}
-			result.Model.NeighborSeen = p.Seen
-			result.Model.NeighborTotal = p.Total
-			if p.Host != "" {
-				before := len(result.Model.FoundHosts)
-				result.Model.FoundHosts = appendIfNew(result.Model.FoundHosts, p.Host)
-				hostAdded = len(result.Model.FoundHosts) > before
-			}
-		case shared.SweepProgress:
-			if p.TotalHosts > 0 {
-				result.Model.TotalHosts = p.TotalHosts
-			}
-			result.Model.ScannedCount = p.Scanned
-			if p.Host != "" {
-				before := len(result.Model.FoundHosts)
-				result.Model.FoundHosts = appendIfNew(result.Model.FoundHosts, p.Host)
-				hostAdded = len(result.Model.FoundHosts) > before
-			}
-		}
-		if hostAdded {
-			result.Model = result.Model.RefreshResults(true)
-		}
-		result.Cmd = ListenForProgress(m.ProgressChan)
-		return result
+		return handleProgressMsg(m, typed)
 	case CompleteMsg:
-		result.Handled = true
-		result.Model = prepareForExit(result.Model, true)
-		result.Model.Scanning = false
-		result.Model.ScanComplete = true
-		result.Cmd = sendQuitMsg()
-		return result
+		return handleCompleteMsg(m)
 	case QuitMsg:
 		result.Handled = true
 		result.Quit = true
@@ -164,6 +120,81 @@ func (m Model) Update(msg tea.Msg) Result {
 	default:
 		return result
 	}
+}
+
+func handleStopwatchMsg(m Model, msg tea.Msg) Result {
+	result := Result{Model: m}
+	var cmd tea.Cmd
+	result.Model.Stopwatch, cmd = m.Stopwatch.Update(msg)
+	result.Cmd = cmd
+	result.Handled = true
+	return result
+}
+
+func handleKeyMsg(m Model, key tea.KeyMsg) Result {
+	result := Result{Model: m}
+	result.Handled = true
+	switch HandleKey(m.Scanning, m.ScanComplete, key.String()) {
+	case ActionQuitAndComplete:
+		result.Model = prepareForExit(result.Model, true)
+		result.Model.Scanning = false
+		result.Model.ScanComplete = true
+		result.Cmd = tea.Batch(m.Stopwatch.Stop(), sendQuitMsg())
+		return result
+	case ActionQuit:
+		result.Cmd = tea.Batch(m.Stopwatch.Stop(), sendQuitMsg())
+		return result
+	}
+	var cmd tea.Cmd
+	result.Model.Results, cmd = m.Results.Update(key)
+	result.Cmd = cmd
+	return result
+}
+
+func handleProgressMsg(m Model, msg ProgressMsg) Result {
+	result := Result{Model: m}
+	result.Handled = true
+	hostAdded := false
+
+	switch p := msg.Update.(type) {
+	case shared.NeighborProgress:
+		if p.TotalHosts > 0 {
+			result.Model.TotalHosts = p.TotalHosts
+		}
+		result.Model.NeighborSeen = p.Seen
+		result.Model.NeighborTotal = p.Total
+		if p.Host != "" {
+			before := len(result.Model.FoundHosts)
+			result.Model.FoundHosts = appendIfNew(result.Model.FoundHosts, p.Host)
+			hostAdded = len(result.Model.FoundHosts) > before
+		}
+	case shared.SweepProgress:
+		if p.TotalHosts > 0 {
+			result.Model.TotalHosts = p.TotalHosts
+		}
+		result.Model.ScannedCount = p.Scanned
+		if p.Host != "" {
+			before := len(result.Model.FoundHosts)
+			result.Model.FoundHosts = appendIfNew(result.Model.FoundHosts, p.Host)
+			hostAdded = len(result.Model.FoundHosts) > before
+		}
+	}
+
+	if hostAdded {
+		result.Model = result.Model.RefreshResults(true)
+	}
+	result.Cmd = ListenForProgress(m.ProgressChan)
+	return result
+}
+
+func handleCompleteMsg(m Model) Result {
+	result := Result{Model: m}
+	result.Handled = true
+	result.Model = prepareForExit(result.Model, true)
+	result.Model.Scanning = false
+	result.Model.ScanComplete = true
+	result.Cmd = tea.Batch(m.Stopwatch.Stop(), sendQuitMsg())
+	return result
 }
 
 func sendQuitMsg() tea.Cmd {

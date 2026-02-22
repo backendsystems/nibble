@@ -24,4 +24,5 @@ type Model struct {
 	ProgressChan     chan shared.ProgressUpdate
 	Progress         progress.Model
 	Results          viewport.Model
+	Stopwatch        Stopwatch
 }
