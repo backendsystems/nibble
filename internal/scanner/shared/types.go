@@ -2,9 +2,7 @@ package shared
 
 import "net"
 
-type ProgressUpdate interface {
-	isProgressUpdate()
-}
+type ProgressUpdate interface{}
 
 // NeighborProgress represents progress during the neighbor discovery phase
 type NeighborProgress struct {
@@ -14,8 +12,6 @@ type NeighborProgress struct {
 	Total      int    // Total neighbors to process
 }
 
-func (NeighborProgress) isProgressUpdate() {}
-
 // SweepProgress represents progress during the subnet sweep phase
 type SweepProgress struct {
 	Host       string // Optional host line found during sweep
@@ -23,8 +19,6 @@ type SweepProgress struct {
 	Scanned    int    // Hosts scanned so far in sweep
 	Total      int    // Total hosts in sweep phase
 }
-
-func (SweepProgress) isProgressUpdate() {}
 
 // Scanner abstracts network scanning so real and demo modes share the same code path
 type Scanner interface {
