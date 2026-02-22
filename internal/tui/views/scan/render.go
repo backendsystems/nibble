@@ -11,13 +11,13 @@ import (
 
 func Render(m Model, maxWidth int) string {
 	var b strings.Builder
-
+	infoStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	b.WriteString(common.TitleStyle.Render(fmt.Sprintf("Scanning: %s", m.SelectedIface.Name)))
+	b.WriteString(infoStyle.Render(fmt.Sprintf(" - %s", m.Stopwatch.View())))
 	b.WriteString("\n")
 
 	for _, addr := range m.SelectedAddrs {
 		if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.To4() != nil {
-			infoStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 			b.WriteString(infoStyle.Render(fmt.Sprintf("Network: %s", ipnet.String())) + "\n")
 			break
 		}
@@ -27,8 +27,6 @@ func Render(m Model, maxWidth int) string {
 	b.WriteString(statsStyle.Render(fmt.Sprintf("Neighbor discovery %d/%d", m.NeighborSeen, m.NeighborTotal)) + "\n")
 
 	b.WriteString(statsStyle.Render(fmt.Sprintf("Subnet sweep %d/%d", m.ScannedCount, m.TotalHosts)) + "\n")
-
-	b.WriteString(statsStyle.Render(fmt.Sprintf("Elapsed: %s", m.Stopwatch.View())) + "\n")
 
 	sweepPercent := 0.0
 	if m.TotalHosts > 0 {
