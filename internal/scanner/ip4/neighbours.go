@@ -3,7 +3,6 @@ package ip4
 import (
 	"fmt"
 	"net"
-	"runtime"
 	"sort"
 	"sync"
 	"time"
@@ -12,11 +11,6 @@ import (
 )
 
 const portDialTimeout = 70 * time.Millisecond
-const macosGlobalDialConcurrencyCap = 2 * 1024
-const windowsGlobalDialConcurrencyCap = 6 * 1024
-const unixGlobalDialConcurrencyCap = 12 * 1024
-
-var dialLimiter = newDialLimiter()
 
 type portResult struct {
 	port   int
@@ -63,50 +57,42 @@ func scanHostMac(ifaceName, ip, knownMAC string, ports []int) string {
 func scanOpenPorts(ip string, ports []int) []portResult {
 	var wg sync.WaitGroup
 	var resultMu sync.Mutex
-	results := make([]portResult, 0, len(ports))
+	results := make([]portResult, 0, 16)
 
-	for _, port := range ports {
-		wg.Add(1)
-		go func(port int) {
+	portCh := make(chan int, len(ports))
+	for _, p := range ports {
+		portCh <- p
+	}
+	close(portCh)
+
+	n := min(maxWorkers, len(ports))
+
+	wg.Add(n)
+	for range n {
+		go func() {
 			defer wg.Done()
-			if dialLimiter != nil {
-				// Acquire one slot in the global dial work pool
-				dialLimiter <- struct{}{}
-				defer func() {
-					<-dialLimiter // release
-				}()
+			for port := range portCh {
+				dialAndRecord(ip, port, &resultMu, &results)
 			}
-
-			conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), portDialTimeout)
-			if err != nil {
-				return
-			}
-			defer conn.Close()
-
-			resultMu.Lock()
-			results = append(results, portResult{port: port, banner: getServiceBanner(conn)})
-			resultMu.Unlock()
-		}(port)
+		}()
 	}
 
 	wg.Wait()
 	return results
 }
 
-// newDialLimiter returns a process wide semaphore that caps concurrent TCP dials.
-// Windows uses a lower cap due to stricter socket/buffer limits.
-func newDialLimiter() chan struct{} {
-	switch runtime.GOOS {
-	case "windows":
-		return make(chan struct{}, windowsGlobalDialConcurrencyCap)
-	case "darwin":
-		return make(chan struct{}, macosGlobalDialConcurrencyCap)
-	case "linux":
-		return make(chan struct{}, unixGlobalDialConcurrencyCap)
-	default:
-		return nil
+func dialAndRecord(ip string, port int, mu *sync.Mutex, results *[]portResult) {
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), portDialTimeout)
+	if err != nil {
+		return
 	}
+	defer conn.Close()
+	banner := getServiceBanner(conn)
+	mu.Lock()
+	*results = append(*results, portResult{port: port, banner: banner})
+	mu.Unlock()
 }
+
 
 func resolveHardware(targetIP net.IP, knownMAC string) string {
 	if knownMAC != "" {

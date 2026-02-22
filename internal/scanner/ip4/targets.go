@@ -2,16 +2,25 @@ package ip4
 
 import (
 	"net"
+	"runtime"
 	"sync"
 	"sync/atomic"
 
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
-const (
-	neighborPhaseMaxWorkers = 16
-	sweepPhaseMaxWorkers    = 100
-)
+var maxWorkers = newMaxWorkers()
+
+func newMaxWorkers() int {
+	switch runtime.GOOS {
+	case "windows":
+		return 6 * 1024
+	case "darwin":
+		return 2 * 1024
+	default:
+		return 12 * 1024
+	}
+}
 
 // neighborDiscovery emits hosts already visible in neighbor tables
 // and returns IPs that should be skipped in the full sweep
@@ -23,12 +32,9 @@ func (s *Scanner) neighborDiscovery(ifaceName string, subnet *net.IPNet, totalHo
 		return skipIPs
 	}
 
-	workerCount := neighborPhaseMaxWorkers
-	if len(neighbors) < workerCount {
-		workerCount = len(neighbors)
-	}
-
 	ports := s.ports()
+	workerCount := min(len(neighbors), max(1, maxWorkers/max(1, len(ports))))
+
 	jobs := make(chan NeighborEntry)
 	var wg sync.WaitGroup
 	var seenCount atomic.Int64
@@ -55,11 +61,12 @@ func (s *Scanner) neighborDiscovery(ifaceName string, subnet *net.IPNet, totalHo
 // subnetSweep scans the subnet and skips hosts found in neighbor discovery
 func (s *Scanner) subnetSweep(ifaceName string, subnet *net.IPNet, totalHosts int, skipIPs map[string]struct{}, progressChan chan<- shared.ProgressUpdate) {
 	ports := s.ports()
-	jobs := make(chan string, sweepPhaseMaxWorkers)
+	workerCount := max(1, maxWorkers/max(1, len(ports)))
+	jobs := make(chan string, workerCount)
 	var wg sync.WaitGroup
 	var scanned atomic.Int64
 
-	for range sweepPhaseMaxWorkers {
+	for range workerCount {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -107,10 +114,13 @@ func processSweepJob(ifaceName, currentIP string, ports []int, skipIPs map[strin
 
 	currentScanned := int(scanned.Add(1))
 
-	progressChan <- shared.SweepProgress{
+	select {
+	case progressChan <- shared.SweepProgress{
 		Host:       hostInfo,
 		TotalHosts: totalHosts,
 		Scanned:    currentScanned,
+	}:
+	default:
 	}
 }
 
