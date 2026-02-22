@@ -76,6 +76,20 @@ func ListenForProgress(progressChan <-chan shared.ProgressUpdate) tea.Cmd {
 	}
 }
 
+func tickStopwatch(sw Stopwatch) tea.Cmd {
+	return tea.Tick(sw.Interval, func(_ time.Time) tea.Msg {
+		return TickMsg{ID: sw.ID(), tag: 0}
+	})
+}
+
+// continueScanLoop batches all ongoing scan operations: timer ticks, progress listening
+func continueScanLoop(m Model) tea.Cmd {
+	return tea.Batch(
+		tickStopwatch(m.Stopwatch),
+		ListenForProgress(m.ProgressChan),
+	)
+}
+
 func PerformScan(networkScanner shared.Scanner, ifaceName, targetAddr string, progressChan chan shared.ProgressUpdate) tea.Cmd {
 	return func() tea.Msg {
 		go networkScanner.ScanNetwork(ifaceName, targetAddr, progressChan)
@@ -147,7 +161,12 @@ func handleKeyMsg(m Model, key tea.KeyMsg) Result {
 	}
 	var cmd tea.Cmd
 	result.Model.Results, cmd = m.Results.Update(key)
-	result.Cmd = cmd
+	// Batch viewport update with all scan operations
+	if cmd != nil {
+		result.Cmd = tea.Batch(cmd, continueScanLoop(result.Model))
+	} else {
+		result.Cmd = continueScanLoop(result.Model)
+	}
 	return result
 }
 
@@ -183,7 +202,8 @@ func handleProgressMsg(m Model, msg ProgressMsg) Result {
 	if hostAdded {
 		result.Model = result.Model.RefreshResults(true)
 	}
-	result.Cmd = ListenForProgress(m.ProgressChan)
+	// Batch all scan operations together
+	result.Cmd = continueScanLoop(result.Model)
 	return result
 }
 
