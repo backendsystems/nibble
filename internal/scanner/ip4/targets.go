@@ -96,12 +96,20 @@ func processNeighborJob(ifaceName string, neighbor NeighborEntry, ports []int, t
 
 	currentSeen := int(seenCount.Add(1))
 
-	emitNeighborProgress(progressChan, shared.NeighborProgress{
+	progress := shared.NeighborProgress{
 		Host:       hostInfo,
 		TotalHosts: totalHosts,
 		Seen:       currentSeen,
 		Total:      totalNeighbors,
-	})
+	}
+
+	// Always send blocking if we have host info - must not drop discoveries
+	// Otherwise use non-blocking to avoid blocking workers when channel is full
+	if progress.Host != "" {
+		progressChan <- progress
+	} else {
+		emitNeighborProgress(progressChan, progress)
+	}
 }
 
 func processSweepJob(ifaceName, currentIP string, ports []int, skipIPs map[string]struct{}, totalHosts int, scanned *atomic.Int64, progressChan chan<- shared.ProgressUpdate) {
@@ -114,13 +122,21 @@ func processSweepJob(ifaceName, currentIP string, ports []int, skipIPs map[strin
 
 	currentScanned := int(scanned.Add(1))
 
-	select {
-	case progressChan <- shared.SweepProgress{
+	progress := shared.SweepProgress{
 		Host:       hostInfo,
 		TotalHosts: totalHosts,
 		Scanned:    currentScanned,
-	}:
-	default:
+	}
+
+	// Always send blocking if we found a host - must not drop discoveries
+	// Otherwise use non-blocking to avoid blocking workers when channel is full
+	if hostInfo != "" {
+		progressChan <- progress
+	} else {
+		select {
+		case progressChan <- progress:
+		default:
+		}
 	}
 }
 
