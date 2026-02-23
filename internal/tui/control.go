@@ -78,11 +78,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 				progress.WithScaledGradient("#FFD700", "#B8B000"),
 			),
 		},
-		target: targetview.Model{
-			PortPack:    targetPack,
-			CustomPorts: targetCfg.Custom,
-			NetworkScan: networkScanner,
-		},
+		target: targetview.NewModel(networkScanner, "", "", targetPack, targetCfg.Custom, ifaces),
 	}
 	initialModel.scan = initialModel.scan.SetViewportSize(scanViewWidth(initialModel.windowW), initialModel.windowH)
 
@@ -155,11 +151,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case viewTarget:
-		key, ok := msg.(tea.KeyMsg)
-		if !ok {
-			return m, nil
-		}
-		result := m.target.Update(key)
+		result, cmd := m.target.Update(msg)
 		m.target = result.Model
 		if result.Quit {
 			m.main.ErrorMsg = ""
@@ -172,7 +164,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if result.SavePorts {
 				targetview.SaveTargetPortsConfig(m.target.PortPack, m.target.CustomPorts)
 			}
-			nextScan, cmd := m.scan.Start(
+			nextScan, scanCmd := m.scan.Start(
 				net.Interface{},
 				nil,
 				result.Selection.TotalHosts,
@@ -181,9 +173,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			nextScan = nextScan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
 			m.scan = nextScan
 			m.active = viewScan
-			return m, tea.Sequence(exitAltScreenCmd(), cmd)
+			return m, tea.Sequence(exitAltScreenCmd(), scanCmd)
 		}
-		return m, nil
+		return m, cmd
 	case viewMain:
 		key, ok := msg.(tea.KeyMsg)
 		if !ok {
@@ -201,10 +193,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if result.OpenTarget {
-			m.target.ShowHelp = false
-			m.target.FocusField = 0
-			m.target.CIDRInput = "32" // Default to single host
-			m.target.CIDRCursor = 2
+			ipInput := m.target.IPInput
+			cidrInput := m.target.CIDRInput
+			if cidrInput == "" {
+				cidrInput = "32" // Default to single host
+			}
+
 			// Pre-fill IP from selected interface if not on target card
 			if result.Model.Cursor < len(result.Model.Interfaces) {
 				selection, err := mainview.ResolveScanSelection(result.Model.Interfaces, result.Model.Cursor, result.Model.InterfaceMap)
@@ -214,12 +208,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if idx := strings.Index(ip, "/"); idx != -1 {
 						ip = ip[:idx]
 					}
-					m.target.IPInput = ip
-					m.target.IPCursor = len(m.target.IPInput)
+					ipInput = ip
 				}
 			}
+
+			m.target = targetview.NewModel(m.target.NetworkScan, ipInput, cidrInput, m.target.PortPack, m.target.CustomPorts, result.Model.Interfaces)
 			m.active = viewTarget
-			return m, nil
+			return m, m.target.Init()
 		}
 		if result.StartScan {
 			m.main.ErrorMsg = ""

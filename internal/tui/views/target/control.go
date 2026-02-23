@@ -9,6 +9,7 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 
+	"github.com/charmbracelet/huh"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -17,222 +18,100 @@ var (
 	errSubnetTooLarge = errors.New("subnet too large (min /16)")
 )
 
-type Action int
-
-const (
-	ActionNone Action = iota
-	ActionQuit
-	ActionOpenHelp
-	ActionCloseHelp
-	ActionTabNext
-	ActionConfirm
-	ActionTogglePortPack
-	ActionMoveLeft
-	ActionMoveRight
-	ActionMoveHome
-	ActionMoveEnd
-	ActionBackspace
-	ActionDeleteAll
-)
-
 type Result struct {
 	Model     Model
+	Cmd       tea.Cmd
 	Quit      bool
 	StartScan bool
 	Selection mainview.ScanSelection
 	SavePorts bool // Signal to save port config
 }
 
-const helpText = "Tab • backspace • enter • q: cancel • ?: help"
-
-func HandleKey(showHelp bool, key string) Action {
-	if showHelp {
-		return ActionCloseHelp
+// Init returns the initialization command for the form
+func (m Model) Init() tea.Cmd {
+	if m.Form == nil {
+		return nil
 	}
-
-	switch key {
-	case "q":
-		return ActionQuit
-	case "?":
-		return ActionOpenHelp
-	case "tab", "down", "s", "j":
-		return ActionTabNext
-	case "shift+tab", "up", "w", "k":
-		return ActionTabNext
-	case "enter":
-		return ActionConfirm
-	case "left", "a":
-		return ActionMoveLeft
-	case "right", "d":
-		return ActionMoveRight
-	case "home":
-		return ActionMoveHome
-	case "end":
-		return ActionMoveEnd
-	case "backspace":
-		return ActionBackspace
-	case "delete":
-		return ActionDeleteAll
-	default:
-		return ActionNone
-	}
+	return m.Form.Init()
 }
 
-func (m Model) Update(msg tea.KeyMsg) Result {
+// Update handles tea.Msg and delegates to the form
+func (m Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	result := Result{Model: m}
 
-	action := HandleKey(m.ShowHelp, msg.String())
-
-	switch action {
-	case ActionQuit:
-		result.Quit = true
-	case ActionOpenHelp:
-		result.Model.ShowHelp = true
-	case ActionCloseHelp:
-		result.Model.ShowHelp = false
-	case ActionTabNext:
-		result.Model.FocusField = (result.Model.FocusField + 1) % 3
-	case ActionConfirm:
-		selection, err := validateAndBuild(result.Model)
-		if err != nil {
-			result.Model.ErrorMsg = err.Error()
-			return result
+	// Handle special keys
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
+		case "q", "esc":
+			result.Quit = true
+			return result, nil
+		case "up", "down", "k", "j", "w", "s":
+			// Cycle through interface IPs only when IP field is focused
+			if m.Form != nil {
+				focused := m.Form.GetFocusedField()
+				if focused != nil && focused.GetKey() == "ip" {
+					// Determine direction: up/k/w = forward, down/j/s = backward
+					forward := keyMsg.String() == "up" || keyMsg.String() == "k" || keyMsg.String() == "w"
+					m.CycleInterfaceIP(forward)
+					result.Model = m
+					// Recreate the form with the new IP
+					formModel := NewModel(m.NetworkScan, m.IPInput, m.CIDRInput, m.PortPack, m.CustomPorts, m.Interfaces)
+					m.Form = formModel.Form
+					result.Model = m
+					return result, m.Form.Init()
+				}
+			}
+		default:
+			// Block invalid characters for IP field if it's focused
+			if m.Form != nil {
+				focused := m.Form.GetFocusedField()
+				if focused != nil && focused.GetKey() == "ip" {
+					// Only allow printable characters that are digits or dots
+					if len(keyMsg.String()) == 1 {
+						ch := keyMsg.String()[0]
+						if !((ch >= '0' && ch <= '9') || ch == '.') {
+							// Invalid character for IP field, ignore it
+							return result, nil
+						}
+					}
+				}
+			}
 		}
-		result.Model.ErrorMsg = ""
+	}
+
+	if m.Form == nil {
+		return result, nil
+	}
+
+	// Delegate update to the form
+	formModel, cmd := m.Form.Update(msg)
+	if f, ok := formModel.(*huh.Form); ok {
+		m.Form = f
+	}
+	result.Model = m
+	result.Cmd = cmd
+
+	// Check if form is completed
+	if m.Form.State == huh.StateCompleted {
+		selection, err := validateAndBuild(m)
+		if err != nil {
+			m.ErrorMsg = err.Error()
+			result.Model = m
+			return result, nil
+		}
+		m.ErrorMsg = ""
+		result.Model = m
 		result.StartScan = true
 		result.Selection = selection
-		result.SavePorts = true // Signal to save target ports config
-	case ActionMoveLeft:
-		if result.Model.FocusField == 0 {
-			if result.Model.IPCursor > 0 {
-				result.Model.IPCursor--
-			}
-		} else if result.Model.FocusField == 1 {
-			if result.Model.CIDRCursor > 0 {
-				result.Model.CIDRCursor--
-			}
-		} else {
-			// In ports field: left cycles through ports modes
-			switch result.Model.PortPack {
-			case "custom":
-				result.Model.PortPack = "all"
-			case "all":
-				result.Model.PortPack = "default"
-			case "default":
-				result.Model.PortPack = "custom"
-			}
-		}
-	case ActionMoveRight:
-		if result.Model.FocusField == 0 {
-			if result.Model.IPCursor < len(result.Model.IPInput) {
-				result.Model.IPCursor++
-			}
-		} else if result.Model.FocusField == 1 {
-			if result.Model.CIDRCursor < len(result.Model.CIDRInput) {
-				result.Model.CIDRCursor++
-			}
-		} else {
-			// In ports field: right cycles through ports modes
-			switch result.Model.PortPack {
-			case "default":
-				result.Model.PortPack = "all"
-			case "all":
-				result.Model.PortPack = "custom"
-			case "custom":
-				result.Model.PortPack = "default"
-			}
-		}
-	case ActionMoveHome:
-		if result.Model.FocusField == 0 {
-			result.Model.IPCursor = 0
-		} else if result.Model.FocusField == 1 {
-			result.Model.CIDRCursor = 0
-		} else {
-			result.Model.PortCursor = 0
-		}
-	case ActionMoveEnd:
-		if result.Model.FocusField == 0 {
-			result.Model.IPCursor = len(result.Model.IPInput)
-		} else if result.Model.FocusField == 1 {
-			result.Model.CIDRCursor = len(result.Model.CIDRInput)
-		} else {
-			result.Model.PortCursor = len(result.Model.CustomPorts)
-		}
-	case ActionBackspace:
-		if result.Model.FocusField == 0 {
-			if result.Model.IPCursor > 0 {
-				result.Model.IPInput = result.Model.IPInput[:result.Model.IPCursor-1] + result.Model.IPInput[result.Model.IPCursor:]
-				result.Model.IPCursor--
-			}
-		} else if result.Model.FocusField == 1 {
-			if result.Model.CIDRCursor > 0 {
-				result.Model.CIDRInput = result.Model.CIDRInput[:result.Model.CIDRCursor-1] + result.Model.CIDRInput[result.Model.CIDRCursor:]
-				result.Model.CIDRCursor--
-			}
-		} else {
-			if result.Model.PortCursor > 0 {
-				result.Model.CustomPorts = result.Model.CustomPorts[:result.Model.PortCursor-1] + result.Model.CustomPorts[result.Model.PortCursor:]
-				result.Model.PortCursor--
-			}
-		}
-	case ActionDeleteAll:
-		if result.Model.FocusField == 2 {
-			result.Model.CustomPorts = ""
-			result.Model.PortCursor = 0
-		}
-	default:
-		// Handle character input (exclude escape/control chars)
-		if len(msg.String()) == 1 && msg.Type == tea.KeyRunes {
-			char := msg.Runes[0]
-			// Skip control characters
-			if char < 32 {
-				return result
-			}
-			if result.Model.FocusField == 0 {
-				// IP field - allow digits and dots
-				if isIPChar(char) {
-					result.Model.IPInput = insertChar(result.Model.IPInput, result.Model.IPCursor, char)
-					result.Model.IPCursor++
-				}
-			} else if result.Model.FocusField == 1 {
-				// CIDR field - allow digits only (0-32)
-				if isCIDRChar(char) {
-					result.Model.CIDRInput = insertChar(result.Model.CIDRInput, result.Model.CIDRCursor, char)
-					result.Model.CIDRCursor++
-				}
-			} else {
-				// Ports field - allow digits, hyphens, commas
-				if isPortChar(char) {
-					result.Model.CustomPorts = insertChar(result.Model.CustomPorts, result.Model.PortCursor, char)
-					result.Model.PortCursor++
-				}
-			}
-		}
+		result.SavePorts = true
 	}
 
-	return result
-}
-
-func isIPChar(r rune) bool {
-	return (r >= '0' && r <= '9') || r == '.'
-}
-
-func isCIDRChar(r rune) bool {
-	return r >= '0' && r <= '9'
-}
-
-func isPortChar(r rune) bool {
-	return (r >= '0' && r <= '9') || r == '-' || r == ','
-}
-
-func insertChar(s string, pos int, ch rune) string {
-	if pos < 0 {
-		pos = 0
+	// Check if form is aborted
+	if m.Form.State == huh.StateAborted {
+		result.Quit = true
 	}
-	if pos > len(s) {
-		pos = len(s)
-	}
-	return s[:pos] + string(ch) + s[pos:]
+
+	return result, cmd
 }
 
 func validateAndBuild(m Model) (mainview.ScanSelection, error) {
