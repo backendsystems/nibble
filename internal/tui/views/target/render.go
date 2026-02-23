@@ -55,15 +55,20 @@ func Render(m Model, maxWidth int) string {
 	// Ports section
 	b.WriteString("\n")
 	defaultStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	allStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	customStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	if m.PortPack == "default" {
 		defaultStyle = defaultStyle.Foreground(lipgloss.Color("226")).Bold(true)
+	} else if m.PortPack == "all" {
+		allStyle = allStyle.Foreground(lipgloss.Color("226")).Bold(true)
 	} else {
 		customStyle = customStyle.Foreground(lipgloss.Color("226")).Bold(true)
 	}
 
 	defaultLine := wrapPortList("default: ", formatPortList(ports.DefaultPorts()), maxWidth)
 	b.WriteString(defaultStyle.Render(defaultLine) + "\n")
+	allLine := wrapPortList("all:     ", "1-65535", maxWidth)
+	b.WriteString(allStyle.Render(allLine) + "\n")
 	customContent := m.CustomPorts
 	if m.FocusField == 2 {
 		customContent = withCursor(m.CustomPorts, m.PortCursor)

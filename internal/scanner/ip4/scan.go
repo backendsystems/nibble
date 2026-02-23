@@ -27,9 +27,10 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 }
 
 func (s *Scanner) ports() (out []int) {
-	out = ports.DefaultPorts()
+	// Use configured ports if explicitly set (even if empty for host-only scan)
 	if s.Ports != nil {
-		out = s.Ports
+		return s.Ports
 	}
-	return out
+	// Otherwise use defaults
+	return ports.DefaultPorts()
 }

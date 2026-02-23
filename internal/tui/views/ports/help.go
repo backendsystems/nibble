@@ -31,15 +31,13 @@ func renderHelpOverlay(view string) string {
 	helpContent := strings.Join([]string{
 		titleRow,
 		"Configure which ports get scanned.",
-		"• tab: switch default/custom mode",
+		"• tab/↑↓ or w/s k/j: switch default/custom mode",
 		"• ←/→ or a/d or h/l: move cursor in custom list",
 		"• type digits, commas, and ranges (e.g. 8000-9000)",
 		"• backspace: remove",
 		"• delete: clear all",
-		"• q: quit",
+		"• q: cancel",
 		"• enter: save and return",
-		"",
-		"any key: close",
 	}, "\n")
 
 	helpOverlay := helpBox.Render(helpContent)

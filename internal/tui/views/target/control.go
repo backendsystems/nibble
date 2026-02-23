@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"net"
 
-	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
+	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 var (
-	errInvalidCIDR      = errors.New("invalid CIDR (e.g. 10.0.0.0/24)")
-	errSubnetTooLarge   = errors.New("subnet too large (min /16)")
+	errInvalidCIDR    = errors.New("invalid CIDR (e.g. 10.0.0.0/24)")
+	errSubnetTooLarge = errors.New("subnet too large (min /16)")
 )
 
 type Action int
@@ -26,6 +26,7 @@ const (
 	ActionCloseHelp
 	ActionTabNext
 	ActionConfirm
+	ActionTogglePortPack
 	ActionMoveLeft
 	ActionMoveRight
 	ActionMoveHome
@@ -35,15 +36,14 @@ const (
 )
 
 type Result struct {
-	Model      Model
-	Quit       bool
-	Done       bool
-	StartScan  bool
-	Selection  mainview.ScanSelection
-	SavePorts  bool // Signal to save port config
+	Model     Model
+	Quit      bool
+	StartScan bool
+	Selection mainview.ScanSelection
+	SavePorts bool // Signal to save port config
 }
 
-const helpText = "Tab/Shift+Tab: switch field • ←/→ a/d: move cursor • type • backspace: remove • Enter: confirm • Esc: back • ?: help • ctrl+c: quit"
+const helpText = "Tab • backspace • enter • q: cancel • ?: help"
 
 func HandleKey(showHelp bool, key string) Action {
 	if showHelp {
@@ -51,15 +51,13 @@ func HandleKey(showHelp bool, key string) Action {
 	}
 
 	switch key {
-	case "ctrl+c":
+	case "q":
 		return ActionQuit
 	case "?":
 		return ActionOpenHelp
-	case "escape":
-		return ActionQuit
-	case "tab":
+	case "tab", "down", "s", "j":
 		return ActionTabNext
-	case "shift+tab":
+	case "shift+tab", "up", "w", "k":
 		return ActionTabNext
 	case "enter":
 		return ActionConfirm
@@ -87,7 +85,7 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 
 	switch action {
 	case ActionQuit:
-		result.Done = true
+		result.Quit = true
 	case ActionOpenHelp:
 		result.Model.ShowHelp = true
 	case ActionCloseHelp:
@@ -114,8 +112,14 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 				result.Model.CIDRCursor--
 			}
 		} else {
-			if result.Model.PortCursor > 0 {
-				result.Model.PortCursor--
+			// In ports field: left cycles through ports modes
+			switch result.Model.PortPack {
+			case "custom":
+				result.Model.PortPack = "all"
+			case "all":
+				result.Model.PortPack = "default"
+			case "default":
+				result.Model.PortPack = "custom"
 			}
 		}
 	case ActionMoveRight:
@@ -128,8 +132,14 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 				result.Model.CIDRCursor++
 			}
 		} else {
-			if result.Model.PortCursor < len(result.Model.CustomPorts) {
-				result.Model.PortCursor++
+			// In ports field: right cycles through ports modes
+			switch result.Model.PortPack {
+			case "default":
+				result.Model.PortPack = "all"
+			case "all":
+				result.Model.PortPack = "custom"
+			case "custom":
+				result.Model.PortPack = "default"
 			}
 		}
 	case ActionMoveHome:
@@ -171,9 +181,13 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 			result.Model.PortCursor = 0
 		}
 	default:
-		// Handle character input
+		// Handle character input (exclude escape/control chars)
 		if len(msg.String()) == 1 && msg.Type == tea.KeyRunes {
 			char := msg.Runes[0]
+			// Skip control characters
+			if char < 32 {
+				return result
+			}
 			if result.Model.FocusField == 0 {
 				// IP field - allow digits and dots
 				if isIPChar(char) {

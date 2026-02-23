@@ -33,14 +33,13 @@ func renderHelpOverlay(view string) string {
 		"Enter a custom target IP and CIDR to scan.",
 		"CIDR range: 16-32 (default: 32 for single host)",
 		"",
-		"• tab/shift+tab: switch between fields",
-		"• ←/→ or a/d: move cursor",
+		"• tab/↑↓ or w/s k/j: switch between fields",
+		"• ←/→ or a/d: move cursor, or toggle ports mode",
 		"• type: enter IP, CIDR, or ports",
 		"• backspace: remove character",
 		"• delete: clear ports field",
 		"• enter: start scan",
-		"• esc: cancel and return",
-		"• ?: close help",
+		"• q: cancel",
 	}, "\n")
 
 	helpOverlay := helpBox.Render(helpContent)

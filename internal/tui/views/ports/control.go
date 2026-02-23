@@ -11,11 +11,12 @@ import (
 )
 
 const portsGuideText = "  • enter ports e.g. 22,80,443,8000-9000 or empty. valid values are 1-65535"
-const portsHelpText = "tab • ←/→ a/d h/l • type • backspace: remove • delete: clear all • enter • ?: help • q: quit"
+const portsHelpText = "tab • backspace • delete: clear all • enter • ?: help • q: cancel"
 
 type Action struct {
 	Handled    bool
 	Quit       bool
+	Back       bool
 	CloseHelp  bool
 	OpenHelp   bool
 	ToggleMode bool
@@ -31,6 +32,7 @@ type Action struct {
 type Result struct {
 	Model Model
 	Quit  bool
+	Back  bool
 	Done  bool
 }
 
@@ -40,11 +42,13 @@ func HandleKey(showHelp bool, key string) Action {
 	}
 
 	switch key {
-	case "ctrl+c", "q":
+	case "ctrl+c":
 		return Action{Handled: true, Quit: true}
+	case "q":
+		return Action{Handled: true, Back: true}
 	case "?":
 		return Action{Handled: true, OpenHelp: true}
-	case "tab", "up", "down":
+	case "tab", "up", "down", "w", "s", "k", "j":
 		return Action{Handled: true, ToggleMode: true}
 	case "enter":
 		return Action{Handled: true, Apply: true}
@@ -167,19 +171,25 @@ func currentTokenBounds(s string, cursor int) (int, int) {
 }
 
 func applyConfig(m Model) (Model, bool) {
-	addPorts := ""
+	customPorts := ""
 	if m.PortPack == "custom" {
 		normalized, err := ports.NormalizeCustom(strings.TrimSpace(m.CustomPorts))
 		if err != nil {
 			m.ErrorMsg = err.Error()
 			return m, false
 		}
-		addPorts = normalized
+		customPorts = normalized
 		m.CustomPorts = normalized
 		m.CustomCursor = len(normalized)
 	}
 
-	resolvedPorts, err := ports.Resolve(m.PortPack, addPorts, "")
+	// Build ports string based on mode
+	portStr := customPorts
+	if m.PortPack == "all" {
+		portStr = "1-65535"
+	}
+
+	resolvedPorts, err := ports.ParseList(portStr)
 	if err != nil {
 		m.ErrorMsg = err.Error()
 		return m, false
@@ -188,6 +198,12 @@ func applyConfig(m Model) (Model, bool) {
 		m.ErrorMsg = err.Error()
 		return m, false
 	}
+
+	// In custom mode with empty ports, use empty slice for host-only scan
+	if m.PortPack == "custom" && resolvedPorts == nil {
+		resolvedPorts = []int{}
+	}
+
 	switch typed := m.NetworkScan.(type) {
 	case *ip4.Scanner:
 		typed.Ports = resolvedPorts
@@ -203,6 +219,10 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 	action := HandleKey(m.ShowHelp, msg.String())
 	if action.Quit {
 		result.Quit = true
+		return result
+	}
+	if action.Back {
+		result.Back = true
 		return result
 	}
 	if action.CloseHelp {
@@ -262,7 +282,16 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 		return result
 	}
 	if result.Model.PortPack == "custom" && msg.Type == tea.KeyRunes {
-		result.Model.CustomPorts, result.Model.CustomCursor = InsertRunes(result.Model.CustomPorts, result.Model.CustomCursor, msg.Runes)
+		// Filter out control characters
+		filtered := make([]rune, 0, len(msg.Runes))
+		for _, r := range msg.Runes {
+			if r >= 32 {
+				filtered = append(filtered, r)
+			}
+		}
+		if len(filtered) > 0 {
+			result.Model.CustomPorts, result.Model.CustomCursor = InsertRunes(result.Model.CustomPorts, result.Model.CustomCursor, filtered)
+		}
 	}
 	return result
 }

@@ -15,10 +15,11 @@ Select a network interface, and Nibble scans your local subnet. Lists hosts, har
 
 ## Hotkeys
 `↑/↓/←/→`, `w/s/a/d`, `h/j/k/l`: selection  
-`Enter`: confirm.  
-`p`: select ports.  
-`q` or `Ctrl+C`: quit.  
-`?`: help.
+`Enter`: confirm  
+`p`: select ports  
+`q`: cancel  
+`Ctrl+C`: quit  
+`?`: help
 
 ## Installation
 you may have to restart terminal to run `nibble` after install.

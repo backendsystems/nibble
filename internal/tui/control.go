@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/scanner/demo"
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
-	"github.com/backendsystems/nibble/internal/ports"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	scanview "github.com/backendsystems/nibble/internal/tui/views/scan"
@@ -41,11 +41,9 @@ type model struct {
 
 func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map[string][]net.Addr) error {
 	cfg, _ := ports.LoadConfig("ports")
-	pack := cfg.Mode
-	if pack == "" || !ports.IsValidPack(pack) {
-		pack = "default"
-	}
-	if resolvedPorts, err := ports.Resolve(pack, cfg.Custom, ""); err == nil {
+	portStr := cfg.Custom // custom ports string
+
+	if resolvedPorts, err := ports.ParseList(portStr); err == nil {
 		switch typed := networkScanner.(type) {
 		case *ip4.Scanner:
 			typed.Ports = resolvedPorts
@@ -57,9 +55,6 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 	// Load separate target ports config
 	targetCfg, _ := ports.LoadConfig("target")
 	targetPack := targetCfg.Mode
-	if targetPack == "" || !ports.IsValidPack(targetPack) {
-		targetPack = "default"
-	}
 
 	initialWindowW, initialWindowH, initialCardsPerRow := initialLayoutMetrics()
 
@@ -73,7 +68,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 			CardsPerRow:  initialCardsPerRow,
 		},
 		ports: portsview.Model{
-			PortPack:    pack,
+			PortPack:    cfg.Mode,
 			CustomPorts: cfg.Custom,
 			NetworkScan: networkScanner,
 		},
@@ -148,6 +143,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ports = result.Model
 		if result.Quit {
 			return m, tea.Quit
+		}
+		if result.Back {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+			return m, nil
 		}
 		if result.Done {
 			m.main.ErrorMsg = ""
