@@ -29,13 +29,25 @@ func Render(m Model, maxWidth int) string {
 
 	var rows []string
 	var currentRow []string
+	totalCards := len(m.Interfaces) + 1 // +1 for target card
+
+	// Render interface cards
 	for i, iface := range m.Interfaces {
 		card := renderInterfaceCard(m, icons, i, iface)
 		currentRow = append(currentRow, card)
-		if len(currentRow) == cardsPerRow || i == len(m.Interfaces)-1 {
+		if len(currentRow) == cardsPerRow {
 			rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
 			currentRow = nil
 		}
+	}
+
+	// Add target card at the end
+	targetCardIndex := len(m.Interfaces)
+	targetCard := renderTargetCard(m, targetCardIndex)
+	currentRow = append(currentRow, targetCard)
+	if len(currentRow) == cardsPerRow || targetCardIndex == totalCards-1 {
+		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
+		currentRow = nil
 	}
 
 	b.WriteString(lipgloss.JoinVertical(lipgloss.Left, rows...))
@@ -80,6 +92,28 @@ func renderInterfaceCard(m Model, icons map[string]string, index int, iface net.
 	if len(addrs) > 0 {
 		cardContent.WriteString(addrStyle.Render(addrs[0]))
 	}
+
+	return style.Render(cardContent.String())
+}
+
+func renderTargetCard(m Model, index int) string {
+	isSelected := index == m.Cursor
+	style := cardStyle
+	if isSelected {
+		style = selectedCardStyle
+	}
+
+	var cardContent strings.Builder
+	icon := "🎯"
+
+	nameStyle := lipgloss.NewStyle().Bold(true)
+	if isSelected {
+		nameStyle = nameStyle.Foreground(lipgloss.Color("226"))
+	}
+	cardContent.WriteString(nameStyle.Render(icon+" Custom Target") + "\n")
+
+	subtitleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cardContent.WriteString(subtitleStyle.Render("enter IP/CIDR"))
 
 	return style.Render(cardContent.String())
 }

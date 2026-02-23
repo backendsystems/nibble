@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/backendsystems/nibble/internal/scanner/demo"
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
@@ -12,6 +13,7 @@ import (
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	scanview "github.com/backendsystems/nibble/internal/tui/views/scan"
+	targetview "github.com/backendsystems/nibble/internal/tui/views/target"
 
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,6 +26,7 @@ const (
 	viewMain activeView = iota
 	viewPorts
 	viewScan
+	viewTarget
 )
 
 type model struct {
@@ -33,10 +36,11 @@ type model struct {
 	main    mainview.Model
 	ports   portsview.Model
 	scan    scanview.Model
+	target  targetview.Model
 }
 
 func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map[string][]net.Addr) error {
-	cfg, _ := ports.LoadConfig()
+	cfg, _ := ports.LoadConfig("ports")
 	pack := cfg.Mode
 	if pack == "" || !ports.IsValidPack(pack) {
 		pack = "default"
@@ -48,6 +52,13 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 		case *demo.Scanner:
 			typed.Ports = resolvedPorts
 		}
+	}
+
+	// Load separate target ports config
+	targetCfg, _ := ports.LoadConfig("target")
+	targetPack := targetCfg.Mode
+	if targetPack == "" || !ports.IsValidPack(targetPack) {
+		targetPack = "default"
 	}
 
 	initialWindowW, initialWindowH, initialCardsPerRow := initialLayoutMetrics()
@@ -71,6 +82,11 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 			Progress: progress.New(
 				progress.WithScaledGradient("#FFD700", "#B8B000"),
 			),
+		},
+		target: targetview.Model{
+			PortPack:    targetPack,
+			CustomPorts: targetCfg.Custom,
+			NetworkScan: networkScanner,
 		},
 	}
 	initialModel.scan = initialModel.scan.SetViewportSize(scanViewWidth(initialModel.windowW), initialModel.windowH)
@@ -96,11 +112,6 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 func (m model) Init() tea.Cmd {
 	if m.ports.PortPack == "" {
 		m.ports.PortPack = "default"
-	}
-	if m.ports.PortConfigLoc == "" {
-		if path, err := ports.ConfigPath(); err == nil {
-			m.ports.PortConfigLoc = path
-		}
 	}
 	if m.ports.CustomCursor < 0 || m.ports.CustomCursor > len(m.ports.CustomPorts) {
 		m.ports.CustomCursor = len(m.ports.CustomPorts)
@@ -143,6 +154,36 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.active = viewMain
 		}
 		return m, nil
+	case viewTarget:
+		key, ok := msg.(tea.KeyMsg)
+		if !ok {
+			return m, nil
+		}
+		result := m.target.Update(key)
+		m.target = result.Model
+		if result.Quit {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+			return m, nil
+		}
+		if result.StartScan {
+			m.main.ErrorMsg = ""
+			// Save target ports configuration
+			if result.SavePorts {
+				targetview.SaveTargetPortsConfig(m.target.PortPack, m.target.CustomPorts)
+			}
+			nextScan, cmd := m.scan.Start(
+				net.Interface{},
+				nil,
+				result.Selection.TotalHosts,
+				result.Selection.TargetAddr,
+			)
+			nextScan = nextScan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
+			m.scan = nextScan
+			m.active = viewScan
+			return m, tea.Sequence(exitAltScreenCmd(), cmd)
+		}
+		return m, nil
 	case viewMain:
 		key, ok := msg.(tea.KeyMsg)
 		if !ok {
@@ -157,6 +198,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.ports.ShowHelp = false
 			m.ports.CustomCursor = len(m.ports.CustomPorts)
 			m.active = viewPorts
+			return m, nil
+		}
+		if result.OpenTarget {
+			m.target.ShowHelp = false
+			m.target.FocusField = 0
+			m.target.CIDRInput = "32" // Default to single host
+			m.target.CIDRCursor = 2
+			// Pre-fill IP from selected interface if not on target card
+			if result.Model.Cursor < len(result.Model.Interfaces) {
+				selection, err := mainview.ResolveScanSelection(result.Model.Interfaces, result.Model.Cursor, result.Model.InterfaceMap)
+				if err == nil && selection.TargetAddr != "" {
+					// Extract IP from CIDR notation (e.g., "192.168.1.0/24" -> "192.168.1.0")
+					ip := selection.TargetAddr
+					if idx := strings.Index(ip, "/"); idx != -1 {
+						ip = ip[:idx]
+					}
+					m.target.IPInput = ip
+					m.target.IPCursor = len(m.target.IPInput)
+				}
+			}
+			m.active = viewTarget
 			return m, nil
 		}
 		if result.StartScan {
@@ -185,6 +247,8 @@ func (m model) View() string {
 		return scanview.Render(m.scan, maxWidth)
 	case viewPorts:
 		return portsview.Render(m.ports, maxWidth)
+	case viewTarget:
+		return targetview.Render(m.target, maxWidth)
 	default:
 		return mainview.Render(m.main, maxWidth)
 	}
