@@ -41,10 +41,6 @@ func Render(m Model, maxWidth int) string {
 		b.WriteString("\n")
 	}
 
-	if m.PortConfigLoc != "" {
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("saved at: "+m.PortConfigLoc) + "\n")
-	}
-
 	if m.ErrorMsg != "" {
 		errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
 		b.WriteString("\n" + errorStyle.Render("Error: "+m.ErrorMsg) + "\n")

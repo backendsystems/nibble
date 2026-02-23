@@ -184,7 +184,7 @@ func applyConfig(m Model) (Model, bool) {
 		m.ErrorMsg = err.Error()
 		return m, false
 	}
-	if err := ports.SaveConfig(ports.Config{Mode: m.PortPack, Custom: m.CustomPorts}); err != nil {
+	if err := ports.SaveConfig("ports", ports.Config{Mode: m.PortPack, Custom: m.CustomPorts}); err != nil {
 		m.ErrorMsg = err.Error()
 		return m, false
 	}

@@ -12,16 +12,18 @@ type Config struct {
 	Custom string `json:"custom"`
 }
 
-func ConfigPath() (string, error) {
+// configPath returns the path to a config file with the given name
+func configPath(name string) (string, error) {
 	base, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(base, "nibble", "ports.json"), nil
+	return filepath.Join(base, "nibble", name+".json"), nil
 }
 
-func LoadConfig() (Config, error) {
-	path, err := ConfigPath()
+// LoadConfig loads port configuration by name (e.g. "ports", "target")
+func LoadConfig(name string) (Config, error) {
+	path, err := configPath(name)
 	if err != nil {
 		return Config{}, err
 	}
@@ -41,8 +43,9 @@ func LoadConfig() (Config, error) {
 	return cfg, nil
 }
 
-func SaveConfig(cfg Config) error {
-	path, err := ConfigPath()
+// SaveConfig saves port configuration by name (e.g. "ports", "target")
+func SaveConfig(name string, cfg Config) error {
+	path, err := configPath(name)
 	if err != nil {
 		return err
 	}
