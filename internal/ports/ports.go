@@ -16,6 +16,7 @@ var defaultPorts = []int{
 	23,   // Telnet
 	53,   // DNS
 	80,   // HTTP
+	111,  // RPCbind
 	139,  // NetBIOS Session Service
 	443,  // HTTPS
 	445,  // SMB
