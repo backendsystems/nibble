@@ -3,13 +3,14 @@ package portsview
 import (
 	"strings"
 
+	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/scanner/demo"
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
-	"github.com/backendsystems/nibble/internal/ports"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+const portsGuideText = "  • enter ports e.g. 22,80,443,8000-9000 or empty. valid values are 1-65535"
 const portsHelpText = "tab • ←/→ a/d h/l • type • backspace: remove • delete: clear all • enter • ?: help • q: quit"
 
 type Action struct {
