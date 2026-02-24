@@ -23,22 +23,22 @@ func getIPsDescription(m *Model) string {
 
 // getHostCountDesc returns a description showing the number of hosts for the current CIDR
 func getHostCountDesc(m *Model) string {
-	if m.CIDRInput == "" {
-		return ""
+	cidrStr := m.CIDRInput
+	if cidrStr == "" {
+		cidrStr = "32" // Default to /32
 	}
 
-	cidrStr := m.CIDRInput
 	cidr := 0
 	_, err := fmt.Sscanf(cidrStr, "%d", &cidr)
 	if err != nil || cidr < 16 || cidr > 32 {
-		return ""
+		return "targets: -"
 	}
 
 	// Use a dummy IP to calculate host count - any valid IP works since we only care about the CIDR
 	fullCIDR := "0.0.0.0/" + cidrStr
 	_, ipnet, err := net.ParseCIDR(fullCIDR)
 	if err != nil {
-		return ""
+		return "targets: -"
 	}
 
 	hostCount := shared.TotalScanHosts(ipnet)
