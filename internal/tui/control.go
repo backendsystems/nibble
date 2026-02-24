@@ -57,6 +57,11 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 	targetPack := targetCfg.Mode
 
 	initialWindowW, initialWindowH, initialCardsPerRow := initialLayoutMetrics()
+	portsModel, _ := portsview.Prepare(portsview.Model{
+		PortPack:    cfg.Mode,
+		CustomPorts: cfg.Custom,
+		NetworkScan: networkScanner,
+	})
 
 	initialModel := model{
 		active:  viewMain,
@@ -67,11 +72,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 			InterfaceMap: addrsByIface,
 			CardsPerRow:  initialCardsPerRow,
 		},
-		ports: portsview.Model{
-			PortPack:    cfg.Mode,
-			CustomPorts: cfg.Custom,
-			NetworkScan: networkScanner,
-		},
+		ports: portsModel,
 		scan: scanview.Model{
 			NetworkScan: networkScanner,
 			Progress: progress.New(
@@ -143,11 +144,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, result.Cmd
 	case viewPorts:
-		key, ok := msg.(tea.KeyMsg)
-		if !ok {
-			return m, nil
-		}
-		result := m.ports.Update(key)
+		result := m.ports.Update(msg)
 		m.ports = result.Model
 		if result.Quit {
 			return m, tea.Quit
@@ -161,7 +158,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.main.ErrorMsg = ""
 			m.active = viewMain
 		}
-		return m, nil
+		return m, result.Cmd
 	case viewTarget:
 		result, cmd := (&m.target).Update(msg)
 		// Note: m.target is updated in place to preserve form bindings
@@ -206,9 +203,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if result.OpenPorts {
 			m.ports.ShowHelp = false
-			m.ports.CustomCursor = len(m.ports.CustomPorts)
+			var cmd tea.Cmd
+			m.ports, cmd = portsview.Prepare(m.ports)
 			m.active = viewPorts
-			return m, nil
+			return m, cmd
 		}
 		if result.OpenTarget {
 			ipInput := m.target.IPInput

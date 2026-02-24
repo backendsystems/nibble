@@ -6,10 +6,10 @@ import (
 	"net"
 
 	"github.com/backendsystems/nibble/internal/ports"
-	"github.com/backendsystems/nibble/internal/tui/views/common/portinput"
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 
-	"github.com/charmbracelet/huh"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 )
 
 var (
@@ -160,7 +160,7 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 
 						if len(filtered) > 0 {
 							// Insert runes at the end (huh doesn't expose cursor position)
-							newValue, _ := portinput.InsertRunes(currentValue, len(currentValue), filtered)
+							newValue, _ := common.InsertRunes(currentValue, len(currentValue), filtered)
 
 							// If the value changed, it means valid characters were added
 							// Otherwise, block the input

@@ -24,19 +24,23 @@ func Render(m Model, maxWidth int) string {
 
 	defaultLine := wrapPortList("default: ", formatPortList(ports.DefaultPorts()), maxWidth)
 	b.WriteString(defaultStyle.Render(defaultLine) + "\n")
-	customContent := m.CustomPorts
-	if m.PortPack == "custom" {
-		customContent = withCursor(m.CustomPorts, m.CustomCursor)
-	}
-	customLine := wrapPortList("custom:  ", customContent, maxWidth)
-	invalidTokens := invalidPorts(m.ErrorMsg)
-	if m.PortPack == "custom" && len(invalidTokens) > 0 {
-		b.WriteString(highlightInvalidPorts(customLine, invalidTokens) + "\n")
+
+	customLine := ""
+	if m.PortPack == "custom" && m.InputReady {
+		input := m.CustomInput
+		available := maxWidth - len("custom:  ")
+		if available > 0 {
+			input.Width = available
+		}
+		customLine = "custom:  " + input.View()
 	} else {
-		b.WriteString(customStyle.Render(customLine) + "\n")
+		customLine = wrapPortList("custom:  ", m.CustomPorts, maxWidth)
 	}
+	b.WriteString(customStyle.Render(customLine) + "\n")
+
 	if m.PortPack == "custom" {
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Italic(true).Render(portsGuideText) + "\n")
+		guide := "  • " + common.CustomPortsDescription
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Italic(true).Render(guide) + "\n")
 	} else {
 		b.WriteString("\n")
 	}
@@ -54,16 +58,6 @@ func Render(m Model, maxWidth int) string {
 		return renderHelpOverlay(view)
 	}
 	return view
-}
-
-func withCursor(s string, cursor int) string {
-	if cursor < 0 {
-		cursor = 0
-	}
-	if cursor > len(s) {
-		cursor = len(s)
-	}
-	return s[:cursor] + "|" + s[cursor:]
 }
 
 func formatPortList(portList []int) string {

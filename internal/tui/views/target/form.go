@@ -90,7 +90,7 @@ func (m *Model) initializeForm() {
 			huh.NewInput().
 				Key("custom_ports").
 				Title("Custom ports").
-				Description("e.g. 22,80,443,8000-9000 (valid: 1-65535)").
+				Description(common.CustomPortsDescription).
 				Validate(func(s string) error {
 					if m.PortPack == "custom" {
 						if s == "" {
