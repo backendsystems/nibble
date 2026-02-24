@@ -2,7 +2,7 @@ package portsview
 
 import (
 	"github.com/backendsystems/nibble/internal/scanner/shared"
-	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
 
 type Model struct {
@@ -10,8 +10,7 @@ type Model struct {
 	PortPack     string
 	CustomPorts  string
 	CustomCursor int
-	CustomInput  textinput.Model
-	InputReady   bool
+	PortInput    common.CustomPortInput
 	ErrorMsg     string
 	NetworkScan  shared.Scanner
 }

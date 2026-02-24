@@ -5,7 +5,6 @@ import (
 	"net"
 	"regexp"
 
-	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 	"github.com/charmbracelet/huh"
 )
@@ -94,29 +93,6 @@ func (m *Model) initializeForm() {
 				).
 				Value(&m.PortPack),
 		),
-
-		// Custom ports field - only shown when "custom" is selected
-		huh.NewGroup(
-			huh.NewInput().
-				Key("custom_ports").
-				Title("Custom ports").
-				Description(common.CustomPortsDescription).
-				Validate(func(s string) error {
-					if m.PortPack == "custom" {
-						if s == "" {
-							return nil // Empty is valid for host-only scan
-						}
-						_, err := ports.NormalizeCustom(s)
-						if err != nil {
-							return err
-						}
-					}
-					return nil
-				}).
-				Value(&m.CustomPorts),
-		).WithHideFunc(func() bool {
-			return m.PortPack != "custom"
-		}),
 	).WithTheme(common.FormTheme()).
 		WithShowHelp(false) // Disable per-field help, use static help text instead
 }

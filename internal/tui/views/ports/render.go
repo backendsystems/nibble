@@ -25,15 +25,15 @@ func Render(m Model, maxWidth int) string {
 	b.WriteString(defaultStyle.Render(defaultLine) + "\n")
 
 	customLine := ""
-	if m.PortPack == "custom" && m.InputReady {
-		input := m.CustomInput
+	if m.PortPack == "custom" && m.PortInput.Ready {
+		input := m.PortInput.Input
 		available := maxWidth - len("custom:  ")
 		if available > 0 {
 			input.Width = available
 		}
 		customLine = "custom:  " + input.View()
 	} else {
-		customLine = wrapPortList("custom:  ", m.CustomPorts, maxWidth)
+		customLine = wrapPortList("custom:  ", m.PortInput.Value, maxWidth)
 	}
 	b.WriteString(customStyle.Render(customLine) + "\n")
 

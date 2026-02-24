@@ -32,15 +32,33 @@ func (m *Model) Init() tea.Cmd {
 	if m.Form == nil {
 		m.initializeForm()
 	}
+
+	// Only auto-transition to custom input if form was already shown
+	// (i.e., returning from back/esc, not first open)
+	if m.PortPack == "custom" && !m.InCustomPortInput && m.Form.State != huh.StateNormal {
+		m.InCustomPortInput = true
+		m.PortInput.Value = m.CustomPorts
+		m.PortInput.Cursor = len(m.CustomPorts)
+		m.PortInput.Ready = false
+		_, cmd := m.PortInput.Prepare(true)
+		return cmd
+	}
+
+	m.InCustomPortInput = false
 	return m.Form.Init()
 }
 
-// Update handles tea.Msg and delegates to the form
+// Update handles tea.Msg and delegates to the form or custom port input
 // The model is updated in place to preserve form bindings
 func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	result := Result{}
 
-	// Handle special keys
+	// --- Stage 2: Custom port textinput is active ---
+	if m.InCustomPortInput {
+		return m.updateCustomPortInput(msg)
+	}
+
+	// --- Stage 1: huh form (ip/cidr/port_mode) ---
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		if m.ShowHelp {
 			m.ShowHelp = false
@@ -52,19 +70,6 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			// Clear error state if present
 			if m.ErrorMsg != "" {
 				m.ErrorMsg = ""
-			}
-			// If in custom_ports field, navigate back to port_mode selector
-			if m.Form != nil {
-				focused := m.Form.GetFocusedField()
-				if focused != nil && focused.GetKey() == "custom_ports" {
-					// Keep custom mode selected, just navigate back
-					// Rebuild form to refresh state
-					m.initializeForm()
-					// Navigate to port_mode field (skip ip and cidr)
-					m.Form.NextField() // ip -> cidr
-					m.Form.NextField() // cidr -> port_mode
-					return result, m.Form.Init()
-				}
 			}
 			result.Quit = true
 			return result, nil
@@ -85,8 +90,6 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 				m.IPInput = ""
 			case "cidr":
 				m.CIDRInput = ""
-			case "custom_ports":
-				m.CustomPorts = ""
 			default:
 				return result, nil
 			}
@@ -111,10 +114,6 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			// Navigate form fields upward (like shift+tab)
 			if m.Form != nil {
 				focused := m.Form.GetFocusedField()
-				// Block navigation in custom_ports field
-				if focused != nil && focused.GetKey() == "custom_ports" {
-					return result, nil
-				}
 				// Wrap from the first field back to ports selection instead of exiting the form.
 				if focused != nil && focused.GetKey() == "ip" {
 					m.Form.NextField() // ip -> cidr
@@ -146,10 +145,6 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			// Navigate form fields downward (like tab)
 			if m.Form != nil {
 				focused := m.Form.GetFocusedField()
-				// Block navigation in custom_ports field
-				if focused != nil && focused.GetKey() == "custom_ports" {
-					return result, nil
-				}
 				// For port_mode select: convert j/s to down and let it handle navigation
 				if focused != nil && focused.GetKey() == "port_mode" {
 					if keyMsg.String() == "j" || keyMsg.String() == "s" {
@@ -182,38 +177,6 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 								return result, nil
 							}
 						}
-
-						// Custom ports field: block navigation keys w/s/k/j
-						if key == "custom_ports" {
-							if ch == 'w' || ch == 's' || ch == 'k' || ch == 'j' {
-								return result, nil
-							}
-						}
-					}
-
-					// Custom ports field: use portinput validation
-					if key == "custom_ports" && keyMsg.Type == tea.KeyRunes {
-						// Get current value and cursor position from the input field
-						currentValue := m.Form.GetString("custom_ports")
-
-						// Filter runes through portinput
-						filtered := make([]rune, 0, len(keyMsg.Runes))
-						for _, r := range keyMsg.Runes {
-							if r >= 32 {
-								filtered = append(filtered, r)
-							}
-						}
-
-						if len(filtered) > 0 {
-							// Insert runes at the end (huh doesn't expose cursor position)
-							newValue, _ := common.InsertRunes(currentValue, len(currentValue), filtered)
-
-							// If the value changed, it means valid characters were added
-							// Otherwise, block the input
-							if newValue == currentValue {
-								return result, nil
-							}
-						}
 					}
 				}
 			}
@@ -233,44 +196,29 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 
 	// Check if form is trying to complete
 	if m.Form.State == huh.StateCompleted {
-		// Extract values directly from form fields instead of model fields
-		// The .Value() bindings don't update model fields properly
+		// Extract values directly from form fields
 		ipInput := m.Form.GetString("ip")
 		cidrInput := m.Form.GetString("cidr")
 		portPack := m.Form.GetString("port_mode")
-		customPorts := m.Form.GetString("custom_ports")
-		savedCustomPorts := customPorts
-		if portPack == "custom" && customPorts != "" {
-			// Normalize for saving (form validation already passed)
-			normalized, _ := ports.NormalizeCustom(strings.TrimSpace(customPorts))
-			savedCustomPorts = normalized
-			customPorts = normalized
+
+		m.PortPack = portPack
+
+		if portPack == "custom" {
+			// Transition to stage 2 (custom port textinput)
+			m.InCustomPortInput = true
+			m.PortInput.Value = m.CustomPorts  // seed from saved value
+			m.PortInput.Cursor = len(m.CustomPorts)
+			m.PortInput.Ready = false           // force re-init
+			var prepCmd tea.Cmd
+			m.PortInput, prepCmd = m.PortInput.Prepare(true)
+			m.Form.State = huh.StateNormal      // reset so form doesn't show as complete
+			return result, prepCmd
 		}
 
-		// Extract values from form and create scan config
-		targetAddr, totalHosts, resolvedPorts, err := buildScanConfig(ipInput, cidrInput, portPack, customPorts)
-		if err != nil {
-			m.ErrorMsg = err.Error()
-			m.Form.State = huh.StateNormal
-			return result, nil
-		}
-		if err := ports.SaveConfig("target", ports.Config{Mode: portPack, Custom: savedCustomPorts}); err != nil {
-			m.ErrorMsg = err.Error()
-			m.Form.State = huh.StateNormal
-			return result, nil
-		}
-
-		// Keep target model state in sync so reopening the view shows saved values.
+		// Non-custom: complete immediately
 		m.IPInput = ipInput
 		m.CIDRInput = cidrInput
-		m.PortPack = portPack
-		m.CustomPorts = savedCustomPorts
-
-		m.ErrorMsg = ""
-		result.StartScan = true
-		result.TargetAddr = targetAddr
-		result.TotalHosts = totalHosts
-		result.Ports = resolvedPorts
+		return m.finalizeScan(result)
 	}
 
 	// Check if form is aborted
@@ -279,6 +227,90 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	}
 
 	return result, cmd
+}
+
+// updateCustomPortInput handles all messages when InCustomPortInput == true
+func (m *Model) updateCustomPortInput(msg tea.Msg) (Result, tea.Cmd) {
+	result := Result{}
+
+	// Non-key: blink tick forwarded to textinput
+	if _, ok := msg.(tea.KeyMsg); !ok {
+		var cmd tea.Cmd
+		m.PortInput, cmd = m.PortInput.UpdateNonKey(msg)
+		return result, cmd
+	}
+
+	keyMsg := msg.(tea.KeyMsg)
+
+	if m.ShowHelp {
+		m.ShowHelp = false
+		return result, nil
+	}
+
+	switch keyMsg.String() {
+	case "ctrl+c":
+		result.Quit = true
+		return result, nil
+	case "q", "esc":
+		// Go back to stage 1 (port_mode select)
+		m.InCustomPortInput = false
+		m.initializeForm()
+		// Navigate form to port_mode field
+		m.Form.NextField() // ip -> cidr
+		m.Form.NextField() // cidr -> port_mode
+		return result, m.Form.Init()
+	case "?":
+		m.ShowHelp = true
+		return result, nil
+	case "delete":
+		m.PortInput = m.PortInput.SetValue("")
+		return result, nil
+	case "enter":
+		// Validate and finalize
+		normalized, err := ports.NormalizeCustom(strings.TrimSpace(m.PortInput.Value))
+		if err != nil {
+			m.ErrorMsg = err.Error()
+			return result, nil
+		}
+		m.PortInput = m.PortInput.SetValue(normalized)
+		m.CustomPorts = normalized
+		m.InCustomPortInput = false
+		return m.finalizeScan(result)
+	}
+
+	// All other keys: delegate to PortInput
+	portAction := common.PortInputActionFromKey(keyMsg.String(), keyMsg.Type == tea.KeyRunes)
+	var cmd tea.Cmd
+	m.PortInput, cmd = m.PortInput.HandleKey(portAction, keyMsg)
+	return result, cmd
+}
+
+// finalizeScan validates IP/CIDR/ports and emits a StartScan result
+func (m *Model) finalizeScan(result Result) (Result, tea.Cmd) {
+	customPorts := ""
+	if m.PortPack == "custom" {
+		customPorts = m.CustomPorts // already normalized
+	}
+
+	targetAddr, totalHosts, resolvedPorts, err := buildScanConfig(m.IPInput, m.CIDRInput, m.PortPack, customPorts)
+	if err != nil {
+		m.ErrorMsg = err.Error()
+		// re-show the form at stage 1
+		m.InCustomPortInput = false
+		m.initializeForm()
+		return result, m.Form.Init()
+	}
+	if err := ports.SaveConfig("target", ports.Config{Mode: m.PortPack, Custom: m.CustomPorts}); err != nil {
+		m.ErrorMsg = err.Error()
+		return result, nil
+	}
+
+	m.ErrorMsg = ""
+	result.StartScan = true
+	result.TargetAddr = targetAddr
+	result.TotalHosts = totalHosts
+	result.Ports = resolvedPorts
+	return result, nil
 }
 
 // buildScanConfig extracts form values and builds a complete scan configuration

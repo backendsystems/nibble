@@ -78,52 +78,32 @@ func ToggleMode(portPack string) string {
 }
 
 func Prepare(m Model) (Model, tea.Cmd) {
-	if !m.InputReady {
-		m.CustomInput = common.NewCustomPortsInput()
-		m.InputReady = true
-		if len(m.CustomPorts) > 0 {
-			m.CustomCursor = len(m.CustomPorts)
-		}
+	// Seed PortInput from the model's persistent fields on first call.
+	if !m.PortInput.Ready {
+		m.PortInput.Value = m.CustomPorts
+		m.PortInput.Cursor = m.CustomCursor
 	}
-
-	m.CustomInput.SetValue(m.CustomPorts)
-	m.CustomCursor = common.ClampCursor(m.CustomCursor, len(m.CustomPorts))
-	m.CustomInput.SetCursor(m.CustomCursor)
-
-	if m.PortPack == "custom" {
-		cmd := m.CustomInput.Focus()
-		return syncStateFromInput(m), cmd
-	}
-
-	m.CustomInput.Blur()
-	return syncStateFromInput(m), nil
-}
-
-func syncStateFromInput(m Model) Model {
-	if !m.InputReady {
-		return m
-	}
-	m.CustomPorts = m.CustomInput.Value()
-	m.CustomCursor = m.CustomInput.Position()
-	return m
+	focused := m.PortPack == "custom"
+	var cmd tea.Cmd
+	m.PortInput, cmd = m.PortInput.Prepare(focused)
+	// Keep top-level fields in sync for persistence layer.
+	m.CustomPorts = m.PortInput.Value
+	m.CustomCursor = m.PortInput.Cursor
+	return m, cmd
 }
 
 func applyConfig(m Model) (Model, bool) {
 	customPorts := ""
 	if m.PortPack == "custom" {
-		m = syncStateFromInput(m)
-		normalized, err := ports.NormalizeCustom(strings.TrimSpace(m.CustomPorts))
+		normalized, err := ports.NormalizeCustom(strings.TrimSpace(m.PortInput.Value))
 		if err != nil {
 			m.ErrorMsg = err.Error()
 			return m, false
 		}
 		customPorts = normalized
+		m.PortInput = m.PortInput.SetValue(normalized)
 		m.CustomPorts = normalized
 		m.CustomCursor = len(normalized)
-		if m.InputReady {
-			m.CustomInput.SetValue(normalized)
-			m.CustomInput.SetCursor(len(normalized))
-		}
 	}
 
 	// Build ports string based on mode
@@ -162,10 +142,11 @@ func (m Model) Update(msg tea.Msg) Result {
 
 	// Let the textinput cursor blink/update on non-key messages.
 	if _, ok := msg.(tea.KeyMsg); !ok {
-		if result.Model.PortPack == "custom" && result.Model.InputReady {
+		if result.Model.PortPack == "custom" && result.Model.PortInput.Ready {
 			var cmd tea.Cmd
-			result.Model.CustomInput, cmd = result.Model.CustomInput.Update(msg)
-			result.Model = syncStateFromInput(result.Model)
+			result.Model.PortInput, cmd = result.Model.PortInput.UpdateNonKey(msg)
+			result.Model.CustomPorts = result.Model.PortInput.Value
+			result.Model.CustomCursor = result.Model.PortInput.Cursor
 			result.Cmd = cmd
 		}
 		return result
@@ -207,80 +188,18 @@ func (m Model) Update(msg tea.Msg) Result {
 		return result
 	}
 
-	if !result.Model.InputReady {
+	if !result.Model.PortInput.Ready {
 		var cmd tea.Cmd
 		result.Model, cmd = Prepare(result.Model)
 		result.Cmd = cmd
 	}
 
-	if action.MoveLeft {
-		if pos := result.Model.CustomInput.Position(); pos > 0 {
-			result.Model.CustomInput.SetCursor(common.MoveCursorLeft(pos))
-			result.Model = syncStateFromInput(result.Model)
-		}
-		return result
-	}
-	if action.MoveRight {
-		pos := result.Model.CustomInput.Position()
-		valueLen := len(result.Model.CustomInput.Value())
-		if pos < valueLen {
-			result.Model.CustomInput.SetCursor(common.MoveCursorRight(pos, valueLen))
-			result.Model = syncStateFromInput(result.Model)
-		}
-		return result
-	}
-	if action.MoveHome {
-		result.Model.CustomInput.CursorStart()
-		result.Model = syncStateFromInput(result.Model)
-		return result
-	}
-	if action.MoveEnd {
-		result.Model.CustomInput.CursorEnd()
-		result.Model = syncStateFromInput(result.Model)
-		return result
-	}
-	if action.Backspace {
-		value := result.Model.CustomInput.Value()
-		cursor := result.Model.CustomInput.Position()
-		if cursor > 0 && len(value) > 0 {
-			value, cursor = common.Backspace(value, cursor)
-			result.Model.CustomInput.SetValue(value)
-			result.Model.CustomInput.SetCursor(cursor)
-			result.Model = syncStateFromInput(result.Model)
-		}
-		return result
-	}
-	if action.DeleteAll {
-		result.Model.CustomInput.SetValue("")
-		result.Model.CustomInput.SetCursor(0)
-		result.Model = syncStateFromInput(result.Model)
-		return result
-	}
-
-	if keyMsg.Type == tea.KeyRunes {
-		filtered := make([]rune, 0, len(keyMsg.Runes))
-		for _, r := range keyMsg.Runes {
-			if r >= 32 {
-				filtered = append(filtered, r)
-			}
-		}
-		if len(filtered) > 0 {
-			value := result.Model.CustomInput.Value()
-			cursor := result.Model.CustomInput.Position()
-			value, cursor = common.InsertRunes(value, cursor, filtered)
-			result.Model.CustomInput.SetValue(value)
-			result.Model.CustomInput.SetCursor(cursor)
-			result.Model = syncStateFromInput(result.Model)
-		}
-		return result
-	}
-
-	// Keep textinput internal cursor behavior in sync for remaining key messages.
+	// Delegate all editing operations to PortInput.
+	portAction := common.PortInputActionFromKey(keyMsg.String(), keyMsg.Type == tea.KeyRunes)
 	var cmd tea.Cmd
-	result.Model.CustomInput, cmd = result.Model.CustomInput.Update(keyMsg)
-	result.Model = syncStateFromInput(result.Model)
-	if result.Cmd == nil {
-		result.Cmd = cmd
-	}
+	result.Model.PortInput, cmd = result.Model.PortInput.HandleKey(portAction, keyMsg)
+	result.Model.CustomPorts = result.Model.PortInput.Value
+	result.Model.CustomCursor = result.Model.PortInput.Cursor
+	result.Cmd = cmd
 	return result
 }

@@ -3,10 +3,8 @@ package targetview
 import "github.com/backendsystems/nibble/internal/tui/views/common"
 
 func renderHelpOverlay(view string, m Model, maxWidth int) string {
-	if m.Form != nil {
-		if focused := m.Form.GetFocusedField(); focused != nil && focused.GetKey() == "custom_ports" {
-			return renderPortsHelpOverlay(view, maxWidth)
-		}
+	if m.InCustomPortInput {
+		return renderPortsHelpOverlay(view, maxWidth)
 	}
 	return renderMainHelpOverlay(view, maxWidth)
 }
