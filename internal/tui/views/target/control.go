@@ -49,13 +49,21 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 
 		switch keyMsg.String() {
 		case "q", "esc":
-			// If in custom_ports field, convert to shift+tab to navigate back
+			// Clear error state if present
+			if m.ErrorMsg != "" {
+				m.ErrorMsg = ""
+			}
+			// If in custom_ports field, navigate back to port_mode selector
 			if m.Form != nil {
 				focused := m.Form.GetFocusedField()
 				if focused != nil && focused.GetKey() == "custom_ports" {
-					// Convert to shift+tab and let form handle it
-					msg = tea.KeyMsg{Type: tea.KeyShiftTab}
-					break
+					// Keep custom mode selected, just navigate back
+					// Rebuild form to refresh state
+					m.initializeForm()
+					// Navigate to port_mode field (skip ip and cidr)
+					m.Form.NextField() // ip -> cidr
+					m.Form.NextField() // cidr -> port_mode
+					return result, m.Form.Init()
 				}
 			}
 			result.Quit = true
@@ -223,7 +231,7 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	}
 	result.Cmd = cmd
 
-	// Check if form is completed
+	// Check if form is trying to complete
 	if m.Form.State == huh.StateCompleted {
 		// Extract values directly from form fields instead of model fields
 		// The .Value() bindings don't update model fields properly
@@ -232,12 +240,9 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 		portPack := m.Form.GetString("port_mode")
 		customPorts := m.Form.GetString("custom_ports")
 		savedCustomPorts := customPorts
-		if portPack == "custom" {
-			normalized, err := ports.NormalizeCustom(strings.TrimSpace(customPorts))
-			if err != nil {
-				m.ErrorMsg = err.Error()
-				return result, nil
-			}
+		if portPack == "custom" && customPorts != "" {
+			// Normalize for saving (form validation already passed)
+			normalized, _ := ports.NormalizeCustom(strings.TrimSpace(customPorts))
 			savedCustomPorts = normalized
 			customPorts = normalized
 		}
@@ -246,10 +251,12 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 		targetAddr, totalHosts, resolvedPorts, err := buildScanConfig(ipInput, cidrInput, portPack, customPorts)
 		if err != nil {
 			m.ErrorMsg = err.Error()
+			m.Form.State = huh.StateNormal
 			return result, nil
 		}
 		if err := ports.SaveConfig("target", ports.Config{Mode: portPack, Custom: savedCustomPorts}); err != nil {
 			m.ErrorMsg = err.Error()
+			m.Form.State = huh.StateNormal
 			return result, nil
 		}
 
