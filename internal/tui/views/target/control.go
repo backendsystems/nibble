@@ -43,11 +43,12 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch keyMsg.String() {
 		case "q", "esc":
-			// If in custom_ports field, let the form handle esc naturally
+			// If in custom_ports field, convert to shift+tab to navigate back
 			if m.Form != nil {
 				focused := m.Form.GetFocusedField()
-				if focused != nil && focused.GetKey() == "custom_ports" && keyMsg.String() == "esc" {
-					// Let form handle esc to exit the field
+				if focused != nil && focused.GetKey() == "custom_ports" {
+					// Convert to shift+tab and let form handle it
+					msg = tea.KeyMsg{Type: tea.KeyShiftTab}
 					break
 				}
 			}
@@ -70,6 +71,10 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			// Navigate form fields upward (like shift+tab)
 			if m.Form != nil {
 				focused := m.Form.GetFocusedField()
+				// Block navigation in custom_ports field
+				if focused != nil && focused.GetKey() == "custom_ports" {
+					return result, nil
+				}
 				// For port_mode select: if at first option (default), navigate up to CIDR
 				if focused != nil && focused.GetKey() == "port_mode" {
 					if m.PortPack == "default" {
@@ -90,6 +95,10 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			// Navigate form fields downward (like tab)
 			if m.Form != nil {
 				focused := m.Form.GetFocusedField()
+				// Block navigation in custom_ports field
+				if focused != nil && focused.GetKey() == "custom_ports" {
+					return result, nil
+				}
 				// For port_mode select: convert j/s to down and let it handle navigation
 				if focused != nil && focused.GetKey() == "port_mode" {
 					if keyMsg.String() == "j" || keyMsg.String() == "s" {
@@ -119,6 +128,13 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 						// CIDR field: only digits
 						if key == "cidr" {
 							if !(ch >= '0' && ch <= '9') {
+								return result, nil
+							}
+						}
+
+						// Custom ports field: block navigation keys w/s/k/j
+						if key == "custom_ports" {
+							if ch == 'w' || ch == 's' || ch == 'k' || ch == 'j' {
 								return result, nil
 							}
 						}
