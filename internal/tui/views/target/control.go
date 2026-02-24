@@ -107,6 +107,12 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 				if focused != nil && focused.GetKey() == "custom_ports" {
 					return result, nil
 				}
+				// Wrap from the first field back to ports selection instead of exiting the form.
+				if focused != nil && focused.GetKey() == "ip" {
+					m.Form.NextField() // ip -> cidr
+					m.Form.NextField() // cidr -> port_mode
+					return result, nil
+				}
 				// For port_mode select: if at first option (index 0), navigate up to CIDR
 				if focused != nil && focused.GetKey() == "port_mode" {
 					// Type assert to Select to access Hovered method
