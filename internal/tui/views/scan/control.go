@@ -58,7 +58,7 @@ func HandleKey(scanning bool, scanComplete bool, key string) Action {
 	if !scanning && !scanComplete {
 		return ActionNone
 	}
-	if key != "ctrl+c" && key != "q" {
+	if key != "ctrl+c" && key != "q" && key != "esc" {
 		return ActionNone
 	}
 	if scanning {

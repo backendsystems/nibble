@@ -45,7 +45,7 @@ func HandleKey(showHelp bool, key string) Action {
 	switch key {
 	case "ctrl+c":
 		return Action{Handled: true, Quit: true}
-	case "q":
+	case "q", "esc":
 		return Action{Handled: true, Back: true}
 	case "?":
 		return Action{Handled: true, OpenHelp: true}
