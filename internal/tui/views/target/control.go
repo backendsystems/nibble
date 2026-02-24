@@ -75,12 +75,17 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 				if focused != nil && focused.GetKey() == "custom_ports" {
 					return result, nil
 				}
-				// For port_mode select: if at first option (default), navigate up to CIDR
+				// For port_mode select: if at first option (index 0), navigate up to CIDR
 				if focused != nil && focused.GetKey() == "port_mode" {
-					if m.PortPack == "default" {
-						// At first option, navigate to previous field
-						m.Form.PrevField()
-						return result, nil
+					// Type assert to Select to access Hovered method
+					if selectField, ok := focused.(*huh.Select[string]); ok {
+						hovered, _ := selectField.Hovered()
+						// Check if we're at the first option ("default")
+						if hovered == "default" {
+							// At first option, navigate to previous field
+							m.Form.PrevField()
+							return result, nil
+						}
 					}
 					// Not at first option, convert k/w to up and let select handle it
 					if keyMsg.String() == "k" || keyMsg.String() == "w" {
