@@ -94,35 +94,6 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 		case "?":
 			m.ShowHelp = true
 			return result, nil
-		case "delete":
-			if m.Form == nil {
-				return result, nil
-			}
-			focused := m.Form.GetFocusedField()
-			if focused == nil {
-				return result, nil
-			}
-
-			switch focused.GetKey() {
-			case "ip":
-				// Prevent deletion of first 4 characters in IP field
-				if inputField, ok := focused.(*huh.Input); ok {
-					if currentValue, ok := inputField.GetValue().(string); ok {
-						if len(currentValue) < 5 {
-							return result, nil
-						}
-					}
-				}
-				m.IPInput = ""
-			case "cidr":
-				m.CIDRInput = ""
-			default:
-				return result, nil
-			}
-
-			// Rebuild form so the focused input reflects the cleared value.
-			m.initializeForm()
-			return result, m.Form.Init()
 		case "left", "right":
 			// Cycle through interface IPs when IP field is focused
 			if m.Form != nil {
