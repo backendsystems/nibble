@@ -24,8 +24,10 @@ func getIPsDescription(m *Model) string {
 // getHostCountDesc returns a description showing the number of hosts for the current CIDR
 func getHostCountDesc(m *Model) string {
 	cidrStr := m.CIDRInput
+	isDefault := false
 	if cidrStr == "" {
 		cidrStr = "32" // Default to /32
+		isDefault = true
 	}
 
 	cidr := 0
@@ -42,5 +44,8 @@ func getHostCountDesc(m *Model) string {
 	}
 
 	hostCount := shared.TotalScanHosts(ipnet)
+	if isDefault {
+		return fmt.Sprintf("targets: %d (default /32)", hostCount)
+	}
 	return fmt.Sprintf("targets: %d", hostCount)
 }
