@@ -5,6 +5,7 @@ import (
 
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/stopwatch"
 	"github.com/charmbracelet/bubbles/viewport"
 )
 
@@ -24,5 +25,5 @@ type Model struct {
 	ProgressChan     chan shared.ProgressUpdate
 	Progress         progress.Model
 	Results          viewport.Model
-	Stopwatch        Stopwatch
+	Stopwatch        stopwatch.Model
 }

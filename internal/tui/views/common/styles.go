@@ -22,6 +22,44 @@ var (
 	TitleStyle = lipgloss.NewStyle().
 		Bold(true).
 		Foreground(Color.Info)
+
+	// Help overlay styles
+	HelpBoxStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(Color.Selection).
+			Padding(0, 1).
+			Foreground(Color.Info)
+
+	HelpTitleStyle = lipgloss.NewStyle().
+			Foreground(Color.Selection).
+			Bold(true)
+
+	HelpIconStyle = lipgloss.NewStyle().
+			Foreground(Color.Selection).
+			Bold(true)
+
+	// Common text styles
+	HelpTextStyle = lipgloss.NewStyle().
+			Foreground(Color.Help)
+
+	InfoTextStyle = lipgloss.NewStyle().
+			Foreground(Color.Help)
+
+	ErrorStyle = lipgloss.NewStyle().
+			Foreground(Color.Error).
+			Bold(true)
+
+	HighlightStyle = lipgloss.NewStyle().
+			Foreground(Color.Selection).
+			Bold(true)
+
+	MutedStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("239")).
+			Italic(true)
+
+	ItalicHelpStyle = lipgloss.NewStyle().
+			Foreground(Color.Help).
+			Italic(true)
 )
 
 // FormTheme returns a custom huh theme with yellow selection colors

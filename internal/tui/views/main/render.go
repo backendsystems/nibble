@@ -62,7 +62,7 @@ func Render(m Model, maxWidth int) string {
 	view += "\n" + helpStyle.Render(common.WrapWords(selectionHelpText, maxWidth))
 
 	if m.ShowHelp {
-		return renderHelpOverlay(view)
+		return renderHelpOverlay(view, maxWidth)
 	}
 	return view
 }

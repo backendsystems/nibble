@@ -6,7 +6,6 @@ import (
 
 	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	"github.com/charmbracelet/lipgloss"
 )
 
 func Render(m Model, maxWidth int) string {
@@ -14,12 +13,12 @@ func Render(m Model, maxWidth int) string {
 
 	b.WriteString(common.TitleStyle.Render("Configure Scan Ports") + "\n")
 
-	defaultStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	customStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	defaultStyle := common.InfoTextStyle
+	customStyle := common.InfoTextStyle
 	if m.PortPack == "default" {
-		defaultStyle = defaultStyle.Foreground(lipgloss.Color("226")).Bold(true)
+		defaultStyle = common.HighlightStyle
 	} else {
-		customStyle = customStyle.Foreground(lipgloss.Color("226")).Bold(true)
+		customStyle = common.HighlightStyle
 	}
 
 	defaultLine := wrapPortList("default: ", formatPortList(ports.DefaultPorts()), maxWidth)
@@ -40,22 +39,20 @@ func Render(m Model, maxWidth int) string {
 
 	if m.PortPack == "custom" {
 		guide := "  • " + common.CustomPortsDescription
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Italic(true).Render(guide) + "\n")
+		b.WriteString(common.ItalicHelpStyle.Render(guide) + "\n")
 	} else {
 		b.WriteString("\n")
 	}
 
 	if m.ErrorMsg != "" {
-		errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
-		b.WriteString("\n" + errorStyle.Render("Error: "+m.ErrorMsg) + "\n")
+		b.WriteString("\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg) + "\n")
 	}
 
-	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	b.WriteString("\n" + helpStyle.Render(common.WrapWords(portsHelpText, maxWidth)))
+	b.WriteString("\n" + common.HelpTextStyle.Render(common.WrapWords(portsHelpText, maxWidth)))
 
 	view := b.String()
 	if m.ShowHelp {
-		return renderHelpOverlay(view)
+		return renderHelpOverlay(view, maxWidth)
 	}
 	return view
 }

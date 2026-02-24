@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const (
@@ -18,8 +17,7 @@ func Render(m Model, maxWidth int) string {
 
 	// Error message (if any)
 	if m.ErrorMsg != "" {
-		errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
-		b.WriteString(errorStyle.Render("Error: "+m.ErrorMsg) + "\n\n")
+		b.WriteString(common.ErrorStyle.Render("Error: "+m.ErrorMsg) + "\n\n")
 	}
 
 	// Form view
@@ -29,12 +27,11 @@ func Render(m Model, maxWidth int) string {
 
 	// Guide text
 	b.WriteString("\n")
-	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	b.WriteString(helpStyle.Render(common.WrapWords(guideText, maxWidth)))
+	b.WriteString(common.HelpTextStyle.Render(common.WrapWords(guideText, maxWidth)))
 
 	view := b.String()
 	if m.ShowHelp {
-		return renderHelpOverlay(view, m)
+		return renderHelpOverlay(view, m, maxWidth)
 	}
 
 	return view

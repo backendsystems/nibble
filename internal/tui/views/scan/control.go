@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/backendsystems/nibble/internal/scanner/shared"
+	"github.com/charmbracelet/bubbles/stopwatch"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -76,18 +77,9 @@ func ListenForProgress(progressChan <-chan shared.ProgressUpdate) tea.Cmd {
 	}
 }
 
-func tickStopwatch(sw Stopwatch) tea.Cmd {
-	return tea.Tick(sw.Interval, func(_ time.Time) tea.Msg {
-		return TickMsg{ID: sw.ID(), tag: 0}
-	})
-}
-
-// continueScanLoop batches all ongoing scan operations: timer ticks, progress listening
+// continueScanLoop batches all ongoing scan operations: progress listening
 func continueScanLoop(m Model) tea.Cmd {
-	return tea.Batch(
-		tickStopwatch(m.Stopwatch),
-		ListenForProgress(m.ProgressChan),
-	)
+	return ListenForProgress(m.ProgressChan)
 }
 
 func PerformScan(networkScanner shared.Scanner, ifaceName, targetAddr string, progressChan chan shared.ProgressUpdate) tea.Cmd {
@@ -110,16 +102,16 @@ func (m Model) Start(iface net.Interface, addrs []net.Addr, totalHosts int, targ
 	m.NeighborSeen = 0
 	m.NeighborTotal = 0
 	m.ProgressChan = make(chan shared.ProgressUpdate, 256)
-	m.Stopwatch = NewWithInterval(10 * time.Millisecond)
+	m.Stopwatch = stopwatch.NewWithInterval(10 * time.Millisecond)
 	m = m.RefreshResults(false)
-	return m, tea.Batch(m.Stopwatch.Start(), PerformScan(m.NetworkScan, iface.Name, targetAddr, m.ProgressChan))
+	return m, tea.Batch(m.Stopwatch.Init(), PerformScan(m.NetworkScan, iface.Name, targetAddr, m.ProgressChan))
 }
 
 func (m Model) Update(msg tea.Msg) Result {
 	result := Result{Model: m}
 
 	switch typed := msg.(type) {
-	case TickMsg, StartStopMsg, ResetMsg:
+	case stopwatch.TickMsg, stopwatch.StartStopMsg:
 		return handleStopwatchMsg(m, typed)
 	case tea.KeyMsg:
 		return handleKeyMsg(m, typed)
