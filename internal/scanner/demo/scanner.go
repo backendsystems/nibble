@@ -4,8 +4,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/ports"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
 // Scanner simulates a scan with fake host data.
@@ -26,8 +26,9 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 	for _, p := range selected {
 		selectedSet[p] = struct{}{}
 	}
-	hostOnly := len(s.Ports) == 0
-	hosts := hostsForInterface(ifaceName)
+	// nil means "use defaults"; explicit empty slice means host-only.
+	hostOnly := s.Ports != nil && len(s.Ports) == 0
+	hosts := allDemoHosts()
 	neighborDelay, sweepDelay := demoDelaysForInterface(ifaceName)
 
 	// Pick which demo hosts belong to this subnet.
@@ -94,6 +95,9 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 	hostInterval := 0
 	if len(remaining) > 0 {
 		hostInterval = totalHosts / (len(remaining) + 1)
+		if hostInterval == 0 {
+			hostInterval = 1
+		}
 	}
 	hostIdx := 0
 
@@ -116,11 +120,11 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 	close(progressChan)
 }
 
-func hostsForInterface(ifaceName string) []Host {
-	if ifaceName == "wlan0" {
-		return WiFiHosts
-	}
-	return Hosts
+func allDemoHosts() []Host {
+	hosts := make([]Host, 0, len(Hosts)+len(WiFiHosts))
+	hosts = append(hosts, Hosts...)
+	hosts = append(hosts, WiFiHosts...)
+	return hosts
 }
 
 func demoDelaysForInterface(ifaceName string) (neighborDelay, sweepDelay time.Duration) {

@@ -12,13 +12,23 @@ import (
 
 // initializeForm creates the form for the target view model
 func (m *Model) initializeForm() {
-	// Collect all available interface IPs and names
-	m.InterfaceInfos = getInterfaceInfos(m.Interfaces)
-	m.InterfaceIPs = getInterfaceIPs(m.Interfaces) // Keep for backward compatibility
-
-	// Default to ethernet interface IP if no IP provided
-	if m.IPInput == "" {
-		m.IPInput = getDefaultIP(m.Interfaces)
+	// Keep backward compatibility fields in sync from precomputed interface infos.
+	if len(m.InterfaceIPs) == 0 && len(m.InterfaceInfos) > 0 {
+		m.InterfaceIPs = buildInterfaceIPs(m.InterfaceInfos)
+	}
+	if len(m.InterfaceInfos) > 0 {
+		if m.IPIndex < 0 || m.IPIndex >= len(m.InterfaceInfos) {
+			m.IPIndex = 0
+		}
+		for i, info := range m.InterfaceInfos {
+			if info.IP == m.IPInput {
+				m.IPIndex = i
+				break
+			}
+		}
+		if m.IPInput == "" {
+			m.IPInput = m.InterfaceInfos[m.IPIndex].IP
+		}
 	}
 
 	// Default CIDR if not provided

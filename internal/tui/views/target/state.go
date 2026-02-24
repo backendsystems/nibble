@@ -1,8 +1,6 @@
 package targetview
 
 import (
-	"net"
-
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/charmbracelet/huh"
 )
@@ -24,5 +22,4 @@ type Model struct {
 	InterfaceIPs   []string        // Available interface IPs (deprecated, use InterfaceInfos)
 	InterfaceInfos []InterfaceInfo // Available interfaces with names and IPs
 	IPIndex        int             // Current index in InterfaceInfos
-	Interfaces     []net.Interface // Store interfaces for later use
 }

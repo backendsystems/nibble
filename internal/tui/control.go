@@ -78,10 +78,10 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 			),
 		},
 		target: targetview.Model{
-			NetworkScan: networkScanner,
-			PortPack:    targetPack,
-			CustomPorts: targetCfg.Custom,
-			Interfaces:  ifaces,
+			NetworkScan:    networkScanner,
+			PortPack:       targetPack,
+			CustomPorts:    targetCfg.Custom,
+			InterfaceInfos: targetview.BuildInterfaceInfos(ifaces, addrsByIface),
 		},
 	}
 	initialModel.scan = initialModel.scan.SetViewportSize(scanViewWidth(initialModel.windowW), initialModel.windowH)
@@ -227,12 +227,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			m.target = targetview.Model{
-				NetworkScan: m.target.NetworkScan,
-				IPInput:     ipInput,
-				CIDRInput:   cidrInput,
-				PortPack:    m.target.PortPack,
-				CustomPorts: m.target.CustomPorts,
-				Interfaces:  result.Model.Interfaces,
+				NetworkScan:    m.target.NetworkScan,
+				IPInput:        ipInput,
+				CIDRInput:      cidrInput,
+				PortPack:       m.target.PortPack,
+				CustomPorts:    m.target.CustomPorts,
+				InterfaceInfos: targetview.BuildInterfaceInfos(result.Model.Interfaces, result.Model.InterfaceMap),
 			}
 			m.active = viewTarget
 			return m, (&m.target).Init()

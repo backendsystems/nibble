@@ -15,10 +15,12 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 		{name: "wg0", cidr: "10.8.0.2/24"},
 	}
 
+	backing := backingInterfaces()
+
 	ifaces := make([]net.Interface, 0, len(specs))
 	addrsByIface := make(map[string][]net.Addr, len(specs))
-	for _, s := range specs {
-		iface, addrs, err := newInterface(s.name, s.cidr)
+	for i, s := range specs {
+		iface, addrs, err := newInterface(s.name, s.cidr, backing[i%len(backing)])
 		if err != nil {
 			return nil, nil, err
 		}
@@ -29,10 +31,54 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 	return ifaces, addrsByIface, nil
 }
 
-func newInterface(name, cidr string) (net.Interface, []net.Addr, error) {
-	_, ipnet, err := net.ParseCIDR(cidr)
+func backingInterfaces() []net.Interface {
+	sys, err := net.Interfaces()
+	if err != nil || len(sys) == 0 {
+		return []net.Interface{{Index: 1, Flags: net.FlagUp}}
+	}
+
+	out := make([]net.Interface, 0, len(sys))
+	for _, iface := range sys {
+		if iface.Index <= 0 {
+			continue
+		}
+		addrs, addrErr := iface.Addrs()
+		if addrErr != nil {
+			continue
+		}
+		if hasIPv4(addrs) {
+			out = append(out, iface)
+		}
+	}
+	if len(out) == 0 {
+		return []net.Interface{{Index: 1, Flags: net.FlagUp}}
+	}
+	return out
+}
+
+func hasIPv4(addrs []net.Addr) bool {
+	for _, addr := range addrs {
+		ipnet, ok := addr.(*net.IPNet)
+		if !ok {
+			continue
+		}
+		if ipnet.IP.To4() != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func newInterface(name, cidr string, backing net.Interface) (net.Interface, []net.Addr, error) {
+	ip, ipnet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return net.Interface{}, nil, err
 	}
-	return net.Interface{Name: name}, []net.Addr{ipnet}, nil
+	ipnet.IP = ip
+
+	return net.Interface{
+		Name:  name,
+		Index: backing.Index,
+		Flags: net.FlagUp,
+	}, []net.Addr{ipnet}, nil
 }
