@@ -65,7 +65,7 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			return result, nil
 		}
 
-		// Check for backspace on IP field - prevent if it would leave < 4 characters
+		// Check for backspace on IP field - prevent deletion before first dot
 		if keyMsg.Type == tea.KeyBackspace {
 			if m.Form != nil {
 				focused := m.Form.GetFocusedField()
@@ -73,8 +73,10 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 					// Get the actual input field to check its current value
 					if inputField, ok := focused.(*huh.Input); ok {
 						if currentValue, ok := inputField.GetValue().(string); ok {
-							// Block if backspace would result in fewer than 4 characters
-							if len(currentValue) <= 4 {
+							// Find the position of the first dot
+							firstDotPos := strings.Index(currentValue, ".")
+							// If there's a dot and cursor is at or before it, block backspace
+							if firstDotPos >= 0 && len(currentValue) <= firstDotPos+1 {
 								return result, nil
 							}
 						}
