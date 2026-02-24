@@ -3,18 +3,20 @@ package portsview
 import (
 	"strings"
 
+	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/scanner/demo"
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
-	"github.com/backendsystems/nibble/internal/ports"
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const portsHelpText = "tab • ←/→ a/d h/l • type • backspace: remove • delete: clear all • enter • ?: help • q: quit"
+const portsHelpText = "tab • backspace • delete: clear all • enter • ?: help • q: cancel"
 
 type Action struct {
 	Handled    bool
 	Quit       bool
+	Back       bool
 	CloseHelp  bool
 	OpenHelp   bool
 	ToggleMode bool
@@ -29,7 +31,9 @@ type Action struct {
 
 type Result struct {
 	Model Model
+	Cmd   tea.Cmd
 	Quit  bool
+	Back  bool
 	Done  bool
 }
 
@@ -39,11 +43,13 @@ func HandleKey(showHelp bool, key string) Action {
 	}
 
 	switch key {
-	case "ctrl+c", "q":
+	case "ctrl+c":
 		return Action{Handled: true, Quit: true}
+	case "q", "esc":
+		return Action{Handled: true, Back: true}
 	case "?":
 		return Action{Handled: true, OpenHelp: true}
-	case "tab", "up", "down":
+	case "tab", "up", "down", "w", "s", "k", "j":
 		return Action{Handled: true, ToggleMode: true}
 	case "enter":
 		return Action{Handled: true, Apply: true}
@@ -71,122 +77,56 @@ func ToggleMode(portPack string) string {
 	return "default"
 }
 
-func ClampCursor(cursor, valueLen int) int {
-	if cursor < 0 {
-		return 0
+func Prepare(m Model) (Model, tea.Cmd) {
+	// Seed PortInput from the model's persistent fields on first call.
+	if !m.PortInput.Ready {
+		m.PortInput.Value = m.CustomPorts
+		m.PortInput.Cursor = m.CustomCursor
 	}
-	if cursor > valueLen {
-		return valueLen
-	}
-	return cursor
-}
-
-func MoveCursorLeft(cursor int) int {
-	if cursor > 0 {
-		cursor--
-	}
-	return cursor
-}
-
-func MoveCursorRight(cursor, valueLen int) int {
-	if cursor < valueLen {
-		cursor++
-	}
-	return cursor
-}
-
-func Backspace(value string, cursor int) (string, int) {
-	if cursor <= 0 || len(value) == 0 {
-		return value, ClampCursor(cursor, len(value))
-	}
-	i := cursor - 1
-	return value[:i] + value[cursor:], i
-}
-
-func InsertRunes(value string, cursor int, runes []rune) (string, int) {
-	cursor = ClampCursor(cursor, len(value))
-	for _, r := range runes {
-		if (r >= '0' && r <= '9') || r == '-' {
-			if !canInsertPortChar(value, cursor, r) {
-				continue
-			}
-			s := string(r)
-			value = value[:cursor] + s + value[cursor:]
-			cursor++
-			continue
-		}
-		if r == ',' {
-			s := string(r)
-			value = value[:cursor] + s + value[cursor:]
-			cursor++
-		}
-	}
-	return value, cursor
-}
-
-func canInsertPortChar(s string, cursor int, ch rune) bool {
-	start, end := currentTokenBounds(s, cursor)
-	pos := cursor - start
-	token := s[start:end]
-	next := token[:pos] + string(ch) + token[pos:]
-
-	if strings.Count(next, "-") > 1 {
-		return false
-	}
-	if strings.Count(next, "-") == 0 {
-		return len(next) <= 5
-	}
-
-	parts := strings.SplitN(next, "-", 2)
-	return len(parts[0]) <= 5 && len(parts[1]) <= 5
-}
-
-func currentTokenBounds(s string, cursor int) (int, int) {
-	cursor = ClampCursor(cursor, len(s))
-	start := -1
-	for i := cursor - 1; i >= 0; i-- {
-		if s[i] == ',' {
-			start = i
-			break
-		}
-	}
-	if start == -1 {
-		start = 0
-	} else {
-		start++
-	}
-	end := len(s)
-	for i := cursor; i < len(s); i++ {
-		if s[i] == ',' {
-			end = i
-			break
-		}
-	}
-	return start, end
+	focused := m.PortPack == "custom"
+	var cmd tea.Cmd
+	m.PortInput, cmd = m.PortInput.Prepare(focused)
+	// Keep top-level fields in sync for persistence layer.
+	m.CustomPorts = m.PortInput.Value
+	m.CustomCursor = m.PortInput.Cursor
+	return m, cmd
 }
 
 func applyConfig(m Model) (Model, bool) {
-	addPorts := ""
+	customPorts := ""
 	if m.PortPack == "custom" {
-		normalized, err := ports.NormalizeCustom(strings.TrimSpace(m.CustomPorts))
+		normalized, err := ports.NormalizeCustom(strings.TrimSpace(m.PortInput.Value))
 		if err != nil {
 			m.ErrorMsg = err.Error()
 			return m, false
 		}
-		addPorts = normalized
+		customPorts = normalized
+		m.PortInput = m.PortInput.SetValue(normalized)
 		m.CustomPorts = normalized
 		m.CustomCursor = len(normalized)
 	}
 
-	resolvedPorts, err := ports.Resolve(m.PortPack, addPorts, "")
+	// Build ports string based on mode
+	portStr := customPorts
+	if m.PortPack == "all" {
+		portStr = "1-65535"
+	}
+
+	resolvedPorts, err := ports.ParseList(portStr)
 	if err != nil {
 		m.ErrorMsg = err.Error()
 		return m, false
 	}
-	if err := ports.SaveConfig(ports.Config{Mode: m.PortPack, Custom: m.CustomPorts}); err != nil {
+	if err := ports.SaveConfig("ports", ports.Config{Mode: m.PortPack, Custom: m.CustomPorts}); err != nil {
 		m.ErrorMsg = err.Error()
 		return m, false
 	}
+
+	// In custom mode with empty ports, use empty slice for host-only scan
+	if m.PortPack == "custom" && resolvedPorts == nil {
+		resolvedPorts = []int{}
+	}
+
 	switch typed := m.NetworkScan.(type) {
 	case *ip4.Scanner:
 		typed.Ports = resolvedPorts
@@ -197,11 +137,29 @@ func applyConfig(m Model) (Model, bool) {
 	return m, true
 }
 
-func (m Model) Update(msg tea.KeyMsg) Result {
+func (m Model) Update(msg tea.Msg) Result {
 	result := Result{Model: m}
-	action := HandleKey(m.ShowHelp, msg.String())
+
+	// Let the textinput cursor blink/update on non-key messages.
+	if _, ok := msg.(tea.KeyMsg); !ok {
+		if result.Model.PortPack == "custom" && result.Model.PortInput.Ready {
+			var cmd tea.Cmd
+			result.Model.PortInput, cmd = result.Model.PortInput.UpdateNonKey(msg)
+			result.Model.CustomPorts = result.Model.PortInput.Value
+			result.Model.CustomCursor = result.Model.PortInput.Cursor
+			result.Cmd = cmd
+		}
+		return result
+	}
+
+	keyMsg := msg.(tea.KeyMsg)
+	action := HandleKey(result.Model.ShowHelp, keyMsg.String())
 	if action.Quit {
 		result.Quit = true
+		return result
+	}
+	if action.Back {
+		result.Back = true
 		return result
 	}
 	if action.CloseHelp {
@@ -214,7 +172,9 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 	}
 	if action.ToggleMode {
 		result.Model.PortPack = ToggleMode(result.Model.PortPack)
-		result.Model.CustomCursor = ClampCursor(result.Model.CustomCursor, len(result.Model.CustomPorts))
+		var cmd tea.Cmd
+		result.Model, cmd = Prepare(result.Model)
+		result.Cmd = cmd
 		return result
 	}
 	if action.Apply {
@@ -223,45 +183,23 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 		result.Done = ok
 		return result
 	}
-	if action.MoveLeft {
-		if result.Model.PortPack == "custom" && result.Model.CustomCursor > 0 {
-			result.Model.CustomCursor = MoveCursorLeft(result.Model.CustomCursor)
-		}
+
+	if result.Model.PortPack != "custom" {
 		return result
 	}
-	if action.MoveRight {
-		if result.Model.PortPack == "custom" && result.Model.CustomCursor < len(result.Model.CustomPorts) {
-			result.Model.CustomCursor = MoveCursorRight(result.Model.CustomCursor, len(result.Model.CustomPorts))
-		}
-		return result
+
+	if !result.Model.PortInput.Ready {
+		var cmd tea.Cmd
+		result.Model, cmd = Prepare(result.Model)
+		result.Cmd = cmd
 	}
-	if action.MoveHome {
-		if result.Model.PortPack == "custom" {
-			result.Model.CustomCursor = 0
-		}
-		return result
-	}
-	if action.MoveEnd {
-		if result.Model.PortPack == "custom" {
-			result.Model.CustomCursor = len(result.Model.CustomPorts)
-		}
-		return result
-	}
-	if action.Backspace {
-		if result.Model.PortPack == "custom" && result.Model.CustomCursor > 0 && len(result.Model.CustomPorts) > 0 {
-			result.Model.CustomPorts, result.Model.CustomCursor = Backspace(result.Model.CustomPorts, result.Model.CustomCursor)
-		}
-		return result
-	}
-	if action.DeleteAll {
-		if result.Model.PortPack == "custom" {
-			result.Model.CustomPorts = ""
-			result.Model.CustomCursor = 0
-		}
-		return result
-	}
-	if result.Model.PortPack == "custom" && msg.Type == tea.KeyRunes {
-		result.Model.CustomPorts, result.Model.CustomCursor = InsertRunes(result.Model.CustomPorts, result.Model.CustomCursor, msg.Runes)
-	}
+
+	// Delegate all editing operations to PortInput.
+	portAction := common.PortInputActionFromKey(keyMsg.String(), keyMsg.Type == tea.KeyRunes)
+	var cmd tea.Cmd
+	result.Model.PortInput, cmd = result.Model.PortInput.HandleKey(portAction, keyMsg)
+	result.Model.CustomPorts = result.Model.PortInput.Value
+	result.Model.CustomCursor = result.Model.PortInput.Cursor
+	result.Cmd = cmd
 	return result
 }

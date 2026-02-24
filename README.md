@@ -5,20 +5,24 @@ Select a network interface, and Nibble scans your local subnet. Lists hosts, har
 
 ![Nibble demo](demo.gif "Made with Bubble Tea VHS")
 
-
-- Maps each device MAC address to a likely vendor (for example, Raspberry Pi, Ubiquiti, Apple), so unknown IPs are easier to recognize
-- Reads service banners on open ports to show what software is running (for example, OpenSSH or nginx versions), so you can identify services
+- Lightning fast scans using lightweight threads
+- Stealthy, emits no network signals before a scan is started
+- Skips loopback and irrelevant adapters
 - Defaults to SSH, Telnet, HTTP, HTTPS, SMB, RDP, and more
 - Can be set to a list of custom ports that are stored for future use
-- First shows currently visible neighbors from the local ARP/neighbor table, then runs a full subnet sweep and skips already found hosts
-- Skips loopback and irrelevant adapters
+- Target mode for targeted network scans
+- Reads service banners on open ports (for example, OpenSSH or nginx versions)
+- Looks up hardware vendors: 
+  - Raspberry Pi, Ubiquiti, Apple and 40,000 other vendor ids
 
 ## Hotkeys
 `↑/↓/←/→`, `w/s/a/d`, `h/j/k/l`: selection  
-`Enter`: confirm.  
-`p`: select ports.  
-`q` or `Ctrl+C`: quit.  
-`?`: help.
+`Enter`: confirm  
+`p`: select ports  
+`t`: target mode  
+`q`: cancel  
+`Ctrl+C`: quit  
+`?`: help
 
 ## Installation
 you may have to restart terminal to run `nibble` after install.

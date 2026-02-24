@@ -6,16 +6,12 @@ import (
 	"strings"
 )
 
-const (
-	ModeDefault = "default"
-	ModeCustom  = "custom"
-)
-
 var defaultPorts = []int{
 	22,   // SSH
 	23,   // Telnet
 	53,   // DNS
 	80,   // HTTP
+	111,  // RPCbind
 	139,  // NetBIOS Session Service
 	443,  // HTTPS
 	445,  // SMB
@@ -28,61 +24,13 @@ var defaultPorts = []int{
 	8443, // Alt HTTPS
 }
 
-func IsValidPack(name string) bool {
-	return name == ModeDefault || name == ModeCustom
-}
-
 func DefaultPorts() []int {
 	out := make([]int, len(defaultPorts))
 	copy(out, defaultPorts)
 	return out
 }
 
-// Resolve returns the final port list from a named pack plus optional add/remove lists.
-func Resolve(packName, addPorts, removePorts string) ([]int, error) {
-	if packName == "" {
-		packName = ModeDefault
-	}
-
-	var base []int
-	switch packName {
-	case ModeDefault:
-		base = defaultPorts
-	case ModeCustom:
-		base = nil
-	default:
-		return nil, fmt.Errorf("unknown port pack: %s", packName)
-	}
-
-	add, err := parseList(addPorts)
-	if err != nil {
-		return nil, err
-	}
-	remove, err := parseList(removePorts)
-	if err != nil {
-		return nil, err
-	}
-
-	set := make(map[int]struct{}, len(base)+len(add))
-	for _, p := range base {
-		set[p] = struct{}{}
-	}
-	for _, p := range add {
-		set[p] = struct{}{}
-	}
-	for _, p := range remove {
-		delete(set, p)
-	}
-
-	out := []int{}
-	for p := range set {
-		out = append(out, p)
-	}
-	sort.Ints(out)
-	return out, nil
-}
-
-func parseList(raw string) ([]int, error) {
+func ParseList(raw string) ([]int, error) {
 	if strings.TrimSpace(raw) == "" {
 		return nil, nil
 	}

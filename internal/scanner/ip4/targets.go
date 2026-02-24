@@ -182,6 +182,13 @@ func skipIp4(ip net.IP, subnet *net.IPNet) bool {
 	if ip4 == nil || base == nil || len(mask) != net.IPv4len {
 		return false
 	}
+
+	// For /31 and /32, don't skip any addresses - all are usable hosts
+	ones, _ := subnet.Mask.Size()
+	if ones >= 31 {
+		return false
+	}
+
 	// loop
 	if ip4.Equal(base.Mask(mask)) {
 		return true

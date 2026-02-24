@@ -6,7 +6,6 @@ import (
 
 	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	"github.com/charmbracelet/lipgloss"
 )
 
 func Render(m Model, maxWidth int) string {
@@ -14,58 +13,48 @@ func Render(m Model, maxWidth int) string {
 
 	b.WriteString(common.TitleStyle.Render("Configure Scan Ports") + "\n")
 
-	defaultStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	customStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	defaultStyle := common.InfoTextStyle
+	customStyle := common.InfoTextStyle
 	if m.PortPack == "default" {
-		defaultStyle = defaultStyle.Foreground(lipgloss.Color("226")).Bold(true)
+		defaultStyle = common.HighlightStyle
 	} else {
-		customStyle = customStyle.Foreground(lipgloss.Color("226")).Bold(true)
+		customStyle = common.HighlightStyle
 	}
 
 	defaultLine := wrapPortList("default: ", formatPortList(ports.DefaultPorts()), maxWidth)
 	b.WriteString(defaultStyle.Render(defaultLine) + "\n")
-	customContent := m.CustomPorts
-	if m.PortPack == "custom" {
-		customContent = withCursor(m.CustomPorts, m.CustomCursor)
-	}
-	customLine := wrapPortList("custom:  ", customContent, maxWidth)
-	invalidTokens := invalidPorts(m.ErrorMsg)
-	if m.PortPack == "custom" && len(invalidTokens) > 0 {
-		b.WriteString(highlightInvalidPorts(customLine, invalidTokens) + "\n")
-	} else {
-		b.WriteString(customStyle.Render(customLine) + "\n")
-	}
-	if m.PortPack == "custom" && strings.TrimSpace(m.CustomPorts) == "" {
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Italic(true).Render("  • enter ports e.g. 22,80,443,8000-9000 or empty = hosts only scan") + "\n")
-	}
 
-	if m.PortConfigLoc != "" {
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("saved at: "+m.PortConfigLoc) + "\n")
+	customLine := ""
+	if m.PortPack == "custom" && m.PortInput.Ready {
+		input := m.PortInput.Input
+		available := maxWidth - len("custom:  ")
+		if available > 0 {
+			input.Width = available
+		}
+		customLine = "custom:  " + input.View()
+	} else {
+		customLine = wrapPortList("custom:  ", m.PortInput.Value, maxWidth)
+	}
+	b.WriteString(customStyle.Render(customLine) + "\n")
+
+	if m.PortPack == "custom" {
+		guide := "  • " + common.CustomPortsDescription
+		b.WriteString(common.ItalicHelpStyle.Render(guide) + "\n")
+	} else {
+		b.WriteString("\n")
 	}
 
 	if m.ErrorMsg != "" {
-		errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
-		b.WriteString("\n" + errorStyle.Render("Error: "+m.ErrorMsg) + "\n")
+		b.WriteString("\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg) + "\n")
 	}
 
-	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	b.WriteString("\n" + helpStyle.Render(common.WrapWords(portsHelpText, maxWidth)))
+	b.WriteString("\n" + common.HelpTextStyle.Render(common.WrapWords(portsHelpText, maxWidth)))
 
 	view := b.String()
 	if m.ShowHelp {
-		return renderHelpOverlay(view)
+		return renderHelpOverlay(view, maxWidth)
 	}
 	return view
-}
-
-func withCursor(s string, cursor int) string {
-	if cursor < 0 {
-		cursor = 0
-	}
-	if cursor > len(s) {
-		cursor = len(s)
-	}
-	return s[:cursor] + "|" + s[cursor:]
 }
 
 func formatPortList(portList []int) string {

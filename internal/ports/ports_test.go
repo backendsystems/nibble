@@ -6,7 +6,7 @@ import (
 )
 
 func TestRangesSupport(t *testing.T) {
-	got, err := parseList("22,80,8001,8002,8000-8003")
+	got, err := ParseList("22,80,8001,8002,8000-8003")
 	if err != nil {
 		t.Fatalf("returned error: %v", err)
 	}
@@ -18,7 +18,7 @@ func TestRangesSupport(t *testing.T) {
 }
 
 func TestRejectInvalidRanges(t *testing.T) {
-	_, err := parseList("8001-8000,1-,a-b")
+	_, err := ParseList("8001-8000,1-,a-b")
 	if err == nil {
 		t.Fatalf("expected parseList error")
 	}

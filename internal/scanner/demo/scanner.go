@@ -4,14 +4,19 @@ import (
 	"net"
 	"time"
 
-	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/ports"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
 // Scanner simulates a scan with fake host data.
 type Scanner struct {
 	Ports []int
 }
+
+const (
+	demoConcurrentPorts = 12000
+	demoPortTimeout     = 70 * time.Millisecond
+)
 
 func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shared.ProgressUpdate) {
 	_, ipnet, err := net.ParseCIDR(subnet)
@@ -26,9 +31,11 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 	for _, p := range selected {
 		selectedSet[p] = struct{}{}
 	}
-	hostOnly := len(s.Ports) == 0
-	hosts := hostsForInterface(ifaceName)
+	// nil means "use defaults"; explicit empty slice means host-only.
+	hostOnly := s.Ports != nil && len(s.Ports) == 0
+	hosts := allDemoHosts()
 	neighborDelay, sweepDelay := demoDelaysForInterface(ifaceName)
+	portDelay := demoPortDelay(len(selected), hostOnly)
 
 	// Pick which demo hosts belong to this subnet.
 	var subnetHosts []shared.HostResult
@@ -55,38 +62,49 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 		subnetHosts = append(subnetHosts, resolved)
 	}
 
-	// Emit nearby hosts first, then run the full sweep.
-	neighborCount := 0
-	if len(subnetHosts) > 0 {
-		neighborCount = 1
-		if len(subnetHosts) > 2 {
-			neighborCount = 2
+	// Skip neighbor discovery for target scans (when no interface specified)
+	var neighbors, remaining []shared.HostResult
+	if ifaceName != "" {
+		// Emit nearby hosts first for interface scans
+		neighborCount := 0
+		if len(subnetHosts) > 0 {
+			neighborCount = 1
+			if len(subnetHosts) > 2 {
+				neighborCount = 2
+			}
 		}
-	}
 
-	neighbors := subnetHosts[:neighborCount]
-	remaining := subnetHosts[neighborCount:]
-	for i, h := range neighbors {
-		time.Sleep(neighborDelay)
-		progressChan <- shared.NeighborProgress{
-			Host:       shared.FormatHost(h),
-			TotalHosts: totalHosts,
-			Seen:       i + 1,
-			Total:      neighborCount,
+		neighbors = subnetHosts[:neighborCount]
+		remaining = subnetHosts[neighborCount:]
+		for i, h := range neighbors {
+			time.Sleep(neighborDelay)
+			time.Sleep(portDelay)
+			progressChan <- shared.NeighborProgress{
+				Host:       shared.FormatHost(h),
+				TotalHosts: totalHosts,
+				Seen:       i + 1,
+				Total:      neighborCount,
+			}
 		}
-	}
-	if neighborCount == 0 {
-		progressChan <- shared.NeighborProgress{
-			TotalHosts: totalHosts,
-			Seen:       0,
-			Total:      0,
+		if neighborCount == 0 {
+			progressChan <- shared.NeighborProgress{
+				TotalHosts: totalHosts,
+				Seen:       0,
+				Total:      0,
+			}
 		}
+	} else {
+		// For target scans, skip neighbor phase and use all hosts
+		remaining = subnetHosts
 	}
 
 	// Spread remaining hosts across the sweep.
 	hostInterval := 0
 	if len(remaining) > 0 {
 		hostInterval = totalHosts / (len(remaining) + 1)
+		if hostInterval == 0 {
+			hostInterval = 1
+		}
 	}
 	hostIdx := 0
 
@@ -95,6 +113,7 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 
 		host := ""
 		if hostInterval > 0 && hostIdx < len(remaining) && i == hostInterval*(hostIdx+1) {
+			time.Sleep(portDelay)
 			host = shared.FormatHost(remaining[hostIdx])
 			hostIdx++
 		}
@@ -109,11 +128,19 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 	close(progressChan)
 }
 
-func hostsForInterface(ifaceName string) []Host {
-	if ifaceName == "wlan0" {
-		return WiFiHosts
+func demoPortDelay(selectedPorts int, hostOnly bool) time.Duration {
+	if hostOnly || selectedPorts <= 0 {
+		return 0
 	}
-	return Hosts
+	waves := (selectedPorts + demoConcurrentPorts - 1) / demoConcurrentPorts
+	return time.Duration(waves) * demoPortTimeout
+}
+
+func allDemoHosts() []Host {
+	hosts := make([]Host, 0, len(Hosts)+len(WiFiHosts))
+	hosts = append(hosts, Hosts...)
+	hosts = append(hosts, WiFiHosts...)
+	return hosts
 }
 
 func demoDelaysForInterface(ifaceName string) (neighborDelay, sweepDelay time.Duration) {
