@@ -41,9 +41,7 @@ type model struct {
 
 func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map[string][]net.Addr) error {
 	cfg, _ := ports.LoadConfig("ports")
-	portStr := cfg.Custom // custom ports string
-
-	if resolvedPorts, err := ports.ParseList(portStr); err == nil {
+	if resolvedPorts, err := resolvePortsConfig(cfg); err == nil {
 		switch typed := networkScanner.(type) {
 		case *ip4.Scanner:
 			typed.Ports = resolvedPorts
@@ -301,4 +299,23 @@ func enterAltScreenCmd() tea.Cmd {
 
 func exitAltScreenCmd() tea.Cmd {
 	return func() tea.Msg { return tea.ExitAltScreen() }
+}
+
+func resolvePortsConfig(cfg ports.Config) ([]int, error) {
+	switch cfg.Mode {
+	case "all":
+		return ports.ParseList("1-65535")
+	case "custom":
+		resolved, err := ports.ParseList(cfg.Custom)
+		if err != nil {
+			return nil, err
+		}
+		if resolved == nil {
+			return []int{}, nil
+		}
+		return resolved, nil
+	default:
+		// nil means "use scanner defaults"
+		return nil, nil
+	}
 }
