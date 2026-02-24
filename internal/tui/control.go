@@ -157,7 +157,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case viewTarget:
 		result, cmd := (&m.target).Update(msg)
-		m.target = result.Model
+		// Note: m.target is updated in place to preserve form bindings
 		if result.Quit {
 			m.main.ErrorMsg = ""
 			m.active = viewMain
@@ -165,15 +165,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if result.StartScan {
 			m.main.ErrorMsg = ""
-			// Save target ports configuration
-			if result.SavePorts {
-				targetview.SaveTargetPortsConfig(m.target.PortPack, m.target.CustomPorts)
+
+			// Set the resolved ports on the scanner
+			switch typed := m.scan.NetworkScan.(type) {
+			case *ip4.Scanner:
+				typed.Ports = result.Ports
+			case *demo.Scanner:
+				typed.Ports = result.Ports
 			}
+
+			// Start scan with the target configuration
 			nextScan, scanCmd := m.scan.Start(
 				net.Interface{},
 				nil,
-				result.Selection.TotalHosts,
-				result.Selection.TargetAddr,
+				result.TotalHosts,
+				result.TargetAddr,
 			)
 			nextScan = nextScan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
 			m.scan = nextScan

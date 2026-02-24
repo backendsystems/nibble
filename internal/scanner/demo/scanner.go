@@ -55,32 +55,39 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 		subnetHosts = append(subnetHosts, resolved)
 	}
 
-	// Emit nearby hosts first, then run the full sweep.
-	neighborCount := 0
-	if len(subnetHosts) > 0 {
-		neighborCount = 1
-		if len(subnetHosts) > 2 {
-			neighborCount = 2
+	// Skip neighbor discovery for target scans (when no interface specified)
+	var neighbors, remaining []shared.HostResult
+	if ifaceName != "" {
+		// Emit nearby hosts first for interface scans
+		neighborCount := 0
+		if len(subnetHosts) > 0 {
+			neighborCount = 1
+			if len(subnetHosts) > 2 {
+				neighborCount = 2
+			}
 		}
-	}
 
-	neighbors := subnetHosts[:neighborCount]
-	remaining := subnetHosts[neighborCount:]
-	for i, h := range neighbors {
-		time.Sleep(neighborDelay)
-		progressChan <- shared.NeighborProgress{
-			Host:       shared.FormatHost(h),
-			TotalHosts: totalHosts,
-			Seen:       i + 1,
-			Total:      neighborCount,
+		neighbors = subnetHosts[:neighborCount]
+		remaining = subnetHosts[neighborCount:]
+		for i, h := range neighbors {
+			time.Sleep(neighborDelay)
+			progressChan <- shared.NeighborProgress{
+				Host:       shared.FormatHost(h),
+				TotalHosts: totalHosts,
+				Seen:       i + 1,
+				Total:      neighborCount,
+			}
 		}
-	}
-	if neighborCount == 0 {
-		progressChan <- shared.NeighborProgress{
-			TotalHosts: totalHosts,
-			Seen:       0,
-			Total:      0,
+		if neighborCount == 0 {
+			progressChan <- shared.NeighborProgress{
+				TotalHosts: totalHosts,
+				Seen:       0,
+				Total:      0,
+			}
 		}
+	} else {
+		// For target scans, skip neighbor phase and use all hosts
+		remaining = subnetHosts
 	}
 
 	// Spread remaining hosts across the sweep.

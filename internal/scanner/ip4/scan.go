@@ -20,7 +20,15 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 	}
 
 	totalHosts := shared.TotalScanHosts(ipnet)
-	skipIPs := s.neighborDiscovery(ifaceName, ipnet, totalHosts, progressChan)
+
+	// Skip neighbor discovery for target scans (when no interface specified)
+	var skipIPs map[string]struct{}
+	if ifaceName != "" {
+		skipIPs = s.neighborDiscovery(ifaceName, ipnet, totalHosts, progressChan)
+	} else {
+		skipIPs = make(map[string]struct{})
+	}
+
 	s.subnetSweep(ifaceName, ipnet, totalHosts, skipIPs, progressChan)
 
 	close(progressChan)
