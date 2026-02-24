@@ -40,5 +40,5 @@ func getHostCountDesc(m *Model) string {
 	}
 
 	hostCount := shared.TotalScanHosts(ipnet)
-	return fmt.Sprintf("hosts: %d", hostCount)
+	return fmt.Sprintf("targets: %d", hostCount)
 }

@@ -52,9 +52,9 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 					// Determine direction: up/k/w = forward, down/j/s = backward
 					forward := keyMsg.String() == "up" || keyMsg.String() == "k" || keyMsg.String() == "w"
 					m.CycleInterfaceIP(forward)
-					// Don't recreate the form - the form bindings are already pointing to m.IPInput
-					// which we just updated via CycleInterfaceIP
-					return result, nil
+					// Recreate the form with the new IP value
+					m.initializeForm()
+					return result, m.Form.Init()
 				}
 			}
 		default:

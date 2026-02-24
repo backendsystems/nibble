@@ -5,6 +5,7 @@ import (
 	"net"
 	"regexp"
 
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 	"github.com/charmbracelet/huh"
 )
 
@@ -98,5 +99,5 @@ func (m *Model) initializeForm() {
 		).WithHideFunc(func() bool {
 			return m.PortPack != "custom"
 		}),
-	).WithTheme(huh.ThemeCharm())
+	).WithTheme(common.FormTheme())
 }
