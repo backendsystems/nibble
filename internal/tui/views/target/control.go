@@ -65,6 +65,24 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			return result, nil
 		}
 
+		// Check for backspace on IP field - prevent if it would leave < 4 characters
+		if keyMsg.Type == tea.KeyBackspace {
+			if m.Form != nil {
+				focused := m.Form.GetFocusedField()
+				if focused != nil && focused.GetKey() == "ip" {
+					// Get the actual input field to check its current value
+					if inputField, ok := focused.(*huh.Input); ok {
+						if currentValue, ok := inputField.GetValue().(string); ok {
+							// Block if backspace would result in fewer than 4 characters
+							if len(currentValue) <= 4 {
+								return result, nil
+							}
+						}
+					}
+				}
+			}
+		}
+
 		switch keyMsg.String() {
 		case "q", "esc":
 			// Clear error state if present
@@ -87,6 +105,14 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 
 			switch focused.GetKey() {
 			case "ip":
+				// Prevent deletion of first 4 characters in IP field
+				if inputField, ok := focused.(*huh.Input); ok {
+					if currentValue, ok := inputField.GetValue().(string); ok {
+						if len(currentValue) < 5 {
+							return result, nil
+						}
+					}
+				}
 				m.IPInput = ""
 			case "cidr":
 				m.CIDRInput = ""

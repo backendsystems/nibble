@@ -47,6 +47,7 @@ func (m *Model) initializeForm() {
 				Key("ip").
 				Title("IP address").
 				Placeholder("192.168.1.0").
+				CharLimit(15).
 				Description(getIPsDescription(m)).
 				Validate(func(s string) error {
 					if s == "" {
