@@ -6,6 +6,7 @@ import (
 	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/scanner/demo"
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
+	"github.com/backendsystems/nibble/internal/tui/views/common/portinput"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -76,99 +77,6 @@ func ToggleMode(portPack string) string {
 	return "default"
 }
 
-func ClampCursor(cursor, valueLen int) int {
-	if cursor < 0 {
-		return 0
-	}
-	if cursor > valueLen {
-		return valueLen
-	}
-	return cursor
-}
-
-func MoveCursorLeft(cursor int) int {
-	if cursor > 0 {
-		cursor--
-	}
-	return cursor
-}
-
-func MoveCursorRight(cursor, valueLen int) int {
-	if cursor < valueLen {
-		cursor++
-	}
-	return cursor
-}
-
-func Backspace(value string, cursor int) (string, int) {
-	if cursor <= 0 || len(value) == 0 {
-		return value, ClampCursor(cursor, len(value))
-	}
-	i := cursor - 1
-	return value[:i] + value[cursor:], i
-}
-
-func InsertRunes(value string, cursor int, runes []rune) (string, int) {
-	cursor = ClampCursor(cursor, len(value))
-	for _, r := range runes {
-		if (r >= '0' && r <= '9') || r == '-' {
-			if !canInsertPortChar(value, cursor, r) {
-				continue
-			}
-			s := string(r)
-			value = value[:cursor] + s + value[cursor:]
-			cursor++
-			continue
-		}
-		if r == ',' {
-			s := string(r)
-			value = value[:cursor] + s + value[cursor:]
-			cursor++
-		}
-	}
-	return value, cursor
-}
-
-func canInsertPortChar(s string, cursor int, ch rune) bool {
-	start, end := currentTokenBounds(s, cursor)
-	pos := cursor - start
-	token := s[start:end]
-	next := token[:pos] + string(ch) + token[pos:]
-
-	if strings.Count(next, "-") > 1 {
-		return false
-	}
-	if strings.Count(next, "-") == 0 {
-		return len(next) <= 5
-	}
-
-	parts := strings.SplitN(next, "-", 2)
-	return len(parts[0]) <= 5 && len(parts[1]) <= 5
-}
-
-func currentTokenBounds(s string, cursor int) (int, int) {
-	cursor = ClampCursor(cursor, len(s))
-	start := -1
-	for i := cursor - 1; i >= 0; i-- {
-		if s[i] == ',' {
-			start = i
-			break
-		}
-	}
-	if start == -1 {
-		start = 0
-	} else {
-		start++
-	}
-	end := len(s)
-	for i := cursor; i < len(s); i++ {
-		if s[i] == ',' {
-			end = i
-			break
-		}
-	}
-	return start, end
-}
 
 func applyConfig(m Model) (Model, bool) {
 	customPorts := ""
@@ -235,7 +143,7 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 	}
 	if action.ToggleMode {
 		result.Model.PortPack = ToggleMode(result.Model.PortPack)
-		result.Model.CustomCursor = ClampCursor(result.Model.CustomCursor, len(result.Model.CustomPorts))
+		result.Model.CustomCursor = portinput.ClampCursor(result.Model.CustomCursor, len(result.Model.CustomPorts))
 		return result
 	}
 	if action.Apply {
@@ -246,13 +154,13 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 	}
 	if action.MoveLeft {
 		if result.Model.PortPack == "custom" && result.Model.CustomCursor > 0 {
-			result.Model.CustomCursor = MoveCursorLeft(result.Model.CustomCursor)
+			result.Model.CustomCursor = portinput.MoveCursorLeft(result.Model.CustomCursor)
 		}
 		return result
 	}
 	if action.MoveRight {
 		if result.Model.PortPack == "custom" && result.Model.CustomCursor < len(result.Model.CustomPorts) {
-			result.Model.CustomCursor = MoveCursorRight(result.Model.CustomCursor, len(result.Model.CustomPorts))
+			result.Model.CustomCursor = portinput.MoveCursorRight(result.Model.CustomCursor, len(result.Model.CustomPorts))
 		}
 		return result
 	}
@@ -270,7 +178,7 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 	}
 	if action.Backspace {
 		if result.Model.PortPack == "custom" && result.Model.CustomCursor > 0 && len(result.Model.CustomPorts) > 0 {
-			result.Model.CustomPorts, result.Model.CustomCursor = Backspace(result.Model.CustomPorts, result.Model.CustomCursor)
+			result.Model.CustomPorts, result.Model.CustomCursor = portinput.Backspace(result.Model.CustomPorts, result.Model.CustomCursor)
 		}
 		return result
 	}
@@ -290,7 +198,7 @@ func (m Model) Update(msg tea.KeyMsg) Result {
 			}
 		}
 		if len(filtered) > 0 {
-			result.Model.CustomPorts, result.Model.CustomCursor = InsertRunes(result.Model.CustomPorts, result.Model.CustomCursor, filtered)
+			result.Model.CustomPorts, result.Model.CustomCursor = portinput.InsertRunes(result.Model.CustomPorts, result.Model.CustomCursor, filtered)
 		}
 	}
 	return result

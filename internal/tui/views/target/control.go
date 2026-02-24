@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/backendsystems/nibble/internal/ports"
+	"github.com/backendsystems/nibble/internal/tui/views/common/portinput"
 
 	"github.com/charmbracelet/huh"
 	tea "github.com/charmbracelet/bubbletea"
@@ -42,32 +43,109 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch keyMsg.String() {
 		case "q", "esc":
+			// If in custom_ports field, let the form handle esc naturally
+			if m.Form != nil {
+				focused := m.Form.GetFocusedField()
+				if focused != nil && focused.GetKey() == "custom_ports" && keyMsg.String() == "esc" {
+					// Let form handle esc to exit the field
+					break
+				}
+			}
 			result.Quit = true
 			return result, nil
-		case "up", "down", "k", "j", "w", "s":
-			// Cycle through interface IPs only when IP field is focused
+		case "left", "right":
+			// Cycle through interface IPs when IP field is focused
 			if m.Form != nil {
 				focused := m.Form.GetFocusedField()
 				if focused != nil && focused.GetKey() == "ip" {
-					// Determine direction: up/k/w = forward, down/j/s = backward
-					forward := keyMsg.String() == "up" || keyMsg.String() == "k" || keyMsg.String() == "w"
+					forward := keyMsg.String() == "right"
 					m.CycleInterfaceIP(forward)
 					// Recreate the form with the new IP value
 					m.initializeForm()
 					return result, m.Form.Init()
 				}
 			}
-		default:
-			// Block invalid characters for IP field if it's focused
+			// For other fields, let left/right fall through for normal behavior
+		case "up", "k", "w":
+			// Navigate form fields upward (like shift+tab)
 			if m.Form != nil {
 				focused := m.Form.GetFocusedField()
-				if focused != nil && focused.GetKey() == "ip" {
-					// Only allow printable characters that are digits or dots
+				// For port_mode select: if at first option (default), navigate up to CIDR
+				if focused != nil && focused.GetKey() == "port_mode" {
+					if m.PortPack == "default" {
+						// At first option, navigate to previous field
+						m.Form.PrevField()
+						return result, nil
+					}
+					// Not at first option, convert k/w to up and let select handle it
+					if keyMsg.String() == "k" || keyMsg.String() == "w" {
+						msg = tea.KeyMsg{Type: tea.KeyUp}
+					}
+					break
+				}
+				m.Form.PrevField()
+				return result, nil
+			}
+		case "down", "j", "s":
+			// Navigate form fields downward (like tab)
+			if m.Form != nil {
+				focused := m.Form.GetFocusedField()
+				// For port_mode select: convert j/s to down and let it handle navigation
+				if focused != nil && focused.GetKey() == "port_mode" {
+					if keyMsg.String() == "j" || keyMsg.String() == "s" {
+						msg = tea.KeyMsg{Type: tea.KeyDown}
+					}
+					break
+				}
+				m.Form.NextField()
+				return result, nil
+			}
+		default:
+			// Block invalid characters based on focused field
+			if m.Form != nil {
+				focused := m.Form.GetFocusedField()
+				if focused != nil {
+					key := focused.GetKey()
 					if len(keyMsg.String()) == 1 {
 						ch := keyMsg.String()[0]
-						if !((ch >= '0' && ch <= '9') || ch == '.') {
-							// Invalid character for IP field, ignore it
-							return result, nil
+
+						// IP field: only digits and dots
+						if key == "ip" {
+							if !((ch >= '0' && ch <= '9') || ch == '.') {
+								return result, nil
+							}
+						}
+
+						// CIDR field: only digits
+						if key == "cidr" {
+							if !(ch >= '0' && ch <= '9') {
+								return result, nil
+							}
+						}
+					}
+
+					// Custom ports field: use portinput validation
+					if key == "custom_ports" && keyMsg.Type == tea.KeyRunes {
+						// Get current value and cursor position from the input field
+						currentValue := m.Form.GetString("custom_ports")
+
+						// Filter runes through portinput
+						filtered := make([]rune, 0, len(keyMsg.Runes))
+						for _, r := range keyMsg.Runes {
+							if r >= 32 {
+								filtered = append(filtered, r)
+							}
+						}
+
+						if len(filtered) > 0 {
+							// Insert runes at the end (huh doesn't expose cursor position)
+							newValue, _ := portinput.InsertRunes(currentValue, len(currentValue), filtered)
+
+							// If the value changed, it means valid characters were added
+							// Otherwise, block the input
+							if newValue == currentValue {
+								return result, nil
+							}
 						}
 					}
 				}

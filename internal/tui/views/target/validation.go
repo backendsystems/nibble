@@ -9,14 +9,19 @@ import (
 
 // getIPsDescription returns a description showing the count of available interface IPs
 func getIPsDescription(m *Model) string {
-	count := len(m.InterfaceIPs)
+	count := len(m.InterfaceInfos)
 	if count == 0 {
 		return "No interfaces found"
 	}
 	if count == 1 {
-		return "1 interface available (↑↓ to cycle)"
+		info := m.InterfaceInfos[0]
+		return fmt.Sprintf("%s", info.Name)
 	}
-	return fmt.Sprintf("%d interfaces available (↑↓ to cycle)", count)
+
+	// Show current interface: "eth0 (1/3) ←/→"
+	current := m.IPIndex + 1
+	info := m.InterfaceInfos[m.IPIndex]
+	return fmt.Sprintf("%s (%d/%d) ←/→", info.Name, current, count)
 }
 
 // getHostCountDesc returns a description showing the number of hosts for the current CIDR

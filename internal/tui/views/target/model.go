@@ -9,15 +9,15 @@ import (
 // CycleInterfaceIP cycles to the next or previous interface IP
 // forward=true moves to next, forward=false moves to previous
 func (m *Model) CycleInterfaceIP(forward bool) {
-	if len(m.InterfaceIPs) == 0 {
+	if len(m.InterfaceInfos) == 0 {
 		return
 	}
 	if forward {
-		m.IPIndex = (m.IPIndex + 1) % len(m.InterfaceIPs)
+		m.IPIndex = (m.IPIndex + 1) % len(m.InterfaceInfos)
 	} else {
-		m.IPIndex = (m.IPIndex - 1 + len(m.InterfaceIPs)) % len(m.InterfaceIPs)
+		m.IPIndex = (m.IPIndex - 1 + len(m.InterfaceInfos)) % len(m.InterfaceInfos)
 	}
-	m.IPInput = m.InterfaceIPs[m.IPIndex]
+	m.IPInput = m.InterfaceInfos[m.IPIndex].IP
 }
 
 // NewModel creates a new target view model with a form bound to the model's fields

@@ -5,14 +5,16 @@ import (
 	"net"
 	"regexp"
 
+	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 	"github.com/charmbracelet/huh"
 )
 
 // initializeForm creates the form for the target view model
 func (m *Model) initializeForm() {
-	// Collect all available interface IPs
-	m.InterfaceIPs = getInterfaceIPs(m.Interfaces)
+	// Collect all available interface IPs and names
+	m.InterfaceInfos = getInterfaceInfos(m.Interfaces)
+	m.InterfaceIPs = getInterfaceIPs(m.Interfaces) // Keep for backward compatibility
 
 	// Default to ethernet interface IP if no IP provided
 	if m.IPInput == "" {
@@ -88,10 +90,16 @@ func (m *Model) initializeForm() {
 			huh.NewInput().
 				Key("custom_ports").
 				Title("Custom ports").
-				Description("Comma-separated, e.g. 22,80,443 or 8000-9000").
+				Description("e.g. 22,80,443,8000-9000 (valid: 1-65535)").
 				Validate(func(s string) error {
-					if m.PortPack == "custom" && s == "" {
-						return fmt.Errorf("custom ports required when 'custom' mode selected")
+					if m.PortPack == "custom" {
+						if s == "" {
+							return nil // Empty is valid for host-only scan
+						}
+						_, err := ports.NormalizeCustom(s)
+						if err != nil {
+							return err
+						}
 					}
 					return nil
 				}).
@@ -99,5 +107,6 @@ func (m *Model) initializeForm() {
 		).WithHideFunc(func() bool {
 			return m.PortPack != "custom"
 		}),
-	).WithTheme(common.FormTheme())
+	).WithTheme(common.FormTheme()).
+		WithShowHelp(false) // Disable per-field help, use static help text instead
 }

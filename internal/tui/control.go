@@ -116,6 +116,13 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Handle ctrl+c globally - always quit the entire program
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.String() == "ctrl+c" {
+			return m, tea.Quit
+		}
+	}
+
 	if resize, ok := msg.(tea.WindowSizeMsg); ok {
 		m.windowW = resize.Width
 		m.windowH = resize.Height

@@ -7,15 +7,21 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
+type InterfaceInfo struct {
+	Name string
+	IP   string
+}
+
 type Model struct {
-	Form         *huh.Form
-	IPInput      string
-	CIDRInput    string // e.g. "32", "24", "16"
-	PortPack     string
-	CustomPorts  string
-	ErrorMsg     string
-	NetworkScan  shared.Scanner
-	InterfaceIPs []string        // Available interface IPs
-	IPIndex      int             // Current index in InterfaceIPs
-	Interfaces   []net.Interface // Store interfaces for later use
+	Form           *huh.Form
+	IPInput        string
+	CIDRInput      string // e.g. "32", "24", "16"
+	PortPack       string
+	CustomPorts    string
+	ErrorMsg       string
+	NetworkScan    shared.Scanner
+	InterfaceIPs   []string          // Available interface IPs (deprecated, use InterfaceInfos)
+	InterfaceInfos []InterfaceInfo   // Available interfaces with names and IPs
+	IPIndex        int               // Current index in InterfaceInfos
+	Interfaces     []net.Interface   // Store interfaces for later use
 }
