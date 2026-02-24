@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
@@ -193,6 +194,16 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 		cidrInput := m.Form.GetString("cidr")
 		portPack := m.Form.GetString("port_mode")
 		customPorts := m.Form.GetString("custom_ports")
+		savedCustomPorts := customPorts
+		if portPack == "custom" {
+			normalized, err := ports.NormalizeCustom(strings.TrimSpace(customPorts))
+			if err != nil {
+				m.ErrorMsg = err.Error()
+				return result, nil
+			}
+			savedCustomPorts = normalized
+			customPorts = normalized
+		}
 
 		// Extract values from form and create scan config
 		targetAddr, totalHosts, resolvedPorts, err := buildScanConfig(ipInput, cidrInput, portPack, customPorts)
@@ -200,6 +211,16 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			m.ErrorMsg = err.Error()
 			return result, nil
 		}
+		if err := ports.SaveConfig("target", ports.Config{Mode: portPack, Custom: savedCustomPorts}); err != nil {
+			m.ErrorMsg = err.Error()
+			return result, nil
+		}
+
+		// Keep target model state in sync so reopening the view shows saved values.
+		m.IPInput = ipInput
+		m.CIDRInput = cidrInput
+		m.PortPack = portPack
+		m.CustomPorts = savedCustomPorts
 
 		m.ErrorMsg = ""
 		result.StartScan = true
