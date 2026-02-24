@@ -34,7 +34,7 @@ func Render(m Model, maxWidth int) string {
 
 	view := b.String()
 	if m.ShowHelp {
-		return renderHelpOverlay(view)
+		return renderHelpOverlay(view, m)
 	}
 
 	return view
