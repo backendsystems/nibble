@@ -67,6 +67,7 @@ func (m *Model) initializeForm() {
 				Key("cidr").
 				Title("CIDR (16-32)").
 				Placeholder("32").
+				CharLimit(2).
 				DescriptionFunc(func() string {
 					return getHostCountDesc(m)
 				}, &m.CIDRInput).
