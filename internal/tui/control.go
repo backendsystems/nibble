@@ -78,7 +78,12 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 				progress.WithScaledGradient("#FFD700", "#B8B000"),
 			),
 		},
-		target: targetview.NewModel(networkScanner, "", "", targetPack, targetCfg.Custom, ifaces),
+		target: targetview.Model{
+			NetworkScan: networkScanner,
+			PortPack:    targetPack,
+			CustomPorts: targetCfg.Custom,
+			Interfaces:  ifaces,
+		},
 	}
 	initialModel.scan = initialModel.scan.SetViewportSize(scanViewWidth(initialModel.windowW), initialModel.windowH)
 
@@ -151,7 +156,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case viewTarget:
-		result, cmd := m.target.Update(msg)
+		result, cmd := (&m.target).Update(msg)
 		m.target = result.Model
 		if result.Quit {
 			m.main.ErrorMsg = ""
@@ -212,9 +217,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
-			m.target = targetview.NewModel(m.target.NetworkScan, ipInput, cidrInput, m.target.PortPack, m.target.CustomPorts, result.Model.Interfaces)
+			m.target = targetview.Model{
+				NetworkScan: m.target.NetworkScan,
+				IPInput:     ipInput,
+				CIDRInput:   cidrInput,
+				PortPack:    m.target.PortPack,
+				CustomPorts: m.target.CustomPorts,
+				Interfaces:  result.Model.Interfaces,
+			}
 			m.active = viewTarget
-			return m, m.target.Init()
+			return m, (&m.target).Init()
 		}
 		if result.StartScan {
 			m.main.ErrorMsg = ""

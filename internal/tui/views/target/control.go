@@ -28,16 +28,16 @@ type Result struct {
 }
 
 // Init returns the initialization command for the form
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	if m.Form == nil {
-		return nil
+		m.initializeForm()
 	}
 	return m.Form.Init()
 }
 
 // Update handles tea.Msg and delegates to the form
-func (m Model) Update(msg tea.Msg) (Result, tea.Cmd) {
-	result := Result{Model: m}
+func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
+	result := Result{Model: *m}
 
 	// Handle special keys
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
@@ -53,11 +53,11 @@ func (m Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 					// Determine direction: up/k/w = forward, down/j/s = backward
 					forward := keyMsg.String() == "up" || keyMsg.String() == "k" || keyMsg.String() == "w"
 					m.CycleInterfaceIP(forward)
-					result.Model = m
+					result.Model = *m
 					// Recreate the form with the new IP
 					formModel := NewModel(m.NetworkScan, m.IPInput, m.CIDRInput, m.PortPack, m.CustomPorts, m.Interfaces)
 					m.Form = formModel.Form
-					result.Model = m
+					result.Model = *m
 					return result, m.Form.Init()
 				}
 			}
@@ -88,19 +88,19 @@ func (m Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	if f, ok := formModel.(*huh.Form); ok {
 		m.Form = f
 	}
-	result.Model = m
+	result.Model = *m
 	result.Cmd = cmd
 
 	// Check if form is completed
 	if m.Form.State == huh.StateCompleted {
-		selection, err := validateAndBuild(m)
+		selection, err := validateAndBuild(*m)
 		if err != nil {
 			m.ErrorMsg = err.Error()
-			result.Model = m
+			result.Model = *m
 			return result, nil
 		}
 		m.ErrorMsg = ""
-		result.Model = m
+		result.Model = *m
 		result.StartScan = true
 		result.Selection = selection
 		result.SavePorts = true
