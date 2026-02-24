@@ -42,6 +42,11 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 
 	// Handle special keys
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if m.ShowHelp {
+			m.ShowHelp = false
+			return result, nil
+		}
+
 		switch keyMsg.String() {
 		case "q", "esc":
 			// If in custom_ports field, convert to shift+tab to navigate back
@@ -55,6 +60,32 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			}
 			result.Quit = true
 			return result, nil
+		case "?":
+			m.ShowHelp = true
+			return result, nil
+		case "delete":
+			if m.Form == nil {
+				return result, nil
+			}
+			focused := m.Form.GetFocusedField()
+			if focused == nil {
+				return result, nil
+			}
+
+			switch focused.GetKey() {
+			case "ip":
+				m.IPInput = ""
+			case "cidr":
+				m.CIDRInput = ""
+			case "custom_ports":
+				m.CustomPorts = ""
+			default:
+				return result, nil
+			}
+
+			// Rebuild form so the focused input reflects the cleared value.
+			m.initializeForm()
+			return result, m.Form.Init()
 		case "left", "right":
 			// Cycle through interface IPs when IP field is focused
 			if m.Form != nil {

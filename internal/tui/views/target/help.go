@@ -30,15 +30,12 @@ func renderHelpOverlay(view string) string {
 
 	helpContent := strings.Join([]string{
 		titleRow,
-		"Enter a custom target IP and CIDR to scan.",
-		"CIDR range: 16-32 (default: 32 for single host)",
+		"This mode is usefull to scan all ports on a single host, or to scan a custom list of ports on a subnet",
 		"",
-		"• tab/↑↓ or w/s k/j: switch between fields",
-		"• ←/→ or a/d: move cursor, or toggle ports mode",
-		"• type: enter IP, CIDR, or ports",
-		"• backspace: remove character",
-		"• delete: clear ports field",
-		"• enter: start scan",
+		"• tab/↑↓: move through options",
+		"• ←/→: select interface ip",
+		"• delete: clear current field",
+		"• enter: submit",
 		"• q: cancel",
 	}, "\n")
 

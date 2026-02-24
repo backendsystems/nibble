@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	guideText = "q: cancel"
+	guideText = "?: help • q: cancel"
 )
 
 func Render(m Model, maxWidth int) string {
@@ -32,5 +32,10 @@ func Render(m Model, maxWidth int) string {
 	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	b.WriteString(helpStyle.Render(common.WrapWords(guideText, maxWidth)))
 
-	return b.String()
+	view := b.String()
+	if m.ShowHelp {
+		return renderHelpOverlay(view)
+	}
+
+	return view
 }
