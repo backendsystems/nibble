@@ -8,11 +8,11 @@ import (
 
 // HelpConfig defines the content and appearance of a help overlay
 type HelpConfig struct {
-	Title        string
-	Content      []string
-	Width        int // Width of help box (default 56)
-	ViewWidth    int // Width of the view/terminal for centering
-	ViewHeight   int // Height of the view/terminal for placement
+	Title      string
+	Content    []string
+	Width      int // Width of help box (default 56)
+	ViewWidth  int // Width of the view/terminal for centering
+	ViewHeight int // Height of the view/terminal for placement
 }
 
 // RenderHelpOverlay renders a centered help overlay with consistent styling
@@ -31,8 +31,8 @@ func RenderHelpOverlay(view string, config HelpConfig) string {
 	width := config.Width
 	if width == 0 {
 		width = int(float64(viewWidth) * 0.8)
-		if width < 56 {
-			width = 56
+		if width < 46 {
+			width = 46
 		}
 		if width > 80 {
 			width = 80
