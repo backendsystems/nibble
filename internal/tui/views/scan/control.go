@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/backendsystems/nibble/internal/scanner/demo"
+	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/charmbracelet/bubbles/stopwatch"
 
@@ -93,16 +95,23 @@ func (m Model) Start(iface net.Interface, addrs []net.Addr, totalHosts int, targ
 	m.SelectedIface = iface
 	m.SelectedAddrs = addrs
 	m.TotalHosts = totalHosts
+	m.TargetCIDR = targetAddr
 	m.Scanning = true
 	m.ScanComplete = false
 	m.ShouldPrintFinal = false
 	m.FoundHosts = nil
 	m.FinalHosts = nil
+	m.FoundHostsData = nil
+	m.FinalHostsData = nil
 	m.ScannedCount = 0
 	m.NeighborSeen = 0
 	m.NeighborTotal = 0
 	m.ProgressChan = make(chan shared.ProgressUpdate, 256)
 	m.Stopwatch = stopwatch.NewWithInterval(10 * time.Millisecond)
+
+	// Capture ports being scanned
+	m.PortsScanned = getScannedPorts(m.NetworkScan)
+
 	m = m.RefreshResults(false)
 	return m, tea.Batch(m.Stopwatch.Init(), PerformScan(m.NetworkScan, iface.Name, targetAddr, m.ProgressChan))
 }
@@ -205,6 +214,13 @@ func handleCompleteMsg(m Model) Result {
 	result.Model = prepareForExit(result.Model, true)
 	result.Model.Scanning = false
 	result.Model.ScanComplete = true
+
+	// Save scan history
+	if err := result.Model.SaveHistory(); err != nil {
+		// Silently ignore history save errors - don't interrupt user flow
+		_ = err
+	}
+
 	result.Cmd = tea.Batch(m.Stopwatch.Stop(), sendQuitMsg())
 	return result
 }
@@ -223,4 +239,16 @@ func prepareForExit(m Model, shouldPrint bool) Model {
 	m.FoundHosts = nil
 	m.Results.SetContent("")
 	return m
+}
+
+// getScannedPorts extracts the ports being scanned from the scanner
+func getScannedPorts(scanner shared.Scanner) []int {
+	switch s := scanner.(type) {
+	case *ip4.Scanner:
+		return s.Ports
+	case *demo.Scanner:
+		return s.Ports
+	default:
+		return nil
+	}
 }

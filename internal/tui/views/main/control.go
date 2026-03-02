@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const selectionHelpText = "←/→/↑/↓ a/d/w/s h/j/k/l • p: ports • t: target • ?: help • q: quit"
+const selectionHelpText = "←/→/↑/↓ a/d/w/s h/j/k/l • p: ports • t: target • y: history • ?: help • q: quit"
 
 type Action int
 
@@ -20,6 +20,7 @@ const (
 	ActionOpenHelp
 	ActionOpenPorts
 	ActionOpenTarget
+	ActionOpenHistory
 	ActionMoveLeft
 	ActionMoveRight
 	ActionMoveUp
@@ -35,12 +36,13 @@ type ScanSelection struct {
 }
 
 type UpdateResult struct {
-	Model      Model
-	Quit       bool
-	OpenPorts  bool
-	OpenTarget bool
-	StartScan  bool
-	Selection  ScanSelection
+	Model       Model
+	Quit        bool
+	OpenPorts   bool
+	OpenTarget  bool
+	OpenHistory bool
+	StartScan   bool
+	Selection   ScanSelection
 }
 
 func HandleKey(showHelp bool, key string) Action {
@@ -57,6 +59,8 @@ func HandleKey(showHelp bool, key string) Action {
 		return ActionOpenPorts
 	case "t":
 		return ActionOpenTarget
+	case "y":
+		return ActionOpenHistory
 	case "left", "a", "h":
 		return ActionMoveLeft
 	case "right", "d", "l":
@@ -139,22 +143,29 @@ func (m Model) Update(msg tea.KeyMsg) UpdateResult {
 		result.OpenPorts = true
 	case ActionOpenTarget:
 		result.OpenTarget = true
+	case ActionOpenHistory:
+		result.OpenHistory = true
 	case ActionMoveLeft:
 		result.Model.Cursor = MoveCursorLeft(result.Model.Cursor)
 	case ActionMoveRight:
-		// Total cards = interfaces + 1 (target card)
-		maxIndex := len(result.Model.Interfaces)
+		// Total cards = interfaces + 2 (target card + history card)
+		maxIndex := len(result.Model.Interfaces) + 1
 		result.Model.Cursor = MoveCursorRight(result.Model.Cursor, maxIndex)
 	case ActionMoveUp:
 		result.Model.Cursor = MoveCursorUp(result.Model.Cursor, result.Model.CardsPerRow)
 	case ActionMoveDown:
-		// Total cards = interfaces + 1 (target card)
-		maxIndex := len(result.Model.Interfaces)
+		// Total cards = interfaces + 2 (target card + history card)
+		maxIndex := len(result.Model.Interfaces) + 1
 		result.Model.Cursor = MoveCursorDown(result.Model.Cursor, result.Model.CardsPerRow, maxIndex)
 	case ActionStartScan:
 		// Check if target card is selected
 		if result.Model.Cursor == len(result.Model.Interfaces) {
 			result.OpenTarget = true
+			return result
+		}
+		// Check if history card is selected
+		if result.Model.Cursor == len(result.Model.Interfaces)+1 {
+			result.OpenHistory = true
 			return result
 		}
 		selection, err := ResolveScanSelection(result.Model.Interfaces, result.Model.Cursor, result.Model.InterfaceMap)

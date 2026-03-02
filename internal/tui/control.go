@@ -10,6 +10,7 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/demo"
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
+	historyview "github.com/backendsystems/nibble/internal/tui/views/history"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	scanview "github.com/backendsystems/nibble/internal/tui/views/scan"
@@ -27,6 +28,7 @@ const (
 	viewPorts
 	viewScan
 	viewTarget
+	viewHistory
 )
 
 type model struct {
@@ -37,6 +39,7 @@ type model struct {
 	ports   portsview.Model
 	scan    scanview.Model
 	target  targetview.Model
+	history historyview.Model
 }
 
 func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map[string][]net.Addr) error {
@@ -157,6 +160,53 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.active = viewMain
 		}
 		return m, result.Cmd
+	case viewHistory:
+		result := m.history.Update(msg)
+		m.history = result.Model
+
+		if result.Quit {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+			return m, nil
+		}
+
+		if result.ScanAllPorts {
+			// Launch all-port scan on selected host
+			hostIP := result.SelectedHostIP
+			targetCIDR := hostIP + "/32"
+
+			// Set scanner to scan all ports
+			allPorts := make([]int, 65535)
+			for i := 0; i < 65535; i++ {
+				allPorts[i] = i + 1
+			}
+
+			switch s := m.scan.NetworkScan.(type) {
+			case *ip4.Scanner:
+				s.Ports = allPorts
+			case *demo.Scanner:
+				s.Ports = allPorts
+			}
+
+			// Start the scan (empty interface for target scans)
+			nextScan, scanCmd := m.scan.Start(
+				net.Interface{},
+				nil,
+				1,
+				targetCIDR,
+			)
+
+			// Mark as rescan to update history file
+			nextScan.IsRescan = true
+			nextScan.RescanHistoryPath = result.ScanHistoryPath
+
+			nextScan = nextScan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
+			m.scan = nextScan
+			m.active = viewScan
+			return m, tea.Sequence(exitAltScreenCmd(), scanCmd)
+		}
+
+		return m, nil
 	case viewTarget:
 		result, cmd := (&m.target).Update(msg)
 		// Note: m.target is updated in place to preserve form bindings
@@ -237,6 +287,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.active = viewTarget
 			return m, (&m.target).Init()
 		}
+		if result.OpenHistory {
+			m.history = historyview.Model{
+				WindowW: m.windowW,
+				WindowH: m.windowH,
+			}
+			m.active = viewHistory
+			return m, m.history.Init()
+		}
 		if result.StartScan {
 			m.main.ErrorMsg = ""
 			nextScan, cmd := m.scan.Start(
@@ -265,6 +323,8 @@ func (m model) View() string {
 		return portsview.Render(m.ports, maxWidth)
 	case viewTarget:
 		return targetview.Render(m.target, maxWidth)
+	case viewHistory:
+		return historyview.Render(m.history, maxWidth)
 	default:
 		return mainview.Render(m.main, maxWidth)
 	}
