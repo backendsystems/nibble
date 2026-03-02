@@ -1,0 +1,18 @@
+package historydetailview
+
+import "github.com/backendsystems/nibble/internal/tui/views/common"
+
+func renderHelpOverlay(view string, maxWidth int) string {
+	return common.RenderHelpOverlay(view, common.HelpConfig{
+		Title:     "Scan Details",
+		ViewWidth: maxWidth,
+		Content: []string{
+			"View scan results and rescan hosts with all ports.",
+			"• ↑/↓: select host",
+			"• enter: rescan all 65535 ports",
+			"• q: back",
+			"",
+			"any key: close",
+		},
+	})
+}

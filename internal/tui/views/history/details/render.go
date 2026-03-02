@@ -91,17 +91,17 @@ func Render(m Model, maxWidth int) string {
 		}
 	}
 
-	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • q: back"))
-
-	if m.ShowHelp {
-		b.WriteString("\n\n" + mutedStyle.Render("Press Enter on a host to scan all 65535 ports"))
-	}
+	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • q: back • ?: help"))
 
 	if m.ErrorMsg != "" {
 		b.WriteString("\n\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render("Error: "+m.ErrorMsg))
 	}
 
-	return b.String()
+	view := b.String()
+	if m.ShowHelp {
+		return renderHelpOverlay(view, maxWidth)
+	}
+	return view
 }
 
 func formatPorts(ports []int) string {
