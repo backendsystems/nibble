@@ -195,6 +195,42 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 func handleDetailKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	result := UpdateResult{Model: m}
 
+	// Handle delete dialog in detail view
+	if m.DeleteDialog != nil {
+		switch key.String() {
+		case "left", "a", "h", "right", "d", "l":
+			// Toggle between Delete/Cancel
+			result.Model.DeleteDialog.CursorOnYes = !result.Model.DeleteDialog.CursorOnYes
+			return result
+		case "enter":
+			// User pressed Enter - execute the selected action
+			if result.Model.DeleteDialog.CursorOnYes {
+				// Delete was selected
+				expandedState := collectExpandedState(result.Model.Tree)
+				performDeleteSync(result.Model.DeleteDialog.Target)
+
+				// Reload tree and restore expanded state
+				tree, _ := buildHistoryTree()
+				restoreExpandedState(tree, expandedState)
+				result.Model.Tree = tree
+				result.Model.FlatList = flattenTree(tree)
+			}
+			// Close dialog (whether Delete or Cancel was selected)
+			result.Model.DeleteDialog = nil
+			return result
+		default:
+			// Any other key closes the dialog and returns to detail view
+			result.Model.DeleteDialog = nil
+			return result
+		}
+	}
+
+	// Accept any key to close help overlay
+	if m.ShowHelp {
+		result.Model.ShowHelp = false
+		return result
+	}
+
 	switch key.String() {
 	case "q", "esc":
 		// Go back to list view

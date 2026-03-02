@@ -137,9 +137,13 @@ func renderDetail(m Model, maxWidth int) string {
 
 	view := b.String()
 
-	// Show help overlay if active
+	// Show overlays (help takes precedence over delete dialog)
 	if m.ShowHelp {
 		return renderDetailHelpOverlay(view, m.WindowW, m.WindowH)
+	}
+
+	if m.DeleteDialog != nil {
+		return m.DeleteDialog.Render(view, m.WindowW, m.WindowH)
 	}
 
 	return view
