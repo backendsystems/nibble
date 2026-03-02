@@ -130,17 +130,25 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 			// User pressed Enter - execute the selected action
 			if result.Model.DeleteDialog.CursorOnYes {
 				// Delete was selected
+				// Remember which nodes were expanded before deletion
+				expandedState := collectExpandedState(result.Model.Tree)
+				currentCursor := result.Model.Cursor
+
 				performDeleteSync(result.Model.DeleteDialog.Target)
-				// Reload tree synchronously
+
+				// Reload tree and restore expanded state
 				tree, _ := buildHistoryTree()
+				restoreExpandedState(tree, expandedState)
 				result.Model.Tree = tree
 				result.Model.FlatList = flattenTree(tree)
-				// Adjust cursor if it's out of bounds
-				if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
+
+				// Keep cursor at same position, or adjust if out of bounds
+				if currentCursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
 					result.Model.Cursor = len(result.Model.FlatList) - 1
-				}
-				if len(result.Model.FlatList) == 0 {
+				} else if len(result.Model.FlatList) == 0 {
 					result.Model.Cursor = 0
+				} else {
+					result.Model.Cursor = currentCursor
 				}
 			}
 			// Close dialog (whether Delete or Cancel was selected)
@@ -410,6 +418,32 @@ func flattenTree(tree []*TreeNode) []*TreeNode {
 		}
 	}
 	return flat
+}
+
+// collectExpandedState collects the names of all expanded nodes
+func collectExpandedState(tree []*TreeNode) map[string]bool {
+	state := make(map[string]bool)
+	for _, node := range tree {
+		if node.Expanded {
+			state[node.Name] = true
+		}
+		// Recursively collect from children
+		for k, v := range collectExpandedState(node.Children) {
+			state[k] = v
+		}
+	}
+	return state
+}
+
+// restoreExpandedState restores the expanded state to matching nodes
+func restoreExpandedState(tree []*TreeNode, state map[string]bool) {
+	for _, node := range tree {
+		if state[node.Name] {
+			node.Expanded = true
+		}
+		// Recursively restore children
+		restoreExpandedState(node.Children, state)
+	}
 }
 
 func filterTree(tree []*TreeNode, filter string) []*TreeNode {

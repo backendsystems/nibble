@@ -121,6 +121,7 @@ func ListAll() ([]ScanHistory, []string, error) {
 }
 
 // UpdateHostInScan updates a specific host in an existing scan history
+// Completely replaces the host data since rescans assume everything can change
 func UpdateHostInScan(path string, hostIP string, newHost HostResult) error {
 	history, err := Load(path)
 	if err != nil {
@@ -130,7 +131,7 @@ func UpdateHostInScan(path string, hostIP string, newHost HostResult) error {
 	// Update the scan's updated timestamp
 	history.ScanMetadata.Updated = time.Now()
 
-	// Find and update the host
+	// Find and replace the host completely
 	found := false
 	for i, host := range history.ScanResults.Hosts {
 		if host.IP == hostIP {
