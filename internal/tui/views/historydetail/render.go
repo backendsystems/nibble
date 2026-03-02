@@ -91,7 +91,7 @@ func Render(m Model, maxWidth int) string {
 		}
 	}
 
-	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • Esc: back"))
+	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • q: back"))
 
 	if m.ShowHelp {
 		b.WriteString("\n\n" + mutedStyle.Render("Press Enter on a host to scan all 65535 ports"))

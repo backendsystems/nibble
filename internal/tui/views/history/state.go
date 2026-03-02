@@ -2,7 +2,6 @@ package historyview
 
 import (
 	"github.com/backendsystems/nibble/internal/history"
-	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 )
 
@@ -38,9 +37,6 @@ type Model struct {
 	Cursor       int
 	ShowHelp     bool
 	DeleteDialog *DeleteDialog // nil when not shown
-	FilterInput  textinput.Model
-	FilterActive bool
-	FilterText   string
 	ErrorMsg     string
 	Viewport     viewport.Model
 	WindowW      int

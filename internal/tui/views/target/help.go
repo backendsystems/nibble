@@ -19,8 +19,8 @@ func renderMainHelpOverlay(view string, maxWidth int) string {
 			"• tab/↑↓: move through options",
 			"• ←/→: select interface ip",
 			"• enter: submit",
-			"• q: cancel",
-			"• enter: submit",
+			"",
+			"any key: close",
 		},
 	})
 }
@@ -35,7 +35,7 @@ func renderPortsHelpOverlay(view string, maxWidth int) string {
 			"• type digits, commas, and ranges (e.g. 8000-9000)",
 			"• backspace: remove",
 			"• delete: clear all",
-			"• q: cancel",
+			"• q: back",
 			"• enter: save and return",
 		},
 	})

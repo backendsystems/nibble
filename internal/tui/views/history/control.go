@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/backendsystems/nibble/internal/history"
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -23,11 +22,10 @@ const (
 	ActionDelete
 	ActionConfirmYes
 	ActionConfirmNo
-	ActionFilter
 	ActionHelp
 )
 
-func HandleKey(key string, inDeleteDialog bool, inFilter bool) Action {
+func HandleKey(key string, inDeleteDialog bool) Action {
 	if inDeleteDialog {
 		switch key {
 		case "left", "a", "h", "right", "d", "l":
@@ -38,15 +36,6 @@ func HandleKey(key string, inDeleteDialog bool, inFilter bool) Action {
 			return ActionConfirmNo // Cancel
 		default:
 			return ActionNone
-		}
-	}
-
-	if inFilter {
-		switch key {
-		case "esc":
-			return ActionFilter // Toggle off
-		default:
-			return ActionNone // Let textinput handle it
 		}
 	}
 
@@ -63,8 +52,6 @@ func HandleKey(key string, inDeleteDialog bool, inFilter bool) Action {
 		return ActionCollapse
 	case "delete":
 		return ActionDelete
-	case "/":
-		return ActionFilter
 	case "?":
 		return ActionHelp
 	default:
@@ -73,11 +60,6 @@ func HandleKey(key string, inDeleteDialog bool, inFilter bool) Action {
 }
 
 func (m Model) Init() tea.Cmd {
-	// Initialize filter input
-	ti := textinput.New()
-	ti.Placeholder = "Filter scans..."
-	ti.CharLimit = 50
-	m.FilterInput = ti
 	return loadTreeCmd()
 }
 
@@ -106,18 +88,8 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 		return handleDetailKeyMsg(m, key)
 	}
 
-	// If filter is active, handle textinput
-	if m.FilterActive {
-		var cmd tea.Cmd
-		result.Model.FilterInput, cmd = m.FilterInput.Update(key)
-		result.Model.FilterText = result.Model.FilterInput.Value()
-		result.Model.FlatList = filterTree(result.Model.Tree, result.Model.FilterText)
-		_ = cmd
-		return result
-	}
-
 	inDeleteDialog := m.DeleteDialog != nil
-	action := HandleKey(key.String(), inDeleteDialog, m.FilterActive)
+	action := HandleKey(key.String(), inDeleteDialog)
 
 	// Handle delete dialog actions
 	if inDeleteDialog {
@@ -163,16 +135,6 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	}
 
 	switch action {
-	case ActionFilter:
-		result.Model.FilterActive = !result.Model.FilterActive
-		if result.Model.FilterActive {
-			result.Model.FilterInput.Focus()
-		} else {
-			result.Model.FilterInput.Blur()
-			result.Model.FilterText = ""
-			result.Model.FilterInput.SetValue("")
-			result.Model.FlatList = flattenTree(result.Model.Tree)
-		}
 	case ActionQuit:
 		result.Quit = true
 	case ActionMoveUp:
@@ -446,44 +408,4 @@ func restoreExpandedState(tree []*TreeNode, state map[string]bool) {
 	}
 }
 
-func filterTree(tree []*TreeNode, filter string) []*TreeNode {
-	if filter == "" {
-		return flattenTree(tree)
-	}
-
-	filter = strings.ToLower(filter)
-	var filtered []*TreeNode
-
-	for _, node := range tree {
-		if matchesFilter(node, filter) {
-			filtered = append(filtered, node)
-			if node.Expanded {
-				filtered = append(filtered, filterTree(node.Children, filter)...)
-			}
-		}
-	}
-
-	return filtered
-}
-
-func matchesFilter(node *TreeNode, filter string) bool {
-	// Match against node name
-	if strings.Contains(strings.ToLower(node.Name), filter) {
-		return true
-	}
-
-	// For scan nodes, also match against metadata
-	if node.Type == NodeScan && node.ScanData != nil {
-		// Match against CIDR
-		if strings.Contains(strings.ToLower(node.ScanData.ScanMetadata.TargetCIDR), filter) {
-			return true
-		}
-		// Match against interface name
-		if strings.Contains(strings.ToLower(node.ScanData.ScanMetadata.InterfaceName), filter) {
-			return true
-		}
-	}
-
-	return false
-}
 

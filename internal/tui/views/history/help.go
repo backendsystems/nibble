@@ -13,8 +13,8 @@ func renderListHelpOverlay(view string, viewWidth, viewHeight int) string {
 			"• →: expand folder or view scan",
 			"• ←: collapse folder",
 			"• Del: delete",
-			"• /: filter",
-			"• q: back",
+			"",
+			"any key: close",
 		},
 	})
 }

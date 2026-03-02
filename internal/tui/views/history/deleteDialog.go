@@ -62,7 +62,7 @@ func (d DeleteDialog) Render(view string, viewWidth, viewHeight int) string {
 	}
 
 	buttons := lipgloss.JoinHorizontal(lipgloss.Left, deleteBtn, cancelBtn)
-	help := common.HelpTextStyle.Render("←/→: navigate • Enter: select • Esc: cancel")
+	help := common.HelpTextStyle.Render("←/→: navigate • Enter: select • q: back")
 
 	// Combine content
 	content := strings.Join([]string{
@@ -86,14 +86,13 @@ func (d DeleteDialog) Render(view string, viewWidth, viewHeight int) string {
 	// Create overlay with common style
 	overlay := common.HelpBoxStyle.Width(width).Render(content)
 
-	// Place overlay over the view
+	// Place overlay over the view (top-centered like help dialog)
 	return lipgloss.Place(
 		viewWidth,
 		viewHeight,
 		lipgloss.Center,
-		lipgloss.Center,
+		lipgloss.Top,
 		overlay,
 		lipgloss.WithWhitespaceChars(" "),
-		lipgloss.WithWhitespaceForeground(lipgloss.Color("0")),
 	)
 }

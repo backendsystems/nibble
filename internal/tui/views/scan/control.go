@@ -13,7 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const scanHelpText = "j/k or ↑/↓: scroll • q: quit"
+const scanHelpText = "j/k or ↑/↓: scroll • q: back"
 
 // appendIfNew appends host to hosts only if no existing entry has the same IP.
 func appendIfNew(hosts []string, host string) []string {

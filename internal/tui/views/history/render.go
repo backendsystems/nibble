@@ -40,13 +40,7 @@ func renderList(m Model, maxWidth int) string {
 	}
 
 	b.WriteString("\n")
-
-	if m.FilterActive {
-		b.WriteString("Filter: " + m.FilterInput.View() + "\n")
-		b.WriteString(helpStyle.Render("Esc: cancel filter"))
-	} else {
-		b.WriteString(helpStyle.Render("wasd/hjkl/arrows: navigate • Enter: view • Del: delete • /: filter • Esc: back"))
-	}
+	b.WriteString(helpStyle.Render("↑/↓/←/→ • Enter • Del: delete • ?: help • q: back"))
 
 	if m.ErrorMsg != "" {
 		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))
@@ -139,7 +133,7 @@ func renderDetail(m Model, maxWidth int) string {
 		}
 	}
 
-	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • ?: help • Esc: back"))
+	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • ?: help • q: back"))
 
 	view := b.String()
 
