@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 	"github.com/charmbracelet/lipgloss"
 )
 
 var (
-	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("15"))
-	selectedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("226")).Bold(true)
-	normalStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
-	mutedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	helpStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	titleStyle    = common.TitleStyle
+	selectedStyle = common.HighlightStyle
+	normalStyle   = lipgloss.NewStyle().Foreground(common.Color.Info)
+	mutedStyle    = common.HelpTextStyle
+	helpStyle     = common.HelpTextStyle
 	folderStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("33"))
-	scanStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
+	scanStyle     = lipgloss.NewStyle().Foreground(common.Color.Info)
 )
 
 func Render(m Model, maxWidth int) string {
@@ -28,10 +29,6 @@ func renderList(m Model, maxWidth int) string {
 	var b strings.Builder
 
 	b.WriteString(titleStyle.Render("Scan History") + "\n\n")
-
-	if m.ShowDeleteConfirm {
-		return renderDeleteConfirmation(m, maxWidth)
-	}
 
 	if len(m.Tree) == 0 {
 		b.WriteString(mutedStyle.Render("No scan history found\n"))
@@ -48,18 +45,25 @@ func renderList(m Model, maxWidth int) string {
 		b.WriteString("Filter: " + m.FilterInput.View() + "\n")
 		b.WriteString(helpStyle.Render("Esc: cancel filter"))
 	} else {
-		b.WriteString(helpStyle.Render("↑/↓: navigate • →/←: expand/collapse • Enter: view • d: delete • /: filter • Esc: back"))
-	}
-
-	if m.ShowHelp {
-		b.WriteString("\n\n" + mutedStyle.Render("Navigate folders and select scans to view details"))
+		b.WriteString(helpStyle.Render("wasd/hjkl/arrows: navigate • Enter: view • Del: delete • /: filter • Esc: back"))
 	}
 
 	if m.ErrorMsg != "" {
-		b.WriteString("\n\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render("Error: "+m.ErrorMsg))
+		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))
 	}
 
-	return b.String()
+	view := b.String()
+
+	// Show overlays (help takes precedence over delete dialog)
+	if m.ShowHelp {
+		return renderListHelpOverlay(view, m.WindowW, m.WindowH)
+	}
+
+	if m.DeleteDialog != nil {
+		return m.DeleteDialog.Render(view, m.WindowW, m.WindowH)
+	}
+
+	return view
 }
 
 func renderDetail(m Model, maxWidth int) string {
@@ -135,9 +139,16 @@ func renderDetail(m Model, maxWidth int) string {
 		}
 	}
 
-	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • Esc: back"))
+	b.WriteString(helpStyle.Render("w/s k/j ↑/↓: select host • Enter: scan all ports • ?: help • Esc: back"))
 
-	return b.String()
+	view := b.String()
+
+	// Show help overlay if active
+	if m.ShowHelp {
+		return renderDetailHelpOverlay(view, m.WindowW, m.WindowH)
+	}
+
+	return view
 }
 
 func formatDetailPorts(ports []int) string {
@@ -151,37 +162,6 @@ func formatDetailPorts(ports []int) string {
 	// Show actual ports with ranges
 	ranges := buildPortRanges(ports)
 	return strings.Join(ranges, ", ")
-}
-
-func renderDeleteConfirmation(m Model, maxWidth int) string {
-	var b strings.Builder
-
-	b.WriteString(titleStyle.Render("Delete Confirmation") + "\n\n")
-
-	if m.DeleteTarget != nil {
-		var itemType string
-		var itemName string
-
-		switch m.DeleteTarget.Type {
-		case NodeScan:
-			itemType = "scan"
-			itemName = m.DeleteTarget.Name
-		case NodeNetwork:
-			itemType = "all scans in network"
-			itemName = m.DeleteTarget.Name
-		case NodeInterface:
-			itemType = "all scans on interface"
-			itemName = m.DeleteTarget.Name
-		}
-
-		warningStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
-		b.WriteString(warningStyle.Render(fmt.Sprintf("Delete %s: %s?", itemType, itemName)) + "\n\n")
-		b.WriteString(mutedStyle.Render("This action cannot be undone.") + "\n\n")
-	}
-
-	b.WriteString(helpStyle.Render("y: yes, delete • n: no, cancel"))
-
-	return b.String()
 }
 
 func renderNode(b *strings.Builder, node *TreeNode, isSelected bool) {

@@ -32,26 +32,25 @@ const (
 )
 
 type Model struct {
-	Mode              ViewMode
-	Tree              []*TreeNode
-	FlatList          []*TreeNode // Flattened view of expanded tree
-	Cursor            int
-	ShowHelp          bool
-	ShowDeleteConfirm bool
-	DeleteTarget      *TreeNode // Node pending deletion
-	FilterInput       textinput.Model
-	FilterActive      bool
-	FilterText        string
-	ErrorMsg          string
-	Viewport          viewport.Model
-	WindowW           int
-	WindowH           int
+	Mode         ViewMode
+	Tree         []*TreeNode
+	FlatList     []*TreeNode // Flattened view of expanded tree
+	Cursor       int
+	ShowHelp     bool
+	DeleteDialog *DeleteDialog // nil when not shown
+	FilterInput  textinput.Model
+	FilterActive bool
+	FilterText   string
+	ErrorMsg     string
+	Viewport     viewport.Model
+	WindowW      int
+	WindowH      int
 
 	// Detail view state
-	DetailHistory     *history.ScanHistory
-	DetailPath        string
-	DetailCursor      int
-	DetailViewport    viewport.Model
+	DetailHistory  *history.ScanHistory
+	DetailPath     string
+	DetailCursor   int
+	DetailViewport viewport.Model
 }
 
 type UpdateResult struct {

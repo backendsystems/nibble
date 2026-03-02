@@ -27,13 +27,15 @@ const (
 	ActionHelp
 )
 
-func HandleKey(key string, inDeleteConfirm bool, inFilter bool) Action {
-	if inDeleteConfirm {
+func HandleKey(key string, inDeleteDialog bool, inFilter bool) Action {
+	if inDeleteDialog {
 		switch key {
-		case "y", "Y":
-			return ActionConfirmYes
-		case "n", "N", "esc", "q":
-			return ActionConfirmNo
+		case "left", "a", "h", "right", "d", "l":
+			return ActionToggle // Toggle between Delete/Cancel
+		case "enter":
+			return ActionConfirmYes // Confirm selection
+		case "esc", "q":
+			return ActionConfirmNo // Cancel
 		default:
 			return ActionNone
 		}
@@ -51,15 +53,15 @@ func HandleKey(key string, inDeleteConfirm bool, inFilter bool) Action {
 	switch key {
 	case "q", "esc":
 		return ActionQuit
-	case "up", "k":
+	case "up", "w", "k":
 		return ActionMoveUp
-	case "down", "j":
+	case "down", "s", "j":
 		return ActionMoveDown
-	case "enter", "right", "l":
+	case "enter", "right", "d", "l":
 		return ActionToggle
-	case "left", "h":
+	case "left", "a", "h":
 		return ActionCollapse
-	case "d":
+	case "delete":
 		return ActionDelete
 	case "/":
 		return ActionFilter
@@ -114,7 +116,45 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 		return result
 	}
 
-	switch HandleKey(key.String(), m.ShowDeleteConfirm, m.FilterActive) {
+	inDeleteDialog := m.DeleteDialog != nil
+	action := HandleKey(key.String(), inDeleteDialog, m.FilterActive)
+
+	// Handle delete dialog actions
+	if inDeleteDialog {
+		switch action {
+		case ActionToggle:
+			// Toggle between Delete and Cancel
+			result.Model.DeleteDialog.CursorOnYes = !result.Model.DeleteDialog.CursorOnYes
+			return result
+		case ActionConfirmYes:
+			// User pressed Enter - execute the selected action
+			if result.Model.DeleteDialog.CursorOnYes {
+				// Delete was selected
+				performDeleteSync(result.Model.DeleteDialog.Target)
+				// Reload tree synchronously
+				tree, _ := buildHistoryTree()
+				result.Model.Tree = tree
+				result.Model.FlatList = flattenTree(tree)
+				// Adjust cursor if it's out of bounds
+				if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
+					result.Model.Cursor = len(result.Model.FlatList) - 1
+				}
+				if len(result.Model.FlatList) == 0 {
+					result.Model.Cursor = 0
+				}
+			}
+			// Close dialog (whether Delete or Cancel was selected)
+			result.Model.DeleteDialog = nil
+			return result
+		case ActionConfirmNo:
+			// User pressed Esc - cancel
+			result.Model.DeleteDialog = nil
+			return result
+		}
+		return result
+	}
+
+	switch action {
 	case ActionFilter:
 		result.Model.FilterActive = !result.Model.FilterActive
 		if result.Model.FilterActive {
@@ -125,29 +165,6 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 			result.Model.FilterInput.SetValue("")
 			result.Model.FlatList = flattenTree(result.Model.Tree)
 		}
-	case ActionConfirmYes:
-		// User confirmed deletion
-		result.Model.ShowDeleteConfirm = false
-		if result.Model.DeleteTarget != nil {
-			// Perform delete - we'll handle the async reload differently
-			performDeleteSync(result.Model.DeleteTarget)
-			result.Model.DeleteTarget = nil
-			// Reload tree synchronously
-			tree, _ := buildHistoryTree()
-			result.Model.Tree = tree
-			result.Model.FlatList = flattenTree(tree)
-			// Adjust cursor if it's out of bounds
-			if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
-				result.Model.Cursor = len(result.Model.FlatList) - 1
-			}
-			if len(result.Model.FlatList) == 0 {
-				result.Model.Cursor = 0
-			}
-		}
-	case ActionConfirmNo:
-		// User cancelled deletion
-		result.Model.ShowDeleteConfirm = false
-		result.Model.DeleteTarget = nil
 	case ActionQuit:
 		result.Quit = true
 	case ActionMoveUp:
@@ -185,9 +202,11 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	case ActionDelete:
 		if len(result.Model.FlatList) > 0 && result.Model.Cursor < len(result.Model.FlatList) {
 			node := result.Model.FlatList[result.Model.Cursor]
-			// Show confirmation dialog
-			result.Model.ShowDeleteConfirm = true
-			result.Model.DeleteTarget = node
+			// Show delete dialog
+			result.Model.DeleteDialog = &DeleteDialog{
+				Target:      node,
+				CursorOnYes: false, // Start on Cancel (safer default)
+			}
 		}
 	case ActionHelp:
 		result.Model.ShowHelp = !result.Model.ShowHelp
@@ -205,11 +224,11 @@ func handleDetailKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 		result.Model.Mode = ViewList
 		result.Model.DetailHistory = nil
 		result.Model.DetailPath = ""
-	case "up", "k":
+	case "up", "w", "k":
 		if result.Model.DetailCursor > 0 {
 			result.Model.DetailCursor--
 		}
-	case "down", "j":
+	case "down", "s", "j":
 		if result.Model.DetailHistory != nil && result.Model.DetailCursor < len(result.Model.DetailHistory.ScanResults.Hosts)-1 {
 			result.Model.DetailCursor++
 		}
@@ -220,6 +239,8 @@ func handleDetailKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 			result.SelectedHostIP = result.Model.DetailHistory.ScanResults.Hosts[result.Model.DetailCursor].IP
 			result.ScanHistoryPath = result.Model.DetailPath
 		}
+	case "?":
+		result.Model.ShowHelp = !result.Model.ShowHelp
 	}
 
 	return result

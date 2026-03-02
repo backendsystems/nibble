@@ -130,6 +130,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.windowH = resize.Height
 		m.main.CardsPerRow = mainview.CardsPerRow(resize.Width)
 		m.scan = m.scan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
+		m.history.WindowW = resize.Width
+		m.history.WindowH = resize.Height
 		return m, nil
 	}
 
