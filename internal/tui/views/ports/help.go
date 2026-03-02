@@ -13,8 +13,9 @@ func renderHelpOverlay(view string, maxWidth int) string {
 			"• type digits, commas, and ranges (e.g. 8000-9000)",
 			"• backspace: remove",
 			"• delete: clear all",
-			"• q: cancel",
 			"• enter: save and return",
+			"",
+			"any key: close",
 		},
 	})
 }

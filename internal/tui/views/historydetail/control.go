@@ -58,6 +58,16 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	result := UpdateResult{Model: m}
 
+	// Accept any key to close help overlay
+	if m.ShowHelp {
+		result.Model.ShowHelp = false
+		// Update viewport for scrolling
+		var cmd tea.Cmd
+		result.Model.Viewport, cmd = m.Viewport.Update(key)
+		_ = cmd
+		return result
+	}
+
 	switch HandleKey(key.String()) {
 	case ActionQuit:
 		result.Quit = true

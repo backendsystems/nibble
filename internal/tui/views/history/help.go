@@ -28,7 +28,8 @@ func renderDetailHelpOverlay(view string, viewWidth, viewHeight int) string {
 			"View scan results and rescan hosts with all ports.",
 			"• ↑/↓: select host",
 			"• enter: rescan all 65535 ports",
-			"• q: back",
+			"",
+			"any key: close",
 		},
 	})
 }

@@ -61,6 +61,7 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	// --- Stage 1: huh form (ip/cidr/port_mode) ---
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		if m.ShowHelp {
+			// Accept any key to close help overlay
 			m.ShowHelp = false
 			return result, nil
 		}
@@ -205,12 +206,12 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 		if portPack == "custom" {
 			// Transition to stage 2 (custom port textinput)
 			m.InCustomPortInput = true
-			m.PortInput.Value = m.CustomPorts  // seed from saved value
+			m.PortInput.Value = m.CustomPorts // seed from saved value
 			m.PortInput.Cursor = len(m.CustomPorts)
-			m.PortInput.Ready = false           // force re-init
+			m.PortInput.Ready = false // force re-init
 			var prepCmd tea.Cmd
 			m.PortInput, prepCmd = m.PortInput.Prepare(true)
-			m.Form.State = huh.StateNormal      // reset so form doesn't show as complete
+			m.Form.State = huh.StateNormal // reset so form doesn't show as complete
 			return result, prepCmd
 		}
 
@@ -242,6 +243,7 @@ func (m *Model) updateCustomPortInput(msg tea.Msg) (Result, tea.Cmd) {
 	keyMsg := msg.(tea.KeyMsg)
 
 	if m.ShowHelp {
+		// Accept any key to close help overlay
 		m.ShowHelp = false
 		return result, nil
 	}

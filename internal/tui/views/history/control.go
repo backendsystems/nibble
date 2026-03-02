@@ -39,6 +39,7 @@ func HandleKey(key string, inDeleteDialog bool) Action {
 		}
 	}
 
+	// Accept any key to close help overlay if in help mode (handled in Update logic)
 	switch key {
 	case "q", "esc":
 		return ActionQuit
@@ -131,6 +132,12 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 			result.Model.DeleteDialog = nil
 			return result
 		}
+		return result
+	}
+
+	// Accept any key to close help overlay
+	if m.ShowHelp {
+		result.Model.ShowHelp = false
 		return result
 	}
 
@@ -252,7 +259,6 @@ func loadTreeCmd() tea.Cmd {
 		return treeLoadedMsg{tree: tree}
 	}
 }
-
 
 func buildHistoryTree() ([]*TreeNode, error) {
 	baseDir, err := history.HistoryDir()
@@ -407,5 +413,3 @@ func restoreExpandedState(tree []*TreeNode, state map[string]bool) {
 		restoreExpandedState(node.Children, state)
 	}
 }
-
-
