@@ -8,8 +8,8 @@ func renderHelpOverlay(view string, maxWidth int) string {
 		ViewWidth: maxWidth,
 		Content: []string{
 			"Configure which ports get scanned.",
-			"• tab/↑↓ or w/s k/j: switch default/custom mode",
-			"• ←/→ or a/d or h/l: move cursor in custom list",
+			"• tab/↑↓: switch default/custom mode",
+			"• ←/→: move cursor in custom list",
 			"• type digits, commas, and ranges (e.g. 8000-9000)",
 			"• backspace: remove",
 			"• delete: clear all",

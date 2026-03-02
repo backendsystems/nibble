@@ -139,7 +139,7 @@ func renderDetail(m Model, maxWidth int) string {
 		}
 	}
 
-	b.WriteString(helpStyle.Render("w/s k/j ↑/↓: select host • Enter: scan all ports • ?: help • Esc: back"))
+	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • ?: help • Esc: back"))
 
 	view := b.String()
 
