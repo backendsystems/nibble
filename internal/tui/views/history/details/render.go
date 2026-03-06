@@ -94,12 +94,11 @@ func Render(m Model, windowWidth, windowHeight int) string {
 					isNewPort = m.NewPortsByHost[host.IP][port.Port]
 				}
 
-				// Use green if all ports scanned, yellow if newly found, normal otherwise
+				// Use green if all ports scanned or newly found, normal otherwise
 				if allPortsScanned {
 					content.WriteString(common.ProgressGreenStyle.Render(portLine) + "\n")
 				} else if isNewPort {
-					// Yellow for newly found ports
-					content.WriteString(common.HighlightStyle.Render(portLine) + "\n")
+					content.WriteString(common.ProgressGreenStyle.Render(portLine) + "\n")
 				} else {
 					content.WriteString(portLine + "\n")
 				}

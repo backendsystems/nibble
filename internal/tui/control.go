@@ -11,8 +11,8 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/demo"
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
-	historydetailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	historyview "github.com/backendsystems/nibble/internal/tui/views/history"
+	historydetailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	scanview "github.com/backendsystems/nibble/internal/tui/views/scan"
@@ -189,12 +189,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				allPorts[i] = i + 1
 			}
 
-			switch s := m.scan.NetworkScan.(type) {
-			case *ip4.Scanner:
-				s.Ports = allPorts
-			case *demo.Scanner:
-				s.Ports = allPorts
-			}
+			detailScanner := scannerWithPorts(m.scan.NetworkScan, allPorts)
 
 			// Start the scan in background, keep details view visible
 			m.history.Details.Scanning = true
@@ -207,7 +202,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Start the scan and let it drive the progress loop
 			scanCmd := tea.Batch(
 				m.history.Details.Stopwatch.Init(),
-				performDetailScan(m.scan.NetworkScan, targetCIDR, m.history.Details.ProgressChan),
+				performDetailScan(detailScanner, targetCIDR, m.history.Details.ProgressChan),
 			)
 			return m, scanCmd
 		}
@@ -320,6 +315,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 }
 
+func scannerWithPorts(base shared.Scanner, ports []int) shared.Scanner {
+	switch base.(type) {
+	case *ip4.Scanner:
+		return &ip4.Scanner{Ports: ports}
+	case *demo.Scanner:
+		return &demo.Scanner{Ports: ports}
+	default:
+		return base
+	}
+}
+
 func (m model) View() string {
 	maxWidth := scanViewWidth(m.windowW)
 	switch m.active {
@@ -398,4 +404,3 @@ func performDetailScan(networkScanner shared.Scanner, targetAddr string, progres
 		return historydetailsview.ProgressMsg{Update: progress}
 	}
 }
-

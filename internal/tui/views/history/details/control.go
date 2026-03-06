@@ -132,6 +132,15 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 
 	switch HandleKey(key.String()) {
 	case ActionQuit:
+		if m.Scanning {
+			result.Model.Scanning = false
+			result.Model.ProgressChan = nil
+			result.Model.ScannedHostStr = ""
+			result.Cmd = tea.Batch(
+				m.Stopwatch.Stop(),
+				drainProgressChan(m.ProgressChan),
+			)
+		}
 		result.Quit = true
 		return result
 	case ActionMoveUp:
@@ -170,6 +179,19 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	return result
 }
 
+func drainProgressChan(ch <-chan shared.ProgressUpdate) tea.Cmd {
+	return func() tea.Msg {
+		if ch == nil {
+			return nil
+		}
+		go func() {
+			for range ch {
+			}
+		}()
+		return nil
+	}
+}
+
 func performDeleteSync(path string) {
 	if path != "" {
 		history.Delete(path)
@@ -186,11 +208,56 @@ func handleProgressMsg(m Model, msg ProgressMsg) UpdateResult {
 		result.Model.ScannedCount = p.Scanned
 		if p.Host != "" {
 			result.Model.ScannedHostStr = p.Host
+			result.Model = applyLiveHostUpdate(result.Model, p.Host)
 		}
 	}
 
 	result.Cmd = continueScanLoop(result.Model)
 	return result
+}
+
+func applyLiveHostUpdate(m Model, hostStr string) Model {
+	hostIdx := m.ScanningHostIdx
+	if hostIdx < 0 || hostIdx >= len(m.History.ScanResults.Hosts) {
+		return m
+	}
+
+	current := m.History.ScanResults.Hosts[hostIdx]
+	updated := parseScanHostStr(hostStr, current.IP, m.ScanPortsScanned)
+	if updated.Hardware == "" {
+		updated.Hardware = current.Hardware
+	}
+	updated.MAC = current.MAC
+
+	existingPorts := make(map[int]struct{}, len(current.Ports))
+	for _, port := range current.Ports {
+		existingPorts[port.Port] = struct{}{}
+	}
+
+	if m.NewPortsByHost == nil {
+		m.NewPortsByHost = make(map[string]map[int]bool)
+	}
+	if m.NewPortsByHost[current.IP] == nil {
+		m.NewPortsByHost[current.IP] = make(map[int]bool)
+	}
+	for _, port := range updated.Ports {
+		if _, ok := existingPorts[port.Port]; !ok {
+			m.NewPortsByHost[current.IP][port.Port] = true
+		}
+	}
+
+	m.History.ScanResults.Hosts[hostIdx] = updated
+	m.History.ScanMetadata.Updated = time.Now()
+	m.History.ScanResults.PortsFound = recalculatePortsFound(m.History.ScanResults.Hosts)
+	return m
+}
+
+func recalculatePortsFound(hosts []history.HostResult) int {
+	total := 0
+	for _, host := range hosts {
+		total += len(host.Ports)
+	}
+	return total
 }
 
 // SavedMsg is sent after the background save+reload finishes
