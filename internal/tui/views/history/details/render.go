@@ -23,11 +23,8 @@ func Render(m Model, windowWidth, windowHeight int) string {
 
 	// Metadata
 	content.WriteString(fmt.Sprintf("Duration:     %.1fs\n", m.History.ScanMetadata.DurationSeconds))
-
-	if len(m.History.ScanMetadata.PortsScanned) > 0 {
-		portsStr := formatPorts(m.History.ScanMetadata.PortsScanned)
-		content.WriteString(fmt.Sprintf("Ports:        %s\n", portsStr))
-	}
+	portsStr := formatPorts(m.History.ScanMetadata.PortsScanned)
+	content.WriteString(fmt.Sprintf("Ports:        %s\n", portsStr))
 
 	content.WriteString(fmt.Sprintf("Hosts found:  %d / %d\n",
 		m.History.ScanResults.HostsFound,
@@ -64,7 +61,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 			// Show spinner only for the host being scanned
 			if i == m.ScanningHostIdx && m.Scanning {
 				spinnerChars := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-				spinnerIdx := int(m.Stopwatch.Elapsed().Milliseconds() / 100) % len(spinnerChars)
+				spinnerIdx := int(m.Stopwatch.Elapsed().Milliseconds()/100) % len(spinnerChars)
 				hostLine += " " + common.ProgressGreenStyle.Render(spinnerChars[spinnerIdx])
 			} else if i == m.ScanningHostIdx && !m.Scanning && m.ProgressChan != nil {
 				// Show checkmark when that host's scan completes
@@ -126,9 +123,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 
 	// Count metadata lines
 	lineToHost++ // Duration line
-	if len(m.History.ScanMetadata.PortsScanned) > 0 {
-		lineToHost++ // Ports line
-	}
+	lineToHost++ // Ports line
 	lineToHost++ // Hosts found line
 	if m.History.ScanResults.PortsFound > 0 {
 		lineToHost++ // Ports found line
@@ -141,7 +136,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	// Count all hosts before the selected one
 	for i := 0; i < m.Cursor; i++ {
 		host := m.History.ScanResults.Hosts[i]
-		lineToHost++ // Host line
+		lineToHost++                  // Host line
 		lineToHost += len(host.Ports) // Port lines
 		// Check if "all ports scanned" message is shown
 		if len(host.PortsScanned) == 65535 {
@@ -192,7 +187,7 @@ func formatPorts(ports []int) string {
 	if len(ports) == 0 {
 		return "none"
 	}
-	if len(ports) > 10000 {
+	if len(ports) == 65535 {
 		return "1-65535 (all ports)"
 	}
 	if len(ports) <= 10 {

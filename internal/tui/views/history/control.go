@@ -70,14 +70,15 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		result.Model.Details = detailResult.Model
 		result.Cmd = detailResult.Cmd
 		if detailResult.Deleted || detailResult.Quit {
-			// Return to list mode; reload tree if deleted
-			if detailResult.Deleted {
-				tree, _, _ := buildHistoryTree()
-				result.Model.Tree = tree
-				result.Model.FlatList = flattenTree(tree)
-				if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
-					result.Model.Cursor = len(result.Model.FlatList) - 1
-				}
+			// Return to list mode; reload tree so rescan updates are reflected.
+			tree, selectedPath, _ := buildHistoryTree()
+			result.Model.Tree = tree
+			result.Model.FlatList = flattenTree(tree)
+			if selectedPath != "" {
+				result.Model.Cursor = findCursorByPath(result.Model.FlatList, selectedPath)
+			}
+			if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
+				result.Model.Cursor = len(result.Model.FlatList) - 1
 			}
 			result.Model.Mode = ViewList
 			result.Model.Details = detailsview.Model{}
@@ -265,4 +266,3 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 
 	return result
 }
-

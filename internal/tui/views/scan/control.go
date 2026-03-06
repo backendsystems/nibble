@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/scanner/demo"
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
@@ -245,8 +246,14 @@ func prepareForExit(m Model, shouldPrint bool) Model {
 func getScannedPorts(scanner shared.Scanner) []int {
 	switch s := scanner.(type) {
 	case *ip4.Scanner:
+		if s.Ports == nil {
+			return ports.DefaultPorts()
+		}
 		return s.Ports
 	case *demo.Scanner:
+		if s.Ports == nil {
+			return ports.DefaultPorts()
+		}
 		return s.Ports
 	default:
 		return nil

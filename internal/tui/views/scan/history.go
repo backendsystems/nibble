@@ -67,6 +67,18 @@ func (m Model) SaveHistory() error {
 		hosts = m.FoundHosts
 	}
 
+	// Get ports that were scanned
+	portsScanned := m.PortsScanned
+	if portsScanned == nil {
+		// Try to get from scanner
+		switch s := m.NetworkScan.(type) {
+		case *ip4.Scanner:
+			portsScanned = s.Ports
+		case *demo.Scanner:
+			portsScanned = s.Ports
+		}
+	}
+
 	var hostResults []history.HostResult
 	now := time.Now()
 
@@ -86,20 +98,8 @@ func (m Model) SaveHistory() error {
 			MAC:          "", // MAC not currently tracked in display format
 			Ports:        ports,
 			LastScanned:  now,
-			PortsScanned: m.PortsScanned,
+			PortsScanned: portsScanned,
 		})
-	}
-
-	// Get ports that were scanned
-	portsScanned := m.PortsScanned
-	if portsScanned == nil {
-		// Try to get from scanner
-		switch s := m.NetworkScan.(type) {
-		case *ip4.Scanner:
-			portsScanned = s.Ports
-		case *demo.Scanner:
-			portsScanned = s.Ports
-		}
 	}
 
 	duration := m.Stopwatch.Elapsed().Seconds()
@@ -148,8 +148,42 @@ func (m Model) updateHistoryRescan() error {
 		hosts = m.FoundHosts
 	}
 
+	portsScanned := m.PortsScanned
+	if portsScanned == nil {
+		portsScanned = getScannedPorts(m.NetworkScan)
+	}
+
+	now := time.Now()
+
+	// If scanner returned no host text, still update the selected host with
+	// the ports that were scanned and empty open-port results.
 	if len(hosts) == 0 {
-		return nil // No hosts to update
+		hostIP, _, _ := strings.Cut(m.TargetCIDR, "/")
+		hostIP = strings.TrimSpace(hostIP)
+		if hostIP == "" {
+			return nil
+		}
+
+		existingHost := history.HostResult{
+			IP: hostIP,
+		}
+		if existing, err := history.Load(m.RescanHistoryPath); err == nil {
+			for _, host := range existing.ScanResults.Hosts {
+				if host.IP == hostIP {
+					existingHost = host
+					break
+				}
+			}
+		}
+
+		return history.UpdateHostInScan(m.RescanHistoryPath, hostIP, history.HostResult{
+			IP:           hostIP,
+			Hardware:     existingHost.Hardware,
+			MAC:          existingHost.MAC,
+			Ports:        existingHost.Ports,
+			LastScanned:  now,
+			PortsScanned: portsScanned,
+		})
 	}
 
 	// Parse the first (and should be only) host
@@ -162,14 +196,13 @@ func (m Model) updateHistoryRescan() error {
 		})
 	}
 
-	now := time.Now()
 	newHost := history.HostResult{
 		IP:           h.IP,
 		Hardware:     h.Hardware,
 		MAC:          "",
 		Ports:        ports,
 		LastScanned:  now,
-		PortsScanned: m.PortsScanned,
+		PortsScanned: portsScanned,
 	}
 
 	// Update the specific host in the history file

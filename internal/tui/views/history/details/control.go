@@ -213,9 +213,19 @@ func handleScanComplete(m Model) UpdateResult {
 		hosts := m.History.ScanResults.Hosts
 
 		result.Cmd = tea.Batch(m.Stopwatch.Stop(), func() tea.Msg {
-			if hostStr != "" && hostIdx < len(hosts) {
+			if hostIdx < len(hosts) {
 				scannedHost := hosts[hostIdx]
 				newHost := parseScanHostStr(hostStr, scannedHost.IP, portsScanned)
+				if hostStr == "" {
+					newHost = history.HostResult{
+						IP:           scannedHost.IP,
+						Hardware:     scannedHost.Hardware,
+						MAC:          scannedHost.MAC,
+						Ports:        scannedHost.Ports,
+						LastScanned:  time.Now(),
+						PortsScanned: portsScanned,
+					}
+				}
 				_ = history.UpdateHostInScan(histPath, scannedHost.IP, newHost)
 			}
 			if updated, err := history.Load(histPath); err == nil {
