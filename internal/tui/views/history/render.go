@@ -28,17 +28,11 @@ func Render(m Model, maxWidth int) string {
 func renderList(m Model, maxWidth int) string {
 	var b strings.Builder
 
+	// Title (outside viewport)
 	b.WriteString(titleStyle.Render("Scan History") + "\n\n")
 
-	if len(m.Tree) == 0 {
-		b.WriteString(mutedStyle.Render("No scan history found\n"))
-	} else {
-		for i, node := range m.FlatList {
-			isSelected := i == m.Cursor
-			renderNode(&b, node, isSelected)
-		}
-	}
-
+	// Add viewport content (already set in Update)
+	b.WriteString(m.Viewport.View())
 	b.WriteString("\n")
 	b.WriteString(helpStyle.Render("↑/↓/←/→ • Enter • Del: delete • ?: help • q: back"))
 
@@ -69,7 +63,7 @@ func renderDetail(m Model, maxWidth int) string {
 
 	h := m.DetailHistory
 
-	// Title
+	// Title (outside viewport)
 	title := fmt.Sprintf("%s - %s - %s",
 		h.ScanMetadata.TargetCIDR,
 		h.ScanMetadata.InterfaceName,
@@ -77,62 +71,9 @@ func renderDetail(m Model, maxWidth int) string {
 	)
 	b.WriteString(titleStyle.Render(title) + "\n\n")
 
-	// Metadata - only duration, updated (if different), and ports scanned (last)
-	b.WriteString(fmt.Sprintf("Duration:     %.1fs\n", h.ScanMetadata.DurationSeconds))
-
-	if !h.ScanMetadata.Updated.Equal(h.ScanMetadata.Created) {
-		b.WriteString(fmt.Sprintf("Updated:      %s\n", h.ScanMetadata.Updated.Format("2006 Jan 2 15:04")))
-	}
-
-	if len(h.ScanMetadata.PortsScanned) > 0 {
-		portsStr := formatDetailPorts(h.ScanMetadata.PortsScanned)
-		b.WriteString(fmt.Sprintf("Ports:        %s\n", portsStr))
-	}
-
+	// Add viewport content (already set in Update)
+	b.WriteString(m.DetailViewport.View())
 	b.WriteString("\n")
-
-	// Hosts list
-	if len(h.ScanResults.Hosts) == 0 {
-		b.WriteString(mutedStyle.Render("No hosts found in this scan\n"))
-	} else {
-		for i, host := range h.ScanResults.Hosts {
-			isSelected := i == m.DetailCursor
-			cursor := "  "
-			if isSelected {
-				cursor = "▶ "
-			}
-
-			// Host line
-			hostLine := cursor + host.IP
-			if host.Hardware != "" {
-				hostLine += " - " + host.Hardware
-			}
-
-			if isSelected {
-				b.WriteString(selectedStyle.Render(hostLine) + "\n")
-			} else {
-				b.WriteString(normalStyle.Render(hostLine) + "\n")
-			}
-
-			// Ports
-			portStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("150"))
-			for _, port := range host.Ports {
-				portLine := "    port " + fmt.Sprintf("%d", port.Port)
-				if port.Banner != "" {
-					portLine += ": " + port.Banner
-				}
-				b.WriteString(portStyle.Render(portLine) + "\n")
-			}
-
-			// Show if all ports were scanned
-			if len(host.PortsScanned) > 10000 {
-				b.WriteString(mutedStyle.Render("    [All 65535 ports scanned]") + "\n")
-			}
-
-			b.WriteString("\n")
-		}
-	}
-
 	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • ?: help • q: back"))
 
 	view := b.String()

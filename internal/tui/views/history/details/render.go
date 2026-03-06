@@ -16,10 +16,10 @@ var (
 	portStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("150"))
 )
 
-func Render(m Model, maxWidth int) string {
+func Render(m Model, windowWidth, windowHeight int) string {
 	var b strings.Builder
 
-	// Title
+	// Title (outside viewport)
 	title := fmt.Sprintf("%s - %s - %s",
 		m.History.ScanMetadata.TargetCIDR,
 		m.History.ScanMetadata.InterfaceName,
@@ -27,32 +27,35 @@ func Render(m Model, maxWidth int) string {
 	)
 	b.WriteString(titleStyle.Render(title) + "\n\n")
 
+	// Content for viewport
+	var content strings.Builder
+
 	// Metadata
-	b.WriteString(fmt.Sprintf("Duration:     %.1fs\n", m.History.ScanMetadata.DurationSeconds))
+	content.WriteString(fmt.Sprintf("Duration:     %.1fs\n", m.History.ScanMetadata.DurationSeconds))
 
 	if len(m.History.ScanMetadata.PortsScanned) > 0 {
 		portsStr := formatPorts(m.History.ScanMetadata.PortsScanned)
-		b.WriteString(fmt.Sprintf("Ports:        %s\n", portsStr))
+		content.WriteString(fmt.Sprintf("Ports:        %s\n", portsStr))
 	}
 
-	b.WriteString(fmt.Sprintf("Hosts found:  %d / %d\n",
+	content.WriteString(fmt.Sprintf("Hosts found:  %d / %d\n",
 		m.History.ScanResults.HostsFound,
 		m.History.ScanResults.TotalHostsScanned,
 	))
 
 	if m.History.ScanResults.PortsFound > 0 {
-		b.WriteString(fmt.Sprintf("Ports found:  %d\n", m.History.ScanResults.PortsFound))
+		content.WriteString(fmt.Sprintf("Ports found:  %d\n", m.History.ScanResults.PortsFound))
 	}
 
 	if !m.History.ScanMetadata.Updated.Equal(m.History.ScanMetadata.Created) {
-		b.WriteString(fmt.Sprintf("Updated:      %s\n", m.History.ScanMetadata.Updated.Format("Jan 2 15:04")))
+		content.WriteString(fmt.Sprintf("Updated:      %s\n", m.History.ScanMetadata.Updated.Format("Jan 2 15:04")))
 	}
 
-	b.WriteString("\n")
+	content.WriteString("\n")
 
 	// Hosts list
 	if len(m.History.ScanResults.Hosts) == 0 {
-		b.WriteString(mutedStyle.Render("No hosts found in this scan\n"))
+		content.WriteString(mutedStyle.Render("No hosts found in this scan\n"))
 	} else {
 		for i, host := range m.History.ScanResults.Hosts {
 			isSelected := i == m.Cursor
@@ -68,9 +71,9 @@ func Render(m Model, maxWidth int) string {
 			}
 
 			if isSelected {
-				b.WriteString(selectedStyle.Render(hostLine) + "\n")
+				content.WriteString(selectedStyle.Render(hostLine) + "\n")
 			} else {
-				b.WriteString(normalStyle.Render(hostLine) + "\n")
+				content.WriteString(normalStyle.Render(hostLine) + "\n")
 			}
 
 			// Ports
@@ -79,18 +82,24 @@ func Render(m Model, maxWidth int) string {
 				if port.Banner != "" {
 					portLine += ": " + port.Banner
 				}
-				b.WriteString(portStyle.Render(portLine) + "\n")
+				content.WriteString(portStyle.Render(portLine) + "\n")
 			}
 
 			// Show if all ports were scanned
 			if len(host.PortsScanned) > 10000 {
-				b.WriteString(mutedStyle.Render("    [All 65535 ports scanned]") + "\n")
+				content.WriteString(mutedStyle.Render("    [All 65535 ports scanned]") + "\n")
 			}
 
-			b.WriteString("\n")
+			content.WriteString("\n")
 		}
 	}
 
+	// Update viewport with content and dimensions
+	m = m.UpdateViewportContent(content.String(), windowWidth, windowHeight)
+
+	// Build final output with viewport and help text
+	b.WriteString(m.Viewport.View())
+	b.WriteString("\n")
 	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • q: back • ?: help"))
 
 	if m.ErrorMsg != "" {
@@ -99,7 +108,7 @@ func Render(m Model, maxWidth int) string {
 
 	view := b.String()
 	if m.ShowHelp {
-		return renderHelpOverlay(view, maxWidth)
+		return renderHelpOverlay(view, windowWidth)
 	}
 	return view
 }
