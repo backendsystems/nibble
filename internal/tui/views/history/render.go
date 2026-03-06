@@ -77,7 +77,11 @@ func renderNode(b *strings.Builder, node *TreeNode, isSelected bool) {
 		name = node.Name
 		style = folderStyle
 		if len(node.Children) > 0 {
-			name += fmt.Sprintf(" (%d networks)", len(node.Children))
+			suffix := "networks"
+			if len(node.Children) == 1 {
+				suffix = "network"
+			}
+			name += fmt.Sprintf(" (%d %s)", len(node.Children), suffix)
 		}
 
 	case NodeNetwork:
@@ -89,15 +93,32 @@ func renderNode(b *strings.Builder, node *TreeNode, isSelected bool) {
 		name = node.Name
 		style = folderStyle
 		if len(node.Children) > 0 {
-			name += fmt.Sprintf(" (%d scans)", len(node.Children))
+			suffix := "scans"
+			if len(node.Children) == 1 {
+				suffix = "scan"
+			}
+			name += fmt.Sprintf(" (%d %s)", len(node.Children), suffix)
 		}
 
 	case NodeScan:
 		icon = "📄"
 		if node.ScanData != nil {
-			name = fmt.Sprintf("%s (%d hosts)",
+			hostCount := node.ScanData.ScanResults.HostsFound
+			hostSuffix := "hosts"
+			if hostCount == 1 {
+				hostSuffix = "host"
+			}
+			portCount := node.ScanData.ScanResults.PortsFound
+			portSuffix := "ports"
+			if portCount == 1 {
+				portSuffix = "port"
+			}
+			name = fmt.Sprintf("%s (%d %s, %d %s)",
 				node.Name,
-				node.ScanData.ScanResults.HostsFound,
+				hostCount,
+				hostSuffix,
+				portCount,
+				portSuffix,
 			)
 		} else {
 			name = node.Name
@@ -113,4 +134,3 @@ func renderNode(b *strings.Builder, node *TreeNode, isSelected bool) {
 		b.WriteString(style.Render(line) + "\n")
 	}
 }
-
