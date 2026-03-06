@@ -80,3 +80,35 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 		lipgloss.WithWhitespaceChars(" "),
 	)
 }
+
+// HistoryDeleteDialog is a delete confirmation dialog specific to the history view
+type HistoryDeleteDialog struct {
+	Target      any   // *historyview.TreeNode
+	CursorOnYes bool  // true = Delete selected, false = Cancel selected
+	ItemType    string // "scan", "network", "interface"
+	ItemName    string // Display name of the item
+}
+
+// Render displays the delete confirmation dialog for history view
+func (d HistoryDeleteDialog) Render(view string, viewWidth, viewHeight int) string {
+	// Use Dialog to render
+	dialog := Dialog{
+		Target:      d.Target,
+		ItemType:    d.ItemType,
+		ItemName:    d.ItemName,
+		CursorOnYes: d.CursorOnYes,
+	}
+	return dialog.Render(view, viewWidth, viewHeight)
+}
+
+// Toggle toggles the cursor between Delete and Cancel
+func (d *HistoryDeleteDialog) Toggle() {
+	if d != nil {
+		d.CursorOnYes = !d.CursorOnYes
+	}
+}
+
+// IsDeleteSelected returns true if Delete is currently selected
+func (d *HistoryDeleteDialog) IsDeleteSelected() bool {
+	return d != nil && d.CursorOnYes
+}

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/backendsystems/nibble/internal/history"
+	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -73,6 +74,10 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 	case treeLoadedMsg:
 		result.Model.Tree = msg.tree
 		result.Model.FlatList = flattenTree(result.Model.Tree)
+		// Restore cursor to previously selected item
+		if msg.selectedPath != "" {
+			result.Model.Cursor = findCursorByPath(result.Model.FlatList, msg.selectedPath)
+		}
 		if result.Model.Cursor >= len(result.Model.FlatList) {
 			result.Model.Cursor = 0
 		}
@@ -97,21 +102,20 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 		switch action {
 		case ActionToggle:
 			// Toggle between Delete and Cancel
-			result.Model.DeleteDialog.CursorOnYes = !result.Model.DeleteDialog.CursorOnYes
+			result.Model.DeleteDialog.Toggle()
 			return result
 		case ActionConfirmYes:
 			// User pressed Enter - execute the selected action
-			if result.Model.DeleteDialog.CursorOnYes {
+			if result.Model.DeleteDialog.IsDeleteSelected() {
 				// Delete was selected
-				// Remember which nodes were expanded before deletion
-				expandedState := collectExpandedState(result.Model.Tree)
 				currentCursor := result.Model.Cursor
 
-				performDeleteSync(result.Model.DeleteDialog.Target)
+				if node, ok := result.Model.DeleteDialog.Target.(*TreeNode); ok {
+					performDeleteSync(node)
+				}
 
-				// Reload tree and restore expanded state
-				tree, _ := buildHistoryTree()
-				restoreExpandedState(tree, expandedState)
+				// Reload tree
+				tree, _, _ := buildHistoryTree()
 				result.Model.Tree = tree
 				result.Model.FlatList = flattenTree(tree)
 
@@ -183,15 +187,32 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 			node := result.Model.FlatList[result.Model.Cursor]
 			// Only allow deletion of actual nodes with valid data
 			if node != nil && node.Type >= NodeInterface && node.Type <= NodeScan {
+				var itemType string
+				switch node.Type {
+				case NodeScan:
+					itemType = "scan"
+				case NodeNetwork:
+					itemType = "all scans in network"
+				case NodeInterface:
+					itemType = "all scans on interface"
+				}
+
 				// Show delete dialog
-				result.Model.DeleteDialog = &DeleteDialog{
+				result.Model.DeleteDialog = &delete.HistoryDeleteDialog{
 					Target:      node,
+					ItemType:    itemType,
+					ItemName:    node.Name,
 					CursorOnYes: true, // Default to Delete
 				}
 			}
 		}
 	case ActionHelp:
 		result.Model.ShowHelp = !result.Model.ShowHelp
+	}
+
+	// Save state once at the end if not quitting or switching views
+	if !result.Quit && result.Model.Mode == ViewList {
+		saveViewState(result.Model.FlatList, result.Model.Cursor)
 	}
 
 	return result
@@ -205,20 +226,22 @@ func handleDetailKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 		switch key.String() {
 		case "left", "a", "h", "right", "d", "l":
 			// Toggle between Delete/Cancel
-			result.Model.DeleteDialog.CursorOnYes = !result.Model.DeleteDialog.CursorOnYes
+			result.Model.DeleteDialog.Toggle()
 			return result
 		case "enter":
 			// User pressed Enter - execute the selected action
-			if result.Model.DeleteDialog.CursorOnYes {
+			if result.Model.DeleteDialog.IsDeleteSelected() {
 				// Delete was selected
-				expandedState := collectExpandedState(result.Model.Tree)
-				performDeleteSync(result.Model.DeleteDialog.Target)
+				if node, ok := result.Model.DeleteDialog.Target.(*TreeNode); ok {
+					performDeleteSync(node)
+				}
 
-				// Reload tree and restore expanded state
-				tree, _ := buildHistoryTree()
-				restoreExpandedState(tree, expandedState)
+				// Reload tree
+				tree, _, _ := buildHistoryTree()
 				result.Model.Tree = tree
 				result.Model.FlatList = flattenTree(tree)
+				// Save state after deletion
+				saveViewState(result.Model.FlatList, result.Model.Cursor)
 			}
 			// Close dialog (whether Delete or Cancel was selected)
 			result.Model.DeleteDialog = nil
@@ -292,23 +315,24 @@ func performDeleteSync(node *TreeNode) {
 }
 
 type treeLoadedMsg struct {
-	tree []*TreeNode
+	tree         []*TreeNode
+	selectedPath string
 }
 
 func loadTreeCmd() tea.Cmd {
 	return func() tea.Msg {
-		tree, err := buildHistoryTree()
+		tree, selectedPath, err := buildHistoryTree()
 		if err != nil {
-			return treeLoadedMsg{tree: []*TreeNode{}}
+			return treeLoadedMsg{tree: []*TreeNode{}, selectedPath: ""}
 		}
-		return treeLoadedMsg{tree: tree}
+		return treeLoadedMsg{tree: tree, selectedPath: selectedPath}
 	}
 }
 
-func buildHistoryTree() ([]*TreeNode, error) {
+func buildHistoryTree() ([]*TreeNode, string, error) {
 	baseDir, err := history.HistoryDir()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Map of interface -> network -> scans
@@ -367,7 +391,7 @@ func buildHistoryTree() ([]*TreeNode, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Build tree structure
@@ -384,6 +408,7 @@ func buildHistoryTree() ([]*TreeNode, error) {
 		ifaceNode := &TreeNode{
 			Type:     NodeInterface,
 			Name:     iface,
+			Path:     filepath.Join(baseDir, iface),
 			Expanded: false,
 			Level:    0,
 		}
@@ -402,6 +427,7 @@ func buildHistoryTree() ([]*TreeNode, error) {
 			netNode := &TreeNode{
 				Type:     NodeNetwork,
 				Name:     cidr,
+				Path:     filepath.Join(baseDir, iface, net),
 				Expanded: false,
 				Level:    1,
 			}
@@ -419,7 +445,13 @@ func buildHistoryTree() ([]*TreeNode, error) {
 		tree = append(tree, ifaceNode)
 	}
 
-	return tree, nil
+	// Load and expand tree to show selected path
+	selectedPath, _ := history.LoadViewState()
+	if selectedPath != "" {
+		expandTreeForPath(tree, selectedPath)
+	}
+
+	return tree, selectedPath, nil
 }
 
 func flattenTree(tree []*TreeNode) []*TreeNode {
@@ -448,13 +480,47 @@ func collectExpandedState(tree []*TreeNode) map[string]bool {
 	return state
 }
 
-// restoreExpandedState restores the expanded state to matching nodes
-func restoreExpandedState(tree []*TreeNode, state map[string]bool) {
-	for _, node := range tree {
-		if state[node.Name] {
-			node.Expanded = true
-		}
-		// Recursively restore children
-		restoreExpandedState(node.Children, state)
+// saveViewState saves the selected item path to persistent storage
+func saveViewState(flatList []*TreeNode, cursor int) {
+	selectedPath := ""
+	if cursor >= 0 && cursor < len(flatList) && flatList[cursor] != nil {
+		selectedPath = flatList[cursor].Path
 	}
+	history.SaveViewState(selectedPath)
+}
+
+// findCursorByPath finds the cursor position for a given path in the flattened list
+func findCursorByPath(flatList []*TreeNode, path string) int {
+	if path == "" {
+		return 0
+	}
+	for i, node := range flatList {
+		if node != nil && node.Path == path {
+			return i
+		}
+	}
+	return 0
+}
+
+// expandTreeForPath expands all parent nodes needed to show a specific path
+func expandTreeForPath(tree []*TreeNode, path string) {
+	for _, node := range tree {
+		if nodeContainsPath(node, path) {
+			node.Expanded = true
+			expandTreeForPath(node.Children, path)
+		}
+	}
+}
+
+// nodeContainsPath checks if a node or its children contain the given path
+func nodeContainsPath(node *TreeNode, path string) bool {
+	if node.Path == path {
+		return true
+	}
+	for _, child := range node.Children {
+		if nodeContainsPath(child, path) {
+			return true
+		}
+	}
+	return false
 }
