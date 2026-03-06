@@ -12,7 +12,7 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	historyview "github.com/backendsystems/nibble/internal/tui/views/history"
-	historydetailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
+	historydetailsscan "github.com/backendsystems/nibble/internal/tui/views/history/details/scan"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	scanview "github.com/backendsystems/nibble/internal/tui/views/scan"
@@ -399,8 +399,8 @@ func performDetailScan(networkScanner shared.Scanner, targetAddr string, progres
 		// Wait for first progress and return it to kick off the loop
 		progress, ok := <-progressChan
 		if !ok {
-			return historydetailsview.CompleteMsg{}
+			return historydetailsscan.CompleteMsg{}
 		}
-		return historydetailsview.ProgressMsg{Update: progress}
+		return historydetailsscan.ProgressMsg{Update: progress}
 	}
 }

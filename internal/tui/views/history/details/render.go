@@ -23,8 +23,6 @@ func Render(m Model, windowWidth, windowHeight int) string {
 
 	// Metadata
 	content.WriteString(fmt.Sprintf("Duration:     %.1fs\n", m.History.ScanMetadata.DurationSeconds))
-	portsStr := formatPorts(m.History.ScanMetadata.PortsScanned)
-	content.WriteString(fmt.Sprintf("Ports:        %s\n", portsStr))
 
 	content.WriteString(fmt.Sprintf("Hosts found:  %d / %d\n",
 		m.History.ScanResults.HostsFound,
@@ -122,7 +120,6 @@ func Render(m Model, windowWidth, windowHeight int) string {
 
 	// Count metadata lines
 	lineToHost++ // Duration line
-	lineToHost++ // Ports line
 	lineToHost++ // Hosts found line
 	if m.History.ScanResults.PortsFound > 0 {
 		lineToHost++ // Ports found line
@@ -180,21 +177,4 @@ func Render(m Model, windowWidth, windowHeight int) string {
 		return renderHelpOverlay(view, windowWidth)
 	}
 	return view
-}
-
-func formatPorts(ports []int) string {
-	if len(ports) == 0 {
-		return "none"
-	}
-	if len(ports) == 65535 {
-		return "1-65535 (all ports)"
-	}
-	if len(ports) <= 10 {
-		var portStrs []string
-		for _, p := range ports {
-			portStrs = append(portStrs, fmt.Sprintf("%d", p))
-		}
-		return strings.Join(portStrs, ", ")
-	}
-	return fmt.Sprintf("%d ports", len(ports))
 }
