@@ -139,7 +139,7 @@ func renderHistoryCard(m Model, index int) string {
 	if isSelected {
 		nameStyle = nameStyle.Foreground(lipgloss.Color("226"))
 	}
-	cardContent.WriteString(nameStyle.Render(icon+" Scan History") + "\n")
+	cardContent.WriteString(nameStyle.Render(icon+" History") + "\n")
 
 	subtitleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	cardContent.WriteString(subtitleStyle.Render("view past scans"))
