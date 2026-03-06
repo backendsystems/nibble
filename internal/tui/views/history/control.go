@@ -153,9 +153,9 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 			result.Model.Cursor++
 		}
 	case ActionToggle:
-		if result.Model.Cursor < len(result.Model.FlatList) {
+		if result.Model.Cursor >= 0 && result.Model.Cursor < len(result.Model.FlatList) {
 			node := result.Model.FlatList[result.Model.Cursor]
-			if node.Type == NodeScan && node.ScanData != nil {
+			if node != nil && node.Type == NodeScan && node.ScanData != nil {
 				// Switch to detail view
 				result.Model.Mode = ViewDetail
 				result.Model.DetailHistory = node.ScanData
@@ -164,25 +164,30 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 				return result
 			}
 			// Toggle folder expansion
-			node.Expanded = !node.Expanded
-			result.Model.FlatList = flattenTree(result.Model.Tree)
+			if node != nil {
+				node.Expanded = !node.Expanded
+				result.Model.FlatList = flattenTree(result.Model.Tree)
+			}
 		}
 	case ActionCollapse:
-		if result.Model.Cursor < len(result.Model.FlatList) {
+		if result.Model.Cursor >= 0 && result.Model.Cursor < len(result.Model.FlatList) {
 			node := result.Model.FlatList[result.Model.Cursor]
 			// If this is an expanded folder, collapse it
-			if node.Expanded && (node.Type == NodeInterface || node.Type == NodeNetwork) {
+			if node != nil && node.Expanded && (node.Type == NodeInterface || node.Type == NodeNetwork) {
 				node.Expanded = false
 				result.Model.FlatList = flattenTree(result.Model.Tree)
 			}
 		}
 	case ActionDelete:
-		if len(result.Model.FlatList) > 0 && result.Model.Cursor < len(result.Model.FlatList) {
+		if result.Model.Cursor >= 0 && result.Model.Cursor < len(result.Model.FlatList) {
 			node := result.Model.FlatList[result.Model.Cursor]
-			// Show delete dialog
-			result.Model.DeleteDialog = &DeleteDialog{
-				Target:      node,
-				CursorOnYes: false, // Start on Cancel (safer default)
+			// Only allow deletion of actual nodes with valid data
+			if node != nil && node.Type >= NodeInterface && node.Type <= NodeScan {
+				// Show delete dialog
+				result.Model.DeleteDialog = &DeleteDialog{
+					Target:      node,
+					CursorOnYes: true, // Default to Delete
+				}
 			}
 		}
 	case ActionHelp:
@@ -260,22 +265,26 @@ func handleDetailKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 }
 
 func performDeleteSync(node *TreeNode) {
+	if node == nil {
+		return
+	}
+
 	switch node.Type {
 	case NodeScan:
 		if node.Path != "" {
-			_ = history.Delete(node.Path)
+			history.Delete(node.Path)
 		}
 	case NodeNetwork:
 		for _, child := range node.Children {
-			if child.Type == NodeScan && child.Path != "" {
-				_ = history.Delete(child.Path)
+			if child != nil && child.Path != "" {
+				history.Delete(child.Path)
 			}
 		}
 	case NodeInterface:
 		for _, netNode := range node.Children {
 			for _, scanNode := range netNode.Children {
-				if scanNode.Type == NodeScan && scanNode.Path != "" {
-					_ = history.Delete(scanNode.Path)
+				if scanNode != nil && scanNode.Path != "" {
+					history.Delete(scanNode.Path)
 				}
 			}
 		}

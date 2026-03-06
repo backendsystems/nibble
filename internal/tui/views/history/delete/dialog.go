@@ -1,4 +1,4 @@
-package historyview
+package delete
 
 import (
 	"fmt"
@@ -8,29 +8,18 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type DeleteDialog struct {
-	Target      *TreeNode
-	CursorOnYes bool // true = Yes, false = Cancel
+// Dialog is a reusable delete confirmation dialog
+type Dialog struct {
+	Target      any    // Generic target being deleted
+	ItemType    string // "scan", "network", "interface", etc
+	ItemName    string // Display name of the item
+	CursorOnYes bool   // true = Delete selected, false = Cancel selected
 }
 
-func (d DeleteDialog) Render(view string, viewWidth, viewHeight int) string {
+// Render displays the delete confirmation dialog
+func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 	if d.Target == nil {
 		return view
-	}
-
-	var itemType string
-	var itemName string
-
-	switch d.Target.Type {
-	case NodeScan:
-		itemType = "scan"
-		itemName = d.Target.Name
-	case NodeNetwork:
-		itemType = "all scans in network"
-		itemName = d.Target.Name
-	case NodeInterface:
-		itemType = "all scans on interface"
-		itemName = d.Target.Name
 	}
 
 	// Button styles
@@ -48,20 +37,20 @@ func (d DeleteDialog) Render(view string, viewWidth, viewHeight int) string {
 		Background(lipgloss.Color("236"))
 
 	// Build content
-	warning := common.ErrorStyle.Render(fmt.Sprintf("Delete %s: %s?", itemType, itemName))
+	warning := common.ErrorStyle.Render(fmt.Sprintf("Delete %s: %s?", d.ItemType, d.ItemName))
 	note := common.HelpTextStyle.Render("This action cannot be undone.")
 
-	// Buttons
-	var deleteBtn, cancelBtn string
+	// Buttons (Cancel on left, Delete on right)
+	var cancelBtn, deleteBtn string
 	if d.CursorOnYes {
-		deleteBtn = selectedButtonStyle.Render("Delete")
 		cancelBtn = unselectedButtonStyle.Render("Cancel")
+		deleteBtn = selectedButtonStyle.Render("Delete")
 	} else {
-		deleteBtn = unselectedButtonStyle.Render("Delete")
 		cancelBtn = selectedButtonStyle.Render("Cancel")
+		deleteBtn = unselectedButtonStyle.Render("Delete")
 	}
 
-	buttons := lipgloss.JoinHorizontal(lipgloss.Left, deleteBtn, cancelBtn)
+	buttons := lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, deleteBtn)
 	help := common.HelpTextStyle.Render("←/→: navigate • Enter: select • q: back")
 
 	// Combine content
@@ -76,12 +65,7 @@ func (d DeleteDialog) Render(view string, viewWidth, viewHeight int) string {
 
 	// Calculate box width
 	width := int(float64(viewWidth) * 0.6)
-	if width < 46 {
-		width = 46
-	}
-	if width > 60 {
-		width = 60
-	}
+	width = max(min(width, 60), 46)
 
 	// Create overlay with common style
 	overlay := common.HelpBoxStyle.Width(width).Render(content)

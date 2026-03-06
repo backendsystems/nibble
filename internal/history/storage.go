@@ -62,11 +62,6 @@ func Update(path string, history ScanHistory) error {
 	return os.WriteFile(path, data, 0o644)
 }
 
-// Delete removes a scan history file
-func Delete(path string) error {
-	return os.Remove(path)
-}
-
 // ListAll returns all scan history files sorted by creation time (newest first)
 func ListAll() ([]ScanHistory, []string, error) {
 	base, err := HistoryDir()
