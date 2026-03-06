@@ -85,12 +85,19 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		_ = cmd
 	}
 
-	// Ensure viewports are initialized with proper dimensions
-	if result.Model.Viewport.Width == 0 && result.Model.WindowW > 0 {
+	// Update viewport sizes on window resize or initialization
+	if result.Model.WindowW > 0 {
+		oldListHeight := result.Model.Viewport.Height
+		oldDetailHeight := result.Model.DetailViewport.Height
 		result.Model = result.Model.SetListViewportSize(result.Model.WindowW, result.Model.WindowH)
-	}
-	if result.Model.DetailViewport.Width == 0 && result.Model.WindowW > 0 {
 		result.Model = result.Model.SetDetailViewportSize(result.Model.WindowW, result.Model.WindowH)
+		// Reset scroll offset if viewport height changed significantly
+		if oldListHeight != result.Model.Viewport.Height {
+			result.Model.Viewport.YOffset = 0
+		}
+		if oldDetailHeight != result.Model.DetailViewport.Height {
+			result.Model.DetailViewport.YOffset = 0
+		}
 	}
 
 	// Pre-render viewport content based on current view mode

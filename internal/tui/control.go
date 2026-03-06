@@ -132,6 +132,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.scan = m.scan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
 		m.history.WindowW = resize.Width
 		m.history.WindowH = resize.Height
+		// Update history view to recalculate viewport sizes
+		result := m.history.Update(msg)
+		m.history = result.Model
 		return m, nil
 	}
 
