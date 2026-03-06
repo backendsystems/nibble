@@ -3,6 +3,7 @@ package historyview
 import (
 	"github.com/backendsystems/nibble/internal/history"
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
+	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	"github.com/charmbracelet/bubbles/viewport"
 )
 
@@ -12,6 +13,13 @@ const (
 	NodeInterface NodeType = iota
 	NodeNetwork
 	NodeScan
+)
+
+type ViewMode int
+
+const (
+	ViewList ViewMode = iota
+	ViewDetail
 )
 
 type TreeNode struct {
@@ -24,13 +32,6 @@ type TreeNode struct {
 	Level     int
 }
 
-type ViewMode int
-
-const (
-	ViewList ViewMode = iota
-	ViewDetail
-)
-
 type Model struct {
 	Mode         ViewMode
 	Tree         []*TreeNode
@@ -42,12 +43,7 @@ type Model struct {
 	Viewport     viewport.Model
 	WindowW      int
 	WindowH      int
-
-	// Detail view state
-	DetailHistory  *history.ScanHistory
-	DetailPath     string
-	DetailCursor   int
-	DetailViewport viewport.Model
+	Details      detailsview.Model
 }
 
 type UpdateResult struct {

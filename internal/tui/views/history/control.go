@@ -2,6 +2,7 @@ package historyview
 
 import (
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
+	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -63,6 +64,32 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) UpdateResult {
 	result := UpdateResult{Model: m}
 
+	// Route detail view messages
+	if m.Mode == ViewDetail {
+		detailResult := m.Details.Update(msg)
+		result.Model.Details = detailResult.Model
+		if detailResult.Deleted || detailResult.Quit {
+			// Return to list mode; reload tree if deleted
+			if detailResult.Deleted {
+				tree, _, _ := buildHistoryTree()
+				result.Model.Tree = tree
+				result.Model.FlatList = flattenTree(tree)
+				if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
+					result.Model.Cursor = len(result.Model.FlatList) - 1
+				}
+			}
+			result.Model.Mode = ViewList
+			result.Model.Details = detailsview.Model{}
+			saveViewState(result.Model.FlatList, result.Model.Cursor)
+		}
+		if detailResult.ScanAllPorts {
+			result.ScanAllPorts = true
+			result.SelectedHostIP = detailResult.SelectedHostIP
+			result.ScanHistoryPath = detailResult.ScanHistoryPath
+		}
+		return result
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		result = handleKeyMsg(m, msg)
@@ -81,23 +108,19 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		var cmd tea.Cmd
 		result.Model.Viewport, cmd = m.Viewport.Update(msg)
 		_ = cmd
-		result.Model.DetailViewport, cmd = m.DetailViewport.Update(msg)
-		_ = cmd
 	}
 
 	// Update viewport sizes on window resize or initialization
 	if result.Model.WindowW > 0 {
 		oldListHeight := result.Model.Viewport.Height
-		oldDetailHeight := result.Model.DetailViewport.Height
 		result.Model = result.Model.SetListViewportSize(result.Model.WindowW, result.Model.WindowH)
-		result.Model = result.Model.SetDetailViewportSize(result.Model.WindowW, result.Model.WindowH)
 		// Reset scroll offset if viewport height changed significantly
 		if oldListHeight != result.Model.Viewport.Height {
 			result.Model.Viewport.YOffset = 0
 		}
-		if oldDetailHeight != result.Model.DetailViewport.Height {
-			result.Model.DetailViewport.YOffset = 0
-		}
+		// Also update details viewport size
+		result.Model.Details.WindowW = result.Model.WindowW
+		result.Model.Details.WindowH = result.Model.WindowH
 	}
 
 	// Pre-render viewport content based on current view mode
@@ -111,11 +134,6 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 
 func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	result := UpdateResult{Model: m}
-
-	// If in detail view, handle detail view keys
-	if m.Mode == ViewDetail {
-		return handleDetailKeyMsg(m, key)
-	}
 
 	inDeleteDialog := m.DeleteDialog != nil
 	action := HandleKey(key.String(), inDeleteDialog)
@@ -185,9 +203,15 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 			if node != nil && node.Type == NodeScan && node.ScanData != nil {
 				// Switch to detail view
 				result.Model.Mode = ViewDetail
-				result.Model.DetailHistory = node.ScanData
-				result.Model.DetailPath = node.Path
-				result.Model.DetailCursor = 0
+				result.Model.Details = detailsview.Model{
+					History:      *node.ScanData,
+					HistoryPath:  node.Path,
+					NodePath:     node.Path,
+					NodeName:     node.Name,
+					NodeItemType: "scan",
+					WindowW:      m.WindowW,
+					WindowH:      m.WindowH,
+				}
 				return result
 			}
 			// Toggle folder expansion
@@ -241,71 +265,3 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	return result
 }
 
-func handleDetailKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
-	result := UpdateResult{Model: m}
-
-	// Handle delete dialog in detail view
-	if m.DeleteDialog != nil {
-		switch key.String() {
-		case "left", "a", "h", "right", "d", "l":
-			// Toggle between Delete/Cancel
-			result.Model.DeleteDialog.Toggle()
-			return result
-		case "enter":
-			// User pressed Enter - execute the selected action
-			if result.Model.DeleteDialog.IsDeleteSelected() {
-				// Delete was selected
-				if node, ok := result.Model.DeleteDialog.Target.(*TreeNode); ok {
-					performDeleteSync(node)
-				}
-
-				// Reload tree
-				tree, _, _ := buildHistoryTree()
-				result.Model.Tree = tree
-				result.Model.FlatList = flattenTree(tree)
-				// Save state after deletion
-				saveViewState(result.Model.FlatList, result.Model.Cursor)
-			}
-			// Close dialog (whether Delete or Cancel was selected)
-			result.Model.DeleteDialog = nil
-			return result
-		default:
-			// Any other key closes the dialog and returns to detail view
-			result.Model.DeleteDialog = nil
-			return result
-		}
-	}
-
-	// Accept any key to close help overlay
-	if m.ShowHelp {
-		result.Model.ShowHelp = false
-		return result
-	}
-
-	switch key.String() {
-	case "q", "esc":
-		// Go back to list view
-		result.Model.Mode = ViewList
-		result.Model.DetailHistory = nil
-		result.Model.DetailPath = ""
-	case "up", "w", "k":
-		if result.Model.DetailCursor > 0 {
-			result.Model.DetailCursor--
-		}
-	case "down", "s", "j":
-		if result.Model.DetailHistory != nil && result.Model.DetailCursor < len(result.Model.DetailHistory.ScanResults.Hosts)-1 {
-			result.Model.DetailCursor++
-		}
-	case "enter":
-		// Trigger all-port scan on selected host
-		if result.Model.DetailHistory != nil && result.Model.DetailCursor < len(result.Model.DetailHistory.ScanResults.Hosts) {
-			result.ScanAllPorts = true
-			result.SelectedHostIP = result.Model.DetailHistory.ScanResults.Hosts[result.Model.DetailCursor].IP
-			result.ScanHistoryPath = result.Model.DetailPath
-		}
-	case "?":
-		result.Model.ShowHelp = !result.Model.ShowHelp
-	}
-
-	return result
-}

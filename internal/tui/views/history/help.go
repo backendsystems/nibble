@@ -19,17 +19,3 @@ func renderListHelpOverlay(view string, viewWidth, viewHeight int) string {
 	})
 }
 
-func renderDetailHelpOverlay(view string, viewWidth, viewHeight int) string {
-	return common.RenderHelpOverlay(view, common.HelpConfig{
-		Title:      "Scan Details",
-		ViewWidth:  viewWidth,
-		ViewHeight: viewHeight,
-		Content: []string{
-			"View scan results and rescan hosts with all ports.",
-			"• ↑/↓: select host",
-			"• enter: rescan all 65535 ports",
-			"",
-			"any key: close",
-		},
-	})
-}

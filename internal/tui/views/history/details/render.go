@@ -14,7 +14,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	title := fmt.Sprintf("%s - %s - %s",
 		m.History.ScanMetadata.TargetCIDR,
 		m.History.ScanMetadata.InterfaceName,
-		m.History.ScanMetadata.Created.Format("Jan 2 15:04"),
+		m.History.ScanMetadata.Created.Format("2006 Jan 2 15:04"),
 	)
 	b.WriteString(common.TitleStyle.Render(title) + "\n\n")
 
@@ -39,7 +39,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	}
 
 	if !m.History.ScanMetadata.Updated.Equal(m.History.ScanMetadata.Created) {
-		content.WriteString(fmt.Sprintf("Updated:      %s\n", m.History.ScanMetadata.Updated.Format("Jan 2 15:04")))
+		content.WriteString(fmt.Sprintf("Updated:      %s\n", m.History.ScanMetadata.Updated.Format("2006 Jan 2 15:04")))
 	}
 
 	content.WriteString("\n")
@@ -94,16 +94,68 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	// Update viewport with content and dimensions
 	m = m.UpdateViewportContent(content.String(), windowWidth, windowHeight)
 
+	// Keep selected host visible by scrolling viewport
+	// Count lines to selected host
+	lineToHost := 0
+
+	// Count metadata lines
+	lineToHost++ // Duration line
+	if len(m.History.ScanMetadata.PortsScanned) > 0 {
+		lineToHost++ // Ports line
+	}
+	lineToHost++ // Hosts found line
+	if m.History.ScanResults.PortsFound > 0 {
+		lineToHost++ // Ports found line
+	}
+	if !m.History.ScanMetadata.Updated.Equal(m.History.ScanMetadata.Created) {
+		lineToHost++ // Updated line
+	}
+	lineToHost++ // Blank line after metadata
+
+	// Count all hosts before the selected one
+	for i := 0; i < m.Cursor; i++ {
+		host := m.History.ScanResults.Hosts[i]
+		lineToHost++ // Host line
+		lineToHost += len(host.Ports) // Port lines
+		// Check if "all ports scanned" message is shown
+		if len(host.PortsScanned) == 65535 {
+			lineToHost++
+		}
+		lineToHost++ // Blank line after host
+	}
+
+	// Keep host visible, scrolling based on number of ports to show them
+	if lineToHost < m.Viewport.YOffset {
+		// Host is above viewport, scroll up to show metadata and host
+		m.Viewport.YOffset = 0
+	} else if lineToHost >= m.Viewport.YOffset+m.Viewport.Height-1 {
+		// Host is at or past bottom, scroll to keep it visible with ports below
+		selectedHost := m.History.ScanResults.Hosts[m.Cursor]
+		// Reserve space: 1 for host line + 2 buffer lines
+		portLines := len(selectedHost.Ports)
+		if len(selectedHost.PortsScanned) == 65535 {
+			portLines++ // "All ports" message
+		}
+		reserveLines := 1 + 2 // host line + buffer
+		m.Viewport.YOffset = lineToHost - m.Viewport.Height + reserveLines + (portLines / 2)
+		if m.Viewport.YOffset < 0 {
+			m.Viewport.YOffset = 0
+		}
+	}
+
 	// Build final output with viewport and help text
 	b.WriteString(m.Viewport.View())
 	b.WriteString("\n")
 	b.WriteString(common.HelpTextStyle.Render("↑/↓: select host • Enter: scan all ports • q: back • ?: help"))
 
 	if m.ErrorMsg != "" {
-		b.WriteString("\n\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render("Error: "+m.ErrorMsg))
+		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))
 	}
 
 	view := b.String()
+	if m.DeleteDialog != nil {
+		return m.DeleteDialog.Render(view, windowWidth, windowHeight)
+	}
 	if m.ShowHelp {
 		return renderHelpOverlay(view, windowWidth)
 	}

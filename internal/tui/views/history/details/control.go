@@ -1,6 +1,8 @@
 package historydetailview
 
 import (
+	"github.com/backendsystems/nibble/internal/history"
+	deletepkg "github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -13,25 +15,30 @@ const (
 	ActionMoveDown
 	ActionScanAllPorts
 	ActionHelp
+	ActionDelete
 )
 
 type UpdateResult struct {
-	Model          Model
-	Quit           bool
-	ScanAllPorts   bool
-	SelectedHostIP string
+	Model           Model
+	Quit            bool
+	ScanAllPorts    bool
+	SelectedHostIP  string
+	ScanHistoryPath string
+	Deleted         bool
 }
 
 func HandleKey(key string) Action {
 	switch key {
 	case "q", "esc":
 		return ActionQuit
-	case "up", "k":
+	case "up", "w", "k":
 		return ActionMoveUp
-	case "down", "j":
+	case "down", "s", "j":
 		return ActionMoveDown
 	case "enter":
 		return ActionScanAllPorts
+	case "delete":
+		return ActionDelete
 	case "?":
 		return ActionHelp
 	default:
@@ -57,6 +64,33 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 
 func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	result := UpdateResult{Model: m}
+
+	// Handle delete dialog in detail view
+	if m.DeleteDialog != nil {
+		switch key.String() {
+		case "left", "a", "h", "right", "d", "l":
+			// Toggle between Delete and Cancel
+			result.Model.DeleteDialog.Toggle()
+			return result
+		case "enter":
+			// User pressed Enter - execute the selected action
+			if result.Model.DeleteDialog.IsDeleteSelected() {
+				// Delete was selected
+				performDeleteSync(m.NodePath)
+				result.Deleted = true
+			}
+			// Close dialog (whether Delete or Cancel was selected)
+			result.Model.DeleteDialog = nil
+			if result.Deleted {
+				result.Quit = true
+			}
+			return result
+		default:
+			// Any other key closes the dialog and returns to detail view
+			result.Model.DeleteDialog = nil
+			return result
+		}
+	}
 
 	// Accept any key to close help overlay (except ? which toggles help)
 	if m.ShowHelp && key.String() != "?" {
@@ -84,6 +118,16 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 		if m.Cursor < len(m.History.ScanResults.Hosts) {
 			result.ScanAllPorts = true
 			result.SelectedHostIP = m.History.ScanResults.Hosts[m.Cursor].IP
+			result.ScanHistoryPath = m.HistoryPath
+		}
+	case ActionDelete:
+		if m.NodePath != "" {
+			result.Model.DeleteDialog = &deletepkg.HistoryDeleteDialog{
+				Target:      nil,
+				ItemType:    m.NodeItemType,
+				ItemName:    m.NodeName,
+				CursorOnYes: true,
+			}
 		}
 	case ActionHelp:
 		result.Model.ShowHelp = !result.Model.ShowHelp
@@ -95,4 +139,10 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	_ = cmd
 
 	return result
+}
+
+func performDeleteSync(path string) {
+	if path != "" {
+		history.Delete(path)
+	}
 }
