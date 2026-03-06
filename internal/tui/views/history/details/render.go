@@ -4,16 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
-)
-
-var (
-	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("15"))
-	selectedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("226")).Bold(true)
-	normalStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
-	mutedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	helpStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	portStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("150"))
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
 
 func Render(m Model, windowWidth, windowHeight int) string {
@@ -25,7 +16,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 		m.History.ScanMetadata.InterfaceName,
 		m.History.ScanMetadata.Created.Format("Jan 2 15:04"),
 	)
-	b.WriteString(titleStyle.Render(title) + "\n\n")
+	b.WriteString(common.TitleStyle.Render(title) + "\n\n")
 
 	// Content for viewport
 	var content strings.Builder
@@ -55,7 +46,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 
 	// Hosts list
 	if len(m.History.ScanResults.Hosts) == 0 {
-		content.WriteString(mutedStyle.Render("No hosts found in this scan\n"))
+		content.WriteString(common.MutedStyle.Render("No hosts found in this scan\n"))
 	} else {
 		for i, host := range m.History.ScanResults.Hosts {
 			isSelected := i == m.Cursor
@@ -71,23 +62,29 @@ func Render(m Model, windowWidth, windowHeight int) string {
 			}
 
 			if isSelected {
-				content.WriteString(selectedStyle.Render(hostLine) + "\n")
+				content.WriteString(common.HighlightStyle.Render(hostLine) + "\n")
 			} else {
-				content.WriteString(normalStyle.Render(hostLine) + "\n")
+				content.WriteString(common.InfoTextStyle.Render(hostLine) + "\n")
 			}
 
 			// Ports
+			allPortsScanned := len(host.PortsScanned) == 65535
 			for _, port := range host.Ports {
 				portLine := "    port " + fmt.Sprintf("%d", port.Port)
 				if port.Banner != "" {
 					portLine += ": " + port.Banner
 				}
-				content.WriteString(portStyle.Render(portLine) + "\n")
+				// Use green only if all ports were scanned
+				if allPortsScanned {
+					content.WriteString(common.ProgressGreenStyle.Render(portLine) + "\n")
+				} else {
+					content.WriteString(portLine + "\n")
+				}
 			}
 
 			// Show if all ports were scanned
-			if len(host.PortsScanned) > 10000 {
-				content.WriteString(mutedStyle.Render("    [All 65535 ports scanned]") + "\n")
+			if allPortsScanned {
+				content.WriteString(common.MutedStyle.Render("    [All 65535 ports scanned]") + "\n")
 			}
 
 			content.WriteString("\n")
@@ -100,7 +97,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	// Build final output with viewport and help text
 	b.WriteString(m.Viewport.View())
 	b.WriteString("\n")
-	b.WriteString(helpStyle.Render("↑/↓: select host • Enter: scan all ports • q: back • ?: help"))
+	b.WriteString(common.HelpTextStyle.Render("↑/↓: select host • Enter: scan all ports • q: back • ?: help"))
 
 	if m.ErrorMsg != "" {
 		b.WriteString("\n\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render("Error: "+m.ErrorMsg))

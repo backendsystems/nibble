@@ -7,15 +7,17 @@ import (
 
 // Color holds the global color palette used throughout the application
 var Color = struct {
-	Selection lipgloss.Color // Primary highlight/selection color (yellow)
-	Help      lipgloss.Color // Help text and secondary info (gray)
-	Info      lipgloss.Color // Primary text and information (white)
-	Error     lipgloss.Color // Error and danger messages (red)
+	Selection   lipgloss.Color // Primary highlight/selection color (yellow)
+	Help        lipgloss.Color // Help text and secondary info (gray)
+	Info        lipgloss.Color // Primary text and information (white)
+	Error       lipgloss.Color // Error and danger messages (red)
+	ProgressGreen lipgloss.Color // Progress bar and found ports color (green tint)
 }{
-	Selection: lipgloss.Color("226"),
-	Help:      lipgloss.Color("240"),
-	Info:      lipgloss.Color("15"),
-	Error:     lipgloss.Color("196"),
+	Selection:   lipgloss.Color("226"),
+	Help:        lipgloss.Color("240"),
+	Info:        lipgloss.Color("15"),
+	Error:       lipgloss.Color("196"),
+	ProgressGreen: lipgloss.Color("150"),
 }
 
 var (
@@ -60,6 +62,9 @@ var (
 	ItalicHelpStyle = lipgloss.NewStyle().
 			Foreground(Color.Help).
 			Italic(true)
+
+	ProgressGreenStyle = lipgloss.NewStyle().
+			Foreground(Color.ProgressGreen)
 )
 
 // FormTheme returns a custom huh theme with yellow selection colors

@@ -162,20 +162,23 @@ func updateViewportContent(m Model) Model {
 					}
 
 					// Ports
+					allPortsScanned := len(host.PortsScanned) == 65535
 					for _, port := range host.Ports {
 						portLine := "    port " + fmt.Sprintf("%d", port.Port)
 						if port.Banner != "" {
-							// Highlight entire port line with banner in green
 							portLine += ": " + port.Banner
-							content.WriteString(getPortBannerStyle().Render(portLine) + "\n")
+						}
+						// Highlight ports in green if all ports were scanned
+						if allPortsScanned {
+							content.WriteString(common.ProgressGreenStyle.Render(portLine) + "\n")
 						} else {
 							content.WriteString(portLine + "\n")
 						}
 					}
 
 					// Show if all ports were scanned
-					if len(host.PortsScanned) > 10000 {
-						content.WriteString(getAllPortsStyle().Render("    [All 65535 ports scanned]") + "\n")
+					if allPortsScanned {
+						content.WriteString(common.MutedStyle.Render("    [All 65535 ports scanned]") + "\n")
 					}
 
 					content.WriteString("\n")
@@ -204,7 +207,7 @@ func updateViewportContent(m Model) Model {
 				lineToHost++ // Host line
 				lineToHost += len(host.Ports) // Port lines
 				// Check if "all ports scanned" message is shown
-				if len(host.PortsScanned) > 10000 {
+				if len(host.PortsScanned) == 65535 {
 					lineToHost++
 				}
 				lineToHost++ // Blank line after host
@@ -219,7 +222,7 @@ func updateViewportContent(m Model) Model {
 				selectedHost := h.ScanResults.Hosts[m.DetailCursor]
 				// Reserve space: 1 for host line + 2 buffer lines
 				portLines := len(selectedHost.Ports)
-				if len(selectedHost.PortsScanned) > 10000 {
+				if len(selectedHost.PortsScanned) == 65535 {
 					portLines++ // "All ports" message
 				}
 				reserveLines := 1 + 2 // host line + buffer
@@ -320,12 +323,3 @@ func getScanStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(common.Color.Info)
 }
 
-// getPortBannerStyle returns the style for port banners
-func getPortBannerStyle() lipgloss.Style {
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("121")) // Light green for banners
-}
-
-// getAllPortsStyle returns the style for "all ports scanned" message
-func getAllPortsStyle() lipgloss.Style {
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true) // Orange/yellow for all ports
-}
