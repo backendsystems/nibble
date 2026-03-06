@@ -68,6 +68,7 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 	if m.Mode == ViewDetail {
 		detailResult := m.Details.Update(msg)
 		result.Model.Details = detailResult.Model
+		result.Cmd = detailResult.Cmd
 		if detailResult.Deleted || detailResult.Quit {
 			// Return to list mode; reload tree if deleted
 			if detailResult.Deleted {

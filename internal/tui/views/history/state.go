@@ -5,6 +5,7 @@ import (
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type NodeType int
@@ -52,4 +53,5 @@ type UpdateResult struct {
 	ScanAllPorts    bool
 	SelectedHostIP  string
 	ScanHistoryPath string
+	Cmd             tea.Cmd
 }

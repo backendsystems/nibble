@@ -5,11 +5,13 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/scanner/demo"
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
+	historydetailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	historyview "github.com/backendsystems/nibble/internal/tui/views/history"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
@@ -17,6 +19,7 @@ import (
 	targetview "github.com/backendsystems/nibble/internal/tui/views/target"
 
 	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/term"
 )
@@ -176,7 +179,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if result.ScanAllPorts {
-			// Launch all-port scan on selected host
+			// Start inline scan on selected host
 			hostIP := result.SelectedHostIP
 			targetCIDR := hostIP + "/32"
 
@@ -193,25 +196,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				s.Ports = allPorts
 			}
 
-			// Start the scan (empty interface for target scans)
-			nextScan, scanCmd := m.scan.Start(
-				net.Interface{},
-				nil,
-				1,
-				targetCIDR,
+			// Start the scan in background, keep details view visible
+			m.history.Details.Scanning = true
+			m.history.Details.ProgressChan = make(chan shared.ProgressUpdate, 256)
+			m.history.Details.NewPortsByHost = make(map[string]map[int]bool)
+			m.history.Details.ScanPortsScanned = allPorts
+			m.history.Details.Stopwatch = stopwatch.NewWithInterval(10 * time.Millisecond)
+			m.history.Details.Stopwatch.Start()
+
+			// Start the scan and let it drive the progress loop
+			scanCmd := tea.Batch(
+				m.history.Details.Stopwatch.Init(),
+				performDetailScan(m.scan.NetworkScan, targetCIDR, m.history.Details.ProgressChan),
 			)
-
-			// Mark as rescan to update history file
-			nextScan.IsRescan = true
-			nextScan.RescanHistoryPath = result.ScanHistoryPath
-
-			nextScan = nextScan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
-			m.scan = nextScan
-			m.active = viewScan
-			return m, tea.Sequence(exitAltScreenCmd(), scanCmd)
+			return m, scanCmd
 		}
 
-		return m, nil
+		return m, result.Cmd
 	case viewTarget:
 		result, cmd := (&m.target).Update(msg)
 		// Note: m.target is updated in place to preserve form bindings
@@ -384,3 +385,17 @@ func resolvePortsConfig(cfg ports.Config) ([]int, error) {
 		return nil, nil
 	}
 }
+
+func performDetailScan(networkScanner shared.Scanner, targetAddr string, progressChan chan shared.ProgressUpdate) tea.Cmd {
+	return func() tea.Msg {
+		// Start scan in goroutine
+		go networkScanner.ScanNetwork("", targetAddr, progressChan)
+		// Wait for first progress and return it to kick off the loop
+		progress, ok := <-progressChan
+		if !ok {
+			return historydetailsview.CompleteMsg{}
+		}
+		return historydetailsview.ProgressMsg{Update: progress}
+	}
+}
+

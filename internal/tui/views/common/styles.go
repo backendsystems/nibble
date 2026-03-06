@@ -12,12 +12,14 @@ var Color = struct {
 	Info        lipgloss.Color // Primary text and information (white)
 	Error       lipgloss.Color // Error and danger messages (red)
 	ProgressGreen lipgloss.Color // Progress bar and found ports color (green tint)
+	Warning     lipgloss.Color // Warning color (orange)
 }{
 	Selection:   lipgloss.Color("226"),
 	Help:        lipgloss.Color("240"),
 	Info:        lipgloss.Color("15"),
 	Error:       lipgloss.Color("196"),
 	ProgressGreen: lipgloss.Color("150"),
+	Warning:    lipgloss.Color("208"),
 }
 
 var (
@@ -65,6 +67,10 @@ var (
 
 	ProgressGreenStyle = lipgloss.NewStyle().
 			Foreground(Color.ProgressGreen)
+
+	WarningStyle = lipgloss.NewStyle().
+			Foreground(Color.Warning).
+			Bold(true)
 )
 
 // FormTheme returns a custom huh theme with yellow selection colors

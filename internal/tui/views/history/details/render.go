@@ -51,7 +51,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 		for i, host := range m.History.ScanResults.Hosts {
 			isSelected := i == m.Cursor
 			cursor := "  "
-			if isSelected {
+			if isSelected && !m.Scanning {
 				cursor = "▶ "
 			}
 
@@ -61,8 +61,24 @@ func Render(m Model, windowWidth, windowHeight int) string {
 				hostLine += " - " + host.Hardware
 			}
 
+			// Show spinner only for the host being scanned
+			if i == m.ScanningHostIdx && m.Scanning {
+				spinnerChars := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+				spinnerIdx := int(m.Stopwatch.Elapsed().Milliseconds() / 100) % len(spinnerChars)
+				hostLine += " " + common.ProgressGreenStyle.Render(spinnerChars[spinnerIdx])
+			} else if i == m.ScanningHostIdx && !m.Scanning && m.ProgressChan != nil {
+				// Show checkmark when that host's scan completes
+				hostLine += " " + common.ProgressGreenStyle.Render("✓")
+			}
+
 			if isSelected {
-				content.WriteString(common.HighlightStyle.Render(hostLine) + "\n")
+				if m.Scanning {
+					// Use warning color (orange) when scanning to indicate locked state
+					content.WriteString(common.WarningStyle.Render(hostLine) + "\n")
+				} else {
+					// Normal yellow highlight when not scanning
+					content.WriteString(common.HighlightStyle.Render(hostLine) + "\n")
+				}
 			} else {
 				content.WriteString(common.InfoTextStyle.Render(hostLine) + "\n")
 			}
@@ -74,9 +90,19 @@ func Render(m Model, windowWidth, windowHeight int) string {
 				if port.Banner != "" {
 					portLine += ": " + port.Banner
 				}
-				// Use green only if all ports were scanned
+
+				// Check if this port is newly found
+				isNewPort := false
+				if m.NewPortsByHost != nil && m.NewPortsByHost[host.IP] != nil {
+					isNewPort = m.NewPortsByHost[host.IP][port.Port]
+				}
+
+				// Use green if all ports scanned, yellow if newly found, normal otherwise
 				if allPortsScanned {
 					content.WriteString(common.ProgressGreenStyle.Render(portLine) + "\n")
+				} else if isNewPort {
+					// Yellow for newly found ports
+					content.WriteString(common.HighlightStyle.Render(portLine) + "\n")
 				} else {
 					content.WriteString(portLine + "\n")
 				}
