@@ -165,14 +165,17 @@ func updateViewportContent(m Model) Model {
 					for _, port := range host.Ports {
 						portLine := "    port " + fmt.Sprintf("%d", port.Port)
 						if port.Banner != "" {
+							// Highlight entire port line with banner in green
 							portLine += ": " + port.Banner
+							content.WriteString(getPortBannerStyle().Render(portLine) + "\n")
+						} else {
+							content.WriteString(portLine + "\n")
 						}
-						content.WriteString(portLine + "\n")
 					}
 
 					// Show if all ports were scanned
 					if len(host.PortsScanned) > 10000 {
-						content.WriteString("    [All 65535 ports scanned]\n")
+						content.WriteString(getAllPortsStyle().Render("    [All 65535 ports scanned]") + "\n")
 					}
 
 					content.WriteString("\n")
@@ -181,8 +184,8 @@ func updateViewportContent(m Model) Model {
 
 			m = m.UpdateDetailViewportContent(content.String(), m.WindowW, m.WindowH)
 
-			// Keep selected host visible by scrolling viewport
-			// Count lines to selected host, accounting for all content
+			// Keep selected host IP visible at top by scrolling to show it
+			// Count lines to selected host
 			lineToHost := 0
 
 			// Count metadata lines (Duration, Updated, Ports)
@@ -207,11 +210,23 @@ func updateViewportContent(m Model) Model {
 				lineToHost++ // Blank line after host
 			}
 
-			// Ensure the selected host line is visible
+			// Keep host visible, scrolling based on number of ports to show them
 			if lineToHost < m.DetailViewport.YOffset {
-				m.DetailViewport.YOffset = lineToHost
-			} else if lineToHost >= m.DetailViewport.YOffset+m.DetailViewport.Height {
-				m.DetailViewport.YOffset = lineToHost - m.DetailViewport.Height + 1
+				// Host is above viewport, scroll up to show metadata and host
+				m.DetailViewport.YOffset = 0
+			} else if lineToHost >= m.DetailViewport.YOffset+m.DetailViewport.Height-1 {
+				// Host is at or past bottom, scroll to keep it visible with ports below
+				selectedHost := h.ScanResults.Hosts[m.DetailCursor]
+				// Reserve space: 1 for host line + 2 buffer lines
+				portLines := len(selectedHost.Ports)
+				if len(selectedHost.PortsScanned) > 10000 {
+					portLines++ // "All ports" message
+				}
+				reserveLines := 1 + 2 // host line + buffer
+				m.DetailViewport.YOffset = lineToHost - m.DetailViewport.Height + reserveLines + (portLines / 2)
+				if m.DetailViewport.YOffset < 0 {
+					m.DetailViewport.YOffset = 0
+				}
 			}
 		}
 	} else {
@@ -242,6 +257,7 @@ func renderNodeToString(b *strings.Builder, node *TreeNode, isSelected bool) {
 
 	var icon string
 	var name string
+	var style lipgloss.Style
 
 	switch node.Type {
 	case NodeInterface:
@@ -251,6 +267,7 @@ func renderNodeToString(b *strings.Builder, node *TreeNode, isSelected bool) {
 			icon = "📁"
 		}
 		name = node.Name
+		style = getFolderStyle()
 		if len(node.Children) > 0 {
 			name += fmt.Sprintf(" (%d networks)", len(node.Children))
 		}
@@ -262,12 +279,14 @@ func renderNodeToString(b *strings.Builder, node *TreeNode, isSelected bool) {
 			icon = "📁"
 		}
 		name = node.Name
+		style = getFolderStyle()
 		if len(node.Children) > 0 {
 			name += fmt.Sprintf(" (%d scans)", len(node.Children))
 		}
 
 	case NodeScan:
 		icon = "📄"
+		style = getScanStyle()
 		if node.ScanData != nil {
 			name = fmt.Sprintf("%s (%d hosts)",
 				node.Name,
@@ -282,11 +301,31 @@ func renderNodeToString(b *strings.Builder, node *TreeNode, isSelected bool) {
 	if isSelected {
 		b.WriteString(getSelectedStyle().Render(line) + "\n")
 	} else {
-		b.WriteString(line + "\n")
+		b.WriteString(style.Render(line) + "\n")
 	}
 }
 
 // getSelectedStyle returns the style for selected items
 func getSelectedStyle() lipgloss.Style {
 	return common.HighlightStyle
+}
+
+// getFolderStyle returns the style for folder nodes
+func getFolderStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("33"))
+}
+
+// getScanStyle returns the style for scan nodes
+func getScanStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(common.Color.Info)
+}
+
+// getPortBannerStyle returns the style for port banners
+func getPortBannerStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("121")) // Light green for banners
+}
+
+// getAllPortsStyle returns the style for "all ports scanned" message
+func getAllPortsStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true) // Orange/yellow for all ports
 }
