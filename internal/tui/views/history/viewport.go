@@ -245,6 +245,16 @@ func updateViewportContent(m Model) Model {
 		}
 
 		m = m.UpdateViewportContent(content.String(), m.WindowW, m.WindowH)
+
+		// Keep cursor visible by scrolling viewport
+		cursorLine := m.Cursor
+		if cursorLine < m.Viewport.YOffset {
+			// Cursor is above viewport, scroll up to show it
+			m.Viewport.YOffset = 0
+		} else if cursorLine >= m.Viewport.YOffset+m.Viewport.Height {
+			// Cursor is below viewport, scroll down to keep it visible
+			m.Viewport.YOffset = cursorLine - m.Viewport.Height + 1
+		}
 	}
 
 	return m
