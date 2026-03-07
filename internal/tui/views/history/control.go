@@ -17,6 +17,7 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 	if m.Mode == ViewDetail {
 		detailResult := m.Details.Update(msg)
 		result.Model.Details = detailResult.Model
+		syncScanNode(result.Model.Tree, detailResult.Model.HistoryPath, detailResult.Model.History)
 		result.Cmd = detailResult.Cmd
 		if detailResult.Deleted {
 			tree, selectedPath, _ := historytree.Build()

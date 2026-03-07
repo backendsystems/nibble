@@ -109,3 +109,25 @@ func loadTreeCmd() tea.Cmd {
 		return treeLoadedMsg{tree: tree, selectedPath: selectedPath}
 	}
 }
+
+func syncScanNode(tree []*TreeNode, path string, updated history.ScanHistory) {
+	if path == "" || updated.Version == "" {
+		return
+	}
+
+	for _, node := range tree {
+		if node == nil {
+			continue
+		}
+		if node.Path == path && node.Type == NodeScan {
+			updatedCopy := updated
+			node.ScanData = &updatedCopy
+			node.Counts = &ScanCounts{
+				Hosts: updated.ScanResults.HostsFound,
+				Ports: updated.ScanResults.PortsFound,
+			}
+			return
+		}
+		syncScanNode(node.Children, path, updated)
+	}
+}

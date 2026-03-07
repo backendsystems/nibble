@@ -80,13 +80,9 @@ func loadScanCountCmd(ctx context.Context, path string) tea.Cmd {
 		if ctx.Err() != nil {
 			return nil
 		}
-		scanData, err := history.Load(path)
+		summary, err := history.LoadSummary(path)
 		if err != nil {
 			return nil
-		}
-		ports := 0
-		for _, host := range scanData.ScanResults.Hosts {
-			ports += len(host.Ports)
 		}
 		if ctx.Err() != nil {
 			return nil
@@ -94,8 +90,8 @@ func loadScanCountCmd(ctx context.Context, path string) tea.Cmd {
 		return ScanCountLoadedMsg{
 			Path: path,
 			Counts: ScanCounts{
-				Hosts: len(scanData.ScanResults.Hosts),
-				Ports: ports,
+				Hosts: summary.ScanResults.HostsFound,
+				Ports: summary.ScanResults.PortsFound,
 			},
 		}
 	}

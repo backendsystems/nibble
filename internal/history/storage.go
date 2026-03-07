@@ -47,6 +47,21 @@ func Load(path string) (ScanHistory, error) {
 	return history, nil
 }
 
+// LoadSummary reads only the metadata and aggregate counts needed by tree/list views.
+func LoadSummary(path string) (ScanSummary, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ScanSummary{}, err
+	}
+
+	var summary ScanSummary
+	if err := json.Unmarshal(data, &summary); err != nil {
+		return ScanSummary{}, err
+	}
+
+	return summary, nil
+}
+
 // Update updates an existing scan history file
 func Update(path string, history ScanHistory) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
