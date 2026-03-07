@@ -45,7 +45,7 @@ func renderList(m Model, maxWidth int) string {
 
 	// Show overlays (help takes precedence over delete dialog)
 	if m.ShowHelp {
-		return renderListHelpOverlay(view, m.WindowW, m.WindowH)
+		return historytree.RenderHelpOverlay(view, m.WindowW, m.WindowH)
 	}
 
 	if m.DeleteDialog != nil {

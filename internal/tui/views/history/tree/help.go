@@ -1,8 +1,8 @@
-package historyview
+package tree
 
 import "github.com/backendsystems/nibble/internal/tui/views/common"
 
-func renderListHelpOverlay(view string, viewWidth, viewHeight int) string {
+func RenderHelpOverlay(view string, viewWidth, viewHeight int) string {
 	return common.RenderHelpOverlay(view, common.HelpConfig{
 		Title:      "Scan History",
 		ViewWidth:  viewWidth,
