@@ -16,18 +16,13 @@ func Render(m Model, windowWidth, windowHeight int) string {
 		m.History.ScanMetadata.InterfaceName,
 		m.History.ScanMetadata.Created.Format("2006 Jan 2 15:04"),
 	)
-	b.WriteString(common.TitleStyle.Render(title) + "\n\n")
+	b.WriteString(common.TitleStyle.Render(title) + "\n")
 
 	// Content for viewport
 	var content strings.Builder
 
 	// Metadata
-	content.WriteString(fmt.Sprintf("Duration:     %.1fs\n", m.History.ScanMetadata.DurationSeconds))
-
-	content.WriteString(fmt.Sprintf("Hosts found:  %d / %d\n",
-		m.History.ScanResults.HostsFound,
-		m.History.ScanResults.TotalHostsScanned,
-	))
+	// content.WriteString(fmt.Sprintf("Duration:     %.1fs\n", m.History.ScanMetadata.DurationSeconds))
 
 	if m.History.ScanResults.PortsFound > 0 {
 		content.WriteString(fmt.Sprintf("Ports found:  %d\n", m.History.ScanResults.PortsFound))
@@ -35,9 +30,11 @@ func Render(m Model, windowWidth, windowHeight int) string {
 
 	if !m.History.ScanMetadata.Updated.Equal(m.History.ScanMetadata.Created) {
 		content.WriteString(fmt.Sprintf("Updated:      %s\n", m.History.ScanMetadata.Updated.Format("2006 Jan 2 15:04")))
+	} else {
+		content.WriteString(fmt.Sprintf("Created:      %s\n", m.History.ScanMetadata.Created.Format("2006 Jan 2 15:04")))
 	}
 
-	content.WriteString("\n")
+	// content.WriteString("\n")
 
 	// Hosts list
 	if len(m.History.ScanResults.Hosts) == 0 {
@@ -105,7 +102,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 				}
 			}
 
-			content.WriteString("\n")
+			// content.WriteString("\n")
 		}
 	}
 
@@ -132,7 +129,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 		host := m.History.ScanResults.Hosts[i]
 		lineToHost++                  // Host line
 		lineToHost += len(host.Ports) // Port lines
-		lineToHost++ // Blank line after host
+		lineToHost++                  // Blank line after host
 	}
 
 	// Keep host visible, scrolling based on number of ports to show them
