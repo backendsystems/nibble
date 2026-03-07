@@ -18,4 +18,3 @@ func renderListHelpOverlay(view string, viewWidth, viewHeight int) string {
 		},
 	})
 }
-

@@ -55,7 +55,6 @@ func renderList(m Model, maxWidth int) string {
 	return view
 }
 
-
 func renderNode(b *strings.Builder, node *TreeNode, isSelected bool) {
 	indent := strings.Repeat("  ", node.Level)
 	cursor := "  "

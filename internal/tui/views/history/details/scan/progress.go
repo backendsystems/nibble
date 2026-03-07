@@ -80,3 +80,14 @@ func Continue(progressChan <-chan shared.ProgressUpdate) tea.Cmd {
 	}
 	return ListenForProgress(progressChan)
 }
+
+func StartNetworkScan(networkScanner shared.Scanner, targetAddr string, progressChan chan shared.ProgressUpdate) tea.Cmd {
+	return func() tea.Msg {
+		go networkScanner.ScanNetwork("", targetAddr, progressChan)
+		progress, ok := <-progressChan
+		if !ok {
+			return CompleteMsg{}
+		}
+		return ProgressMsg{Update: progress}
+	}
+}

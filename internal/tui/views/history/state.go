@@ -24,13 +24,13 @@ const (
 )
 
 type TreeNode struct {
-	Type      NodeType
-	Name      string
-	Path      string
-	Expanded  bool
-	Children  []*TreeNode
-	ScanData  *history.ScanHistory
-	Level     int
+	Type     NodeType
+	Name     string
+	Path     string
+	Expanded bool
+	Children []*TreeNode
+	ScanData *history.ScanHistory
+	Level    int
 }
 
 type Model struct {
