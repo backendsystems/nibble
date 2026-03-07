@@ -9,7 +9,7 @@ import (
 
 func HandleKey(key string) Action {
 	switch key {
-	case "q", "esc":
+	case "q", "esc", "left", "a", "h":
 		return ActionQuit
 	case "up", "w", "k":
 		return ActionMoveUp
