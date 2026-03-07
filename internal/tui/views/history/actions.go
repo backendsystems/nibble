@@ -5,6 +5,56 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+type Action int
+
+const (
+	ActionNone Action = iota
+	ActionQuit
+	ActionMoveUp
+	ActionMoveDown
+	ActionToggle
+	ActionCollapse
+	ActionDelete
+	ActionConfirmYes
+	ActionConfirmNo
+	ActionHelp
+)
+
+// HandleKey converts a key press into an action
+func HandleKey(key string, inDeleteDialog bool) Action {
+	if inDeleteDialog {
+		switch key {
+		case "left", "a", "h", "right", "d", "l":
+			return ActionToggle // Toggle between Delete/Cancel
+		case "enter":
+			return ActionConfirmYes // Confirm selection
+		case "esc", "q":
+			return ActionConfirmNo // Cancel
+		default:
+			return ActionNone
+		}
+	}
+
+	switch key {
+	case "q", "esc":
+		return ActionQuit
+	case "up", "w", "k":
+		return ActionMoveUp
+	case "down", "s", "j":
+		return ActionMoveDown
+	case "enter", "right", "d", "l":
+		return ActionToggle
+	case "left", "a", "h":
+		return ActionCollapse
+	case "delete":
+		return ActionDelete
+	case "?":
+		return ActionHelp
+	default:
+		return ActionNone
+	}
+}
+
 // performDeleteSync recursively deletes a node and all its children
 func performDeleteSync(node *TreeNode) {
 	if node == nil {
