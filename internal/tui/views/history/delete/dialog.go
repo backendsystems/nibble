@@ -39,6 +39,9 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 	// Build content
 	warning := common.ErrorStyle.Render(fmt.Sprintf("Delete %s: %s?", d.ItemType, d.ItemName))
 	note := common.HelpTextStyle.Render("This action cannot be undone.")
+	// Calculate box width early so help text can wrap to the dialog content width.
+	width := int(float64(viewWidth) * 0.6)
+	width = max(min(width, 60), 46)
 
 	// Buttons (Cancel on left, Delete on right)
 	var cancelBtn, deleteBtn string
@@ -51,7 +54,7 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 	}
 
 	buttons := lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, deleteBtn)
-	help := common.HelpTextStyle.Render("←/→: navigate • Enter: select • q: back")
+	help := common.HelpTextStyle.Render(common.WrapWords("←/→: navigate • Enter: select • q: back", width-4))
 
 	// Combine content
 	content := strings.Join([]string{
@@ -62,10 +65,6 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 		"",
 		help,
 	}, "\n")
-
-	// Calculate box width
-	width := int(float64(viewWidth) * 0.6)
-	width = max(min(width, 60), 46)
 
 	// Create overlay with common style
 	overlay := common.HelpBoxStyle.Width(width).Render(content)

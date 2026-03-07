@@ -164,7 +164,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	// Build final output with viewport and help text
 	b.WriteString(m.Viewport.View())
 	b.WriteString("\n")
-	b.WriteString(common.HelpTextStyle.Render("↑/↓: select host • Enter: scan all ports • ←/q: back • ?: help"))
+	b.WriteString(common.HelpTextStyle.Render(common.WrapWords("↑/↓: select host • Enter: scan all ports • ←/q: back • ?: help", windowWidth)))
 
 	if m.ErrorMsg != "" {
 		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))

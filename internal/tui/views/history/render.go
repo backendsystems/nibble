@@ -35,7 +35,7 @@ func renderList(m Model, maxWidth int) string {
 	// Render only the visible rows instead of a fully pre-rendered viewport buffer.
 	b.WriteString(renderVisibleList(m))
 	b.WriteString("\n")
-	b.WriteString(helpStyle.Render("↑/↓/←/→ • Del: delete • ?: help • q: back"))
+	b.WriteString(helpStyle.Render(common.WrapWords("↑/↓/←/→ • Del: delete • ?: help • q: back", maxWidth)))
 
 	if m.ErrorMsg != "" {
 		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))
