@@ -13,6 +13,7 @@ func renderHelpOverlay(view string, maxWidth int) string {
 			"• del: delete scan",
 			"• q: back",
 			"",
+			common.ProgressGreenStyle.Render("✓") + " means all 65535 ports scanned on host",
 			"any key: close",
 		},
 	})

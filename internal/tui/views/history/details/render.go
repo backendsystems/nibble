@@ -45,6 +45,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	} else {
 		for i, host := range m.History.ScanResults.Hosts {
 			isSelected := i == m.Cursor
+			allPortsScanned := len(host.PortsScanned) == 65535
 			cursor := "  "
 			if isSelected && !m.Scanning {
 				cursor = "▶ "
@@ -54,6 +55,9 @@ func Render(m Model, windowWidth, windowHeight int) string {
 			hostLine := cursor + host.IP
 			if host.Hardware != "" {
 				hostLine += " - " + host.Hardware
+			}
+			if allPortsScanned {
+				hostLine += " " + common.ProgressGreenStyle.Render("✓")
 			}
 
 			// Show spinner only for the host being scanned
@@ -79,7 +83,6 @@ func Render(m Model, windowWidth, windowHeight int) string {
 			}
 
 			// Ports
-			allPortsScanned := len(host.PortsScanned) == 65535
 			for _, port := range host.Ports {
 				portLine := "    port " + fmt.Sprintf("%d", port.Port)
 				if port.Banner != "" {
@@ -100,11 +103,6 @@ func Render(m Model, windowWidth, windowHeight int) string {
 				} else {
 					content.WriteString(portLine + "\n")
 				}
-			}
-
-			// Show if all ports were scanned
-			if allPortsScanned {
-				content.WriteString(common.MutedStyle.Render("    [All 65535 ports scanned]") + "\n")
 			}
 
 			content.WriteString("\n")
@@ -134,10 +132,6 @@ func Render(m Model, windowWidth, windowHeight int) string {
 		host := m.History.ScanResults.Hosts[i]
 		lineToHost++                  // Host line
 		lineToHost += len(host.Ports) // Port lines
-		// Check if "all ports scanned" message is shown
-		if len(host.PortsScanned) == 65535 {
-			lineToHost++
-		}
 		lineToHost++ // Blank line after host
 	}
 
@@ -150,9 +144,6 @@ func Render(m Model, windowWidth, windowHeight int) string {
 		selectedHost := m.History.ScanResults.Hosts[m.Cursor]
 		// Reserve space: 1 for host line + 2 buffer lines
 		portLines := len(selectedHost.Ports)
-		if len(selectedHost.PortsScanned) == 65535 {
-			portLines++ // "All ports" message
-		}
 		reserveLines := 1 + 2 // host line + buffer
 		m.Viewport.YOffset = lineToHost - m.Viewport.Height + reserveLines + (portLines / 2)
 		if m.Viewport.YOffset < 0 {
