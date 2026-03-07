@@ -93,6 +93,10 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 			}
 			if node != nil {
 				wasExpanded := node.Expanded
+				// Cancel any in-flight lazy loads when collapsing this node or its descendants.
+				if wasExpanded {
+					cancelNodeLoads(node)
+				}
 				node.Expanded = !node.Expanded
 				result.Model.FlatList = flattenTree(result.Model.Tree)
 				if !wasExpanded && node.Expanded && len(node.Children) > 0 {
@@ -102,6 +106,13 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 							result.Model.Cursor++
 						}
 					}
+					// Load counts for scan children that don't have them yet
+					if node.Type == NodeNetwork {
+						cmds := loadNetworkScanCountsCmd(node)
+						if len(cmds) > 0 {
+							result.Cmd = tea.Sequence(cmds...)
+						}
+					}
 				}
 			}
 		}
@@ -109,6 +120,7 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 		if result.Model.Cursor >= 0 && result.Model.Cursor < len(result.Model.FlatList) {
 			node := result.Model.FlatList[result.Model.Cursor]
 			if node != nil && node.Expanded && (node.Type == NodeInterface || node.Type == NodeNetwork) {
+				cancelNodeLoads(node)
 				node.Expanded = false
 				result.Model.FlatList = flattenTree(result.Model.Tree)
 			} else if node != nil && node.Level > 0 {
@@ -117,6 +129,7 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 					if parent != nil && parent.Level == node.Level-1 {
 						result.Model.Cursor = i
 						if parent.Expanded && (parent.Type == NodeInterface || parent.Type == NodeNetwork) {
+							cancelNodeLoads(parent)
 							parent.Expanded = false
 							result.Model.FlatList = flattenTree(result.Model.Tree)
 						}

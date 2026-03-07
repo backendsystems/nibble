@@ -1,6 +1,7 @@
 package historyview
 
 import (
+	"context"
 	"time"
 
 	"github.com/backendsystems/nibble/internal/history"
@@ -25,15 +26,22 @@ const (
 	ViewDetail
 )
 
+type ScanCounts struct {
+	Hosts int
+	Ports int
+}
+
 type TreeNode struct {
-	Type     NodeType
-	Name     string
-	Path     string
-	Expanded bool
-	Children []*TreeNode
-	ScanData *history.ScanHistory
-	Created  time.Time // populated from filename; avoids loading full scan during tree build
-	Level    int
+	Type       NodeType
+	Name       string
+	Path       string
+	Expanded   bool
+	Children   []*TreeNode
+	ScanData   *history.ScanHistory
+	Created    time.Time          // populated from filename; avoids loading full scan during tree build
+	Counts     *ScanCounts        // nil until background worker loads it
+	cancelLoad context.CancelFunc // non-nil while a background count load is in flight
+	Level      int
 }
 
 type Model struct {

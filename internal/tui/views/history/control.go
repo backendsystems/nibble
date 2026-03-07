@@ -55,6 +55,10 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		if result.Model.Cursor >= len(result.Model.FlatList) {
 			result.Model.Cursor = 0
 		}
+		// Fire count loads for any network nodes already expanded by state restore
+		result.Cmd = loadCountsForExpandedNodes(result.Model.Tree)
+	case scanCountLoadedMsg:
+		applyScanCountLoadedMsg(result.Model.FlatList, msg)
 	default:
 		var cmd tea.Cmd
 		result.Model.Viewport, cmd = m.Viewport.Update(msg)

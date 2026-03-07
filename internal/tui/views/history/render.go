@@ -130,22 +130,20 @@ func renderNode(b *strings.Builder, node *TreeNode, isSelected bool) {
 
 	case NodeScan:
 		icon = "📄"
-		if node.ScanData != nil {
-			hostCount := node.ScanData.ScanResults.HostsFound
+		if node.Counts != nil {
 			hostSuffix := "hosts"
-			if hostCount == 1 {
+			if node.Counts.Hosts == 1 {
 				hostSuffix = "host"
 			}
-			portCount := node.ScanData.ScanResults.PortsFound
 			portSuffix := "ports"
-			if portCount == 1 {
+			if node.Counts.Ports == 1 {
 				portSuffix = "port"
 			}
 			name = fmt.Sprintf("%s (%d %s, %d %s)",
 				node.Name,
-				hostCount,
+				node.Counts.Hosts,
 				hostSuffix,
-				portCount,
+				node.Counts.Ports,
 				portSuffix,
 			)
 		} else {
