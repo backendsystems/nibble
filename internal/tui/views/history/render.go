@@ -32,8 +32,8 @@ func renderList(m Model, maxWidth int) string {
 	// Title (outside viewport)
 	b.WriteString(titleStyle.Render("Scan History") + "\n\n")
 
-	// Add viewport content (already set in Update)
-	b.WriteString(m.Viewport.View())
+	// Render only the visible rows instead of a fully pre-rendered viewport buffer.
+	b.WriteString(renderVisibleList(m))
 	b.WriteString("\n")
 	b.WriteString(helpStyle.Render("↑/↓/←/→ • Enter • Del: delete • ?: help • q: back"))
 
@@ -53,6 +53,35 @@ func renderList(m Model, maxWidth int) string {
 	}
 
 	return view
+}
+
+func renderVisibleList(m Model) string {
+	if len(m.Tree) == 0 {
+		return "No scan history found\n"
+	}
+
+	start := m.Viewport.YOffset
+	if start < 0 {
+		start = 0
+	}
+	if start > len(m.FlatList) {
+		start = len(m.FlatList)
+	}
+
+	end := start + m.Viewport.Height
+	if end > len(m.FlatList) {
+		end = len(m.FlatList)
+	}
+
+	var b strings.Builder
+	for i := start; i < end; i++ {
+		node := m.FlatList[i]
+		if node == nil {
+			continue
+		}
+		renderNode(&b, node, i == m.Cursor)
+	}
+	return b.String()
 }
 
 func renderNode(b *strings.Builder, node *TreeNode, isSelected bool) {

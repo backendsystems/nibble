@@ -69,8 +69,8 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		detailResult := m.Details.Update(msg)
 		result.Model.Details = detailResult.Model
 		result.Cmd = detailResult.Cmd
-		if detailResult.Deleted || detailResult.Quit {
-			// Return to list mode; reload tree so rescan updates are reflected.
+		if detailResult.Deleted {
+			// Deletions must reload the tree so removed items disappear from list view.
 			tree, selectedPath, _ := buildHistoryTree()
 			result.Model.Tree = tree
 			result.Model.FlatList = flattenTree(tree)
@@ -80,6 +80,11 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 			if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
 				result.Model.Cursor = len(result.Model.FlatList) - 1
 			}
+			result.Model.Mode = ViewList
+			result.Model.Details = detailsview.Model{}
+			saveViewState(result.Model.FlatList, result.Model.Cursor)
+		} else if detailResult.Quit {
+			// Back from details should preserve current tree/list state.
 			result.Model.Mode = ViewList
 			result.Model.Details = detailsview.Model{}
 			saveViewState(result.Model.FlatList, result.Model.Cursor)
