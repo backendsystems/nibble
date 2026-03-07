@@ -1,6 +1,7 @@
 package historyview
 
 import (
+	"github.com/backendsystems/nibble/internal/history"
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	tea "github.com/charmbracelet/bubbletea"
@@ -68,7 +69,16 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 	case ActionToggle:
 		if result.Model.Cursor >= 0 && result.Model.Cursor < len(result.Model.FlatList) {
 			node := result.Model.FlatList[result.Model.Cursor]
-			if node != nil && node.Type == NodeScan && node.ScanData != nil {
+			if node != nil && node.Type == NodeScan {
+				// Lazy-load: ScanData is nil until first open to avoid reading all files at startup.
+				if node.ScanData == nil {
+					scanData, err := history.Load(node.Path)
+					if err != nil {
+						result.Model.ErrorMsg = "failed to load scan: " + err.Error()
+						return result
+					}
+					node.ScanData = &scanData
+				}
 				result.Model.Mode = ViewDetail
 				result.Model.Details = detailsview.Model{
 					History:      *node.ScanData,

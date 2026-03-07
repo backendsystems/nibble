@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/backendsystems/nibble/internal/history"
 )
@@ -31,12 +32,6 @@ func buildHistoryTree() ([]*TreeNode, string, error) {
 			return nil
 		}
 
-		// Load scan to get metadata
-		scanData, err := history.Load(path)
-		if err != nil {
-			return nil
-		}
-
 		// Parse path: baseDir/interface/network/file.json
 		relPath, _ := filepath.Rel(baseDir, path)
 		parts := strings.Split(relPath, string(filepath.Separator))
@@ -47,13 +42,20 @@ func buildHistoryTree() ([]*TreeNode, string, error) {
 		interfaceName := parts[0]
 		networkName := parts[1]
 
-		// Create scan node
+		// Parse timestamp from filename (scan_20060102_150405.json) — no file read needed.
+		base := filepath.Base(path)
+		created, parseErr := time.ParseInLocation("scan_20060102_150405.json", base, time.Local)
+		if parseErr != nil {
+			return nil
+		}
+
+		// Create scan node — ScanData is nil until the user opens the scan (lazy loaded).
 		scanNode := &TreeNode{
-			Type:     NodeScan,
-			Name:     scanData.ScanMetadata.Created.Format("2006 Jan 2 15:04"),
-			Path:     path,
-			ScanData: &scanData,
-			Level:    2,
+			Type:    NodeScan,
+			Name:    created.Format("2006 Jan 2 15:04"),
+			Path:    path,
+			Created: created,
+			Level:   2,
 		}
 
 		if interfaceMap[interfaceName] == nil {
@@ -116,7 +118,7 @@ func buildHistoryTree() ([]*TreeNode, string, error) {
 			// Sort scans by date (newest first)
 			scans := interfaceMap[iface][net].scans
 			sort.Slice(scans, func(i, j int) bool {
-				return scans[i].ScanData.ScanMetadata.Created.After(scans[j].ScanData.ScanMetadata.Created)
+				return scans[i].Created.After(scans[j].Created)
 			})
 
 			netNode.Children = scans

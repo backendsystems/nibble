@@ -1,6 +1,8 @@
 package historyview
 
 import (
+	"time"
+
 	"github.com/backendsystems/nibble/internal/history"
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
@@ -30,6 +32,7 @@ type TreeNode struct {
 	Expanded bool
 	Children []*TreeNode
 	ScanData *history.ScanHistory
+	Created  time.Time // populated from filename; avoids loading full scan during tree build
 	Level    int
 }
 
