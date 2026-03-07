@@ -223,8 +223,18 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 			}
 			// Toggle folder expansion
 			if node != nil {
+				wasExpanded := node.Expanded
 				node.Expanded = !node.Expanded
 				result.Model.FlatList = flattenTree(result.Model.Tree)
+				// When opening a folder, move selection into the first child.
+				if !wasExpanded && node.Expanded && len(node.Children) > 0 {
+					if result.Model.Cursor+1 < len(result.Model.FlatList) {
+						next := result.Model.FlatList[result.Model.Cursor+1]
+						if next != nil && next.Level == node.Level+1 {
+							result.Model.Cursor++
+						}
+					}
+				}
 			}
 		}
 	case ActionCollapse:
@@ -234,6 +244,20 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 			if node != nil && node.Expanded && (node.Type == NodeInterface || node.Type == NodeNetwork) {
 				node.Expanded = false
 				result.Model.FlatList = flattenTree(result.Model.Tree)
+			} else if node != nil && node.Level > 0 {
+				// If already collapsed (or a leaf), move selection to parent node.
+				for i := result.Model.Cursor - 1; i >= 0; i-- {
+					parent := result.Model.FlatList[i]
+					if parent != nil && parent.Level == node.Level-1 {
+						result.Model.Cursor = i
+						// Left on child should also close the parent we moved up into.
+						if parent.Expanded && (parent.Type == NodeInterface || parent.Type == NodeNetwork) {
+							parent.Expanded = false
+							result.Model.FlatList = flattenTree(result.Model.Tree)
+						}
+						break
+					}
+				}
 			}
 		}
 	case ActionDelete:
