@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	dialTimeout = 70 * time.Millisecond
-	dialStagger = 10 * time.Millisecond
+	dialTimeout = 100 * time.Millisecond
+	dialStagger = 30 * time.Millisecond
 )
 
 type portResult struct {
