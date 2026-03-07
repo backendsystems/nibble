@@ -131,3 +131,68 @@ func syncScanNode(tree []*TreeNode, path string, updated history.ScanHistory) {
 		syncScanNode(node.Children, path, updated)
 	}
 }
+
+func nextSelectionPathAfterDelete(flatList []*TreeNode, deletedPath string) string {
+	if deletedPath == "" {
+		return ""
+	}
+
+	for i, node := range flatList {
+		if node == nil || node.Path != deletedPath {
+			continue
+		}
+
+		level := node.Level
+
+		// Prefer the next sibling in the same parent folder.
+		for j := i + 1; j < len(flatList); j++ {
+			next := flatList[j]
+			if next == nil {
+				continue
+			}
+			if next.Level < level {
+				break
+			}
+			if next.Level == level {
+				return next.Path
+			}
+		}
+
+		// Then prefer the previous sibling in the same parent folder.
+		for j := i - 1; j >= 0; j-- {
+			prev := flatList[j]
+			if prev == nil {
+				continue
+			}
+			if prev.Level < level {
+				break
+			}
+			if prev.Level == level {
+				return prev.Path
+			}
+		}
+
+		// If there are no siblings left, stay anchored on the parent folder.
+		for j := i - 1; j >= 0; j-- {
+			parent := flatList[j]
+			if parent != nil && parent.Level == level-1 {
+				return parent.Path
+			}
+		}
+
+		// Fallback to the next visible node, then the previous one.
+		for j := i + 1; j < len(flatList); j++ {
+			if flatList[j] != nil {
+				return flatList[j].Path
+			}
+		}
+		for j := i - 1; j >= 0; j-- {
+			if flatList[j] != nil {
+				return flatList[j].Path
+			}
+		}
+		break
+	}
+
+	return ""
+}

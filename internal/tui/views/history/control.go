@@ -20,10 +20,16 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		syncScanNode(result.Model.Tree, detailResult.Model.HistoryPath, detailResult.Model.History)
 		result.Cmd = detailResult.Cmd
 		if detailResult.Deleted {
+			nextPath := nextSelectionPathAfterDelete(m.FlatList, detailResult.Model.HistoryPath)
 			tree, selectedPath, _ := historytree.Build()
+			if nextPath != "" {
+				historytree.ExpandAncestorsForPath(tree, nextPath)
+			}
 			result.Model.Tree = tree
 			result.Model.FlatList = historytree.Flatten(tree)
-			if selectedPath != "" {
+			if nextPath != "" {
+				result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, nextPath)
+			} else if selectedPath != "" {
 				result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, selectedPath)
 			}
 			if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
@@ -32,6 +38,7 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 			result.Model.Mode = ViewList
 			result.Model.Details = detailsview.Model{}
 			saveViewState(result.Model.FlatList, result.Model.Cursor)
+			result.Cmd = tea.Batch(result.Cmd, historytree.LoadCountsForExpandedNodes(result.Model.Tree))
 		} else if detailResult.Quit {
 			result.Model.Mode = ViewList
 			result.Model.Details = detailsview.Model{}

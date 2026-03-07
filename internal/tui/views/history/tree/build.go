@@ -112,7 +112,7 @@ func Build() ([]*Node, string, error) {
 
 	selectedPath, _ := history.LoadViewState()
 	if selectedPath != "" {
-		expandAncestorsForPath(result, selectedPath)
+		ExpandAncestorsForPath(result, selectedPath)
 	}
 
 	return result, selectedPath, nil
@@ -143,12 +143,12 @@ func FindCursorByPath(flatList []*Node, path string) int {
 	return 0
 }
 
-func expandAncestorsForPath(nodes []*Node, path string) bool {
+func ExpandAncestorsForPath(nodes []*Node, path string) bool {
 	for _, node := range nodes {
 		if node.Path == path {
 			return true
 		}
-		if expandAncestorsForPath(node.Children, path) {
+		if ExpandAncestorsForPath(node.Children, path) {
 			node.Expanded = true
 			return true
 		}
