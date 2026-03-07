@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const selectionHelpText = "←/→/↑/↓ a/d/w/s h/j/k/l • p: ports • t: target • y: history • ?: help • q: quit"
+const selectionHelpText = "←/→/↑/↓ a/d/w/s h/j/k/l • p: ports • t: target • r: history • ?: help • q: quit"
 
 type Action int
 
@@ -59,7 +59,7 @@ func HandleKey(showHelp bool, key string) Action {
 		return ActionOpenPorts
 	case "t":
 		return ActionOpenTarget
-	case "y":
+	case "r", "y":
 		return ActionOpenHistory
 	case "left", "a", "h":
 		return ActionMoveLeft

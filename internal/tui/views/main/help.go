@@ -10,7 +10,7 @@ func renderHelpOverlay(view string, maxWidth int) string {
 			"Scans local networks for active hosts.",
 			"• Press p to configure ports",
 			"• Press t for target mode scan",
-			"• Press y to view scan history",
+			"• Press r to view scan history",
 			"",
 			"any key: close",
 		},
