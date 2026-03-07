@@ -1,22 +1,19 @@
 package historyview
 
 import (
-	"context"
-	"time"
-
-	"github.com/backendsystems/nibble/internal/history"
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
+	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type NodeType int
+type NodeType = historytree.NodeType
 
 const (
-	NodeInterface NodeType = iota
-	NodeNetwork
-	NodeScan
+	NodeInterface = historytree.NodeInterface
+	NodeNetwork   = historytree.NodeNetwork
+	NodeScan      = historytree.NodeScan
 )
 
 type ViewMode int
@@ -26,23 +23,8 @@ const (
 	ViewDetail
 )
 
-type ScanCounts struct {
-	Hosts int
-	Ports int
-}
-
-type TreeNode struct {
-	Type       NodeType
-	Name       string
-	Path       string
-	Expanded   bool
-	Children   []*TreeNode
-	ScanData   *history.ScanHistory
-	Created    time.Time          // populated from filename; avoids loading full scan during tree build
-	Counts     *ScanCounts        // nil until background worker loads it
-	cancelLoad context.CancelFunc // non-nil while a background count load is in flight
-	Level      int
-}
+type ScanCounts = historytree.ScanCounts
+type TreeNode = historytree.Node
 
 type Model struct {
 	Mode         ViewMode

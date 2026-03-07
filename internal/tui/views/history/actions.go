@@ -2,6 +2,7 @@ package historyview
 
 import (
 	"github.com/backendsystems/nibble/internal/history"
+	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -101,7 +102,7 @@ type treeLoadedMsg struct {
 // loadTreeCmd is a Bubble Tea command that loads the history tree asynchronously
 func loadTreeCmd() tea.Cmd {
 	return func() tea.Msg {
-		tree, selectedPath, err := buildHistoryTree()
+		tree, selectedPath, err := historytree.Build()
 		if err != nil {
 			return treeLoadedMsg{tree: []*TreeNode{}, selectedPath: ""}
 		}

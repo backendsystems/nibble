@@ -1,4 +1,4 @@
-package historyview
+package tree
 
 import (
 	"context"
@@ -7,23 +7,23 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// cancelNodeLoads cancels any in-flight background count loads for a node and its children.
-func cancelNodeLoads(node *TreeNode) {
+// CancelLoads cancels any in-flight background count loads for a node and its children.
+func CancelLoads(node *Node) {
 	if node == nil {
 		return
 	}
-	if node.cancelLoad != nil {
-		node.cancelLoad()
-		node.cancelLoad = nil
+	if node.CancelLoad != nil {
+		node.CancelLoad()
+		node.CancelLoad = nil
 	}
 	for _, child := range node.Children {
-		cancelNodeLoads(child)
+		CancelLoads(child)
 	}
 }
 
-// loadCountsForExpandedNodes collects scan children of expanded network nodes
+// LoadCountsForExpandedNodes collects scan children of expanded network nodes
 // and schedules one background load per scan in visible order.
-func loadCountsForExpandedNodes(tree []*TreeNode) tea.Cmd {
+func LoadCountsForExpandedNodes(tree []*Node) tea.Cmd {
 	var cmds []tea.Cmd
 	for _, iface := range tree {
 		if !iface.Expanded {
@@ -33,7 +33,7 @@ func loadCountsForExpandedNodes(tree []*TreeNode) tea.Cmd {
 			if !net.Expanded {
 				continue
 			}
-			cmds = append(cmds, loadNetworkScanCountsCmd(net)...)
+			cmds = append(cmds, LoadNetworkScanCountsCmd(net)...)
 		}
 	}
 	if len(cmds) == 0 {
@@ -42,12 +42,12 @@ func loadCountsForExpandedNodes(tree []*TreeNode) tea.Cmd {
 	return tea.Sequence(cmds...)
 }
 
-func loadNetworkScanCountsCmd(node *TreeNode) []tea.Cmd {
+func LoadNetworkScanCountsCmd(node *Node) []tea.Cmd {
 	if node == nil || node.Type != NodeNetwork {
 		return nil
 	}
 
-	var unloaded []*TreeNode
+	var unloaded []*Node
 	for _, child := range node.Children {
 		if child != nil && child.Type == NodeScan && child.Counts == nil {
 			unloaded = append(unloaded, child)
@@ -58,7 +58,7 @@ func loadNetworkScanCountsCmd(node *TreeNode) []tea.Cmd {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	node.cancelLoad = cancel
+	node.CancelLoad = cancel
 
 	cmds := make([]tea.Cmd, 0, len(unloaded))
 	for _, child := range unloaded {
@@ -67,10 +67,10 @@ func loadNetworkScanCountsCmd(node *TreeNode) []tea.Cmd {
 	return cmds
 }
 
-// scanCountLoadedMsg carries host/port counts for a single scan path.
-type scanCountLoadedMsg struct {
-	path   string
-	counts ScanCounts
+// ScanCountLoadedMsg carries host/port counts for a single scan path.
+type ScanCountLoadedMsg struct {
+	Path   string
+	Counts ScanCounts
 }
 
 // loadScanCountCmd reads counts for one scan node in the background.
@@ -91,9 +91,9 @@ func loadScanCountCmd(ctx context.Context, path string) tea.Cmd {
 		if ctx.Err() != nil {
 			return nil
 		}
-		return scanCountLoadedMsg{
-			path: path,
-			counts: ScanCounts{
+		return ScanCountLoadedMsg{
+			Path: path,
+			Counts: ScanCounts{
 				Hosts: len(scanData.ScanResults.Hosts),
 				Ports: ports,
 			},
@@ -101,12 +101,12 @@ func loadScanCountCmd(ctx context.Context, path string) tea.Cmd {
 	}
 }
 
-func applyScanCountLoadedMsg(flatList []*TreeNode, msg scanCountLoadedMsg) {
+func ApplyScanCountLoadedMsg(flatList []*Node, msg ScanCountLoadedMsg) {
 	for _, node := range flatList {
-		if node == nil || node.Path != msg.path {
+		if node == nil || node.Path != msg.Path {
 			continue
 		}
-		counts := msg.counts
+		counts := msg.Counts
 		node.Counts = &counts
 		return
 	}

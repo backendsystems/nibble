@@ -2,6 +2,7 @@ package historyview
 
 import (
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
+	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -18,11 +19,11 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		result.Model.Details = detailResult.Model
 		result.Cmd = detailResult.Cmd
 		if detailResult.Deleted {
-			tree, selectedPath, _ := buildHistoryTree()
+			tree, selectedPath, _ := historytree.Build()
 			result.Model.Tree = tree
-			result.Model.FlatList = flattenTree(tree)
+			result.Model.FlatList = historytree.Flatten(tree)
 			if selectedPath != "" {
-				result.Model.Cursor = findCursorByPath(result.Model.FlatList, selectedPath)
+				result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, selectedPath)
 			}
 			if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
 				result.Model.Cursor = len(result.Model.FlatList) - 1
@@ -48,17 +49,17 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		result = handleKeyMsg(m, msg)
 	case treeLoadedMsg:
 		result.Model.Tree = msg.tree
-		result.Model.FlatList = flattenTree(result.Model.Tree)
+		result.Model.FlatList = historytree.Flatten(result.Model.Tree)
 		if msg.selectedPath != "" {
-			result.Model.Cursor = findCursorByPath(result.Model.FlatList, msg.selectedPath)
+			result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, msg.selectedPath)
 		}
 		if result.Model.Cursor >= len(result.Model.FlatList) {
 			result.Model.Cursor = 0
 		}
 		// Fire count loads for any network nodes already expanded by state restore
-		result.Cmd = loadCountsForExpandedNodes(result.Model.Tree)
-	case scanCountLoadedMsg:
-		applyScanCountLoadedMsg(result.Model.FlatList, msg)
+		result.Cmd = historytree.LoadCountsForExpandedNodes(result.Model.Tree)
+	case historytree.ScanCountLoadedMsg:
+		historytree.ApplyScanCountLoadedMsg(result.Model.FlatList, msg)
 	default:
 		var cmd tea.Cmd
 		result.Model.Viewport, cmd = m.Viewport.Update(msg)

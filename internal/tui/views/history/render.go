@@ -1,22 +1,16 @@
 package historyview
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
-	"github.com/charmbracelet/lipgloss"
+	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
 )
 
 var (
-	titleStyle    = common.TitleStyle
-	selectedStyle = common.HighlightStyle
-	normalStyle   = lipgloss.NewStyle().Foreground(common.Color.Info)
-	mutedStyle    = common.HelpTextStyle
-	helpStyle     = common.HelpTextStyle
-	folderStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("33"))
-	scanStyle     = lipgloss.NewStyle().Foreground(common.Color.Info)
+	titleStyle = common.TitleStyle
+	helpStyle  = common.HelpTextStyle
 )
 
 func Render(m Model, maxWidth int) string {
@@ -33,7 +27,13 @@ func renderList(m Model, maxWidth int) string {
 	b.WriteString(titleStyle.Render("Scan History") + "\n\n")
 
 	// Render only the visible rows instead of a fully pre-rendered viewport buffer.
-	b.WriteString(renderVisibleList(m))
+	b.WriteString(historytree.RenderVisibleList(
+		m.FlatList,
+		m.Tree,
+		m.Cursor,
+		m.Viewport.YOffset,
+		m.Viewport.Height,
+	))
 	b.WriteString("\n")
 	b.WriteString(helpStyle.Render(common.WrapWords("↑/↓/←/→ • Del: delete • ?: help • q: back", maxWidth)))
 
@@ -53,110 +53,4 @@ func renderList(m Model, maxWidth int) string {
 	}
 
 	return view
-}
-
-func renderVisibleList(m Model) string {
-	if len(m.Tree) == 0 {
-		return "No scan history found\n"
-	}
-
-	start := m.Viewport.YOffset
-	if start < 0 {
-		start = 0
-	}
-	if start > len(m.FlatList) {
-		start = len(m.FlatList)
-	}
-
-	end := start + m.Viewport.Height
-	if end > len(m.FlatList) {
-		end = len(m.FlatList)
-	}
-
-	var b strings.Builder
-	for i := start; i < end; i++ {
-		node := m.FlatList[i]
-		if node == nil {
-			continue
-		}
-		renderNode(&b, node, i == m.Cursor)
-	}
-	return b.String()
-}
-
-func renderNode(b *strings.Builder, node *TreeNode, isSelected bool) {
-	indent := strings.Repeat("  ", node.Level)
-	cursor := "  "
-	if isSelected {
-		cursor = "▶ "
-	}
-
-	var icon string
-	var name string
-	var style lipgloss.Style
-
-	switch node.Type {
-	case NodeInterface:
-		if node.Expanded {
-			icon = "📂"
-		} else {
-			icon = "📁"
-		}
-		name = node.Name
-		style = folderStyle
-		if len(node.Children) > 0 {
-			suffix := "networks"
-			if len(node.Children) == 1 {
-				suffix = "network"
-			}
-			name += fmt.Sprintf(" (%d %s)", len(node.Children), suffix)
-		}
-
-	case NodeNetwork:
-		if node.Expanded {
-			icon = "📂"
-		} else {
-			icon = "📁"
-		}
-		name = node.Name
-		style = folderStyle
-		if len(node.Children) > 0 {
-			suffix := "scans"
-			if len(node.Children) == 1 {
-				suffix = "scan"
-			}
-			name += fmt.Sprintf(" (%d %s)", len(node.Children), suffix)
-		}
-
-	case NodeScan:
-		icon = "📄"
-		if node.Counts != nil {
-			hostSuffix := "hosts"
-			if node.Counts.Hosts == 1 {
-				hostSuffix = "host"
-			}
-			portSuffix := "ports"
-			if node.Counts.Ports == 1 {
-				portSuffix = "port"
-			}
-			name = fmt.Sprintf("%s (%d %s, %d %s)",
-				node.Name,
-				node.Counts.Hosts,
-				hostSuffix,
-				node.Counts.Ports,
-				portSuffix,
-			)
-		} else {
-			name = node.Name
-		}
-		style = scanStyle
-	}
-
-	line := indent + cursor + icon + " " + name
-
-	if isSelected {
-		b.WriteString(selectedStyle.Render(line) + "\n")
-	} else {
-		b.WriteString(style.Render(line) + "\n")
-	}
 }

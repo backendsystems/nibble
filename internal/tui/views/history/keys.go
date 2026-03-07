@@ -4,6 +4,7 @@ import (
 	"github.com/backendsystems/nibble/internal/history"
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
+	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -36,9 +37,9 @@ func handleDeleteDialog(result UpdateResult, action Action) UpdateResult {
 			if node, ok := result.Model.DeleteDialog.Target.(*TreeNode); ok {
 				performDeleteSync(node)
 			}
-			tree, _, _ := buildHistoryTree()
+			tree, _, _ := historytree.Build()
 			result.Model.Tree = tree
-			result.Model.FlatList = flattenTree(tree)
+			result.Model.FlatList = historytree.Flatten(tree)
 			if currentCursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
 				result.Model.Cursor = len(result.Model.FlatList) - 1
 			} else if len(result.Model.FlatList) == 0 {
@@ -95,10 +96,10 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 				wasExpanded := node.Expanded
 				// Cancel any in-flight lazy loads when collapsing this node or its descendants.
 				if wasExpanded {
-					cancelNodeLoads(node)
+					historytree.CancelLoads(node)
 				}
 				node.Expanded = !node.Expanded
-				result.Model.FlatList = flattenTree(result.Model.Tree)
+				result.Model.FlatList = historytree.Flatten(result.Model.Tree)
 				if !wasExpanded && node.Expanded && len(node.Children) > 0 {
 					if result.Model.Cursor+1 < len(result.Model.FlatList) {
 						next := result.Model.FlatList[result.Model.Cursor+1]
@@ -108,7 +109,7 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 					}
 					// Load counts for scan children that don't have them yet
 					if node.Type == NodeNetwork {
-						cmds := loadNetworkScanCountsCmd(node)
+						cmds := historytree.LoadNetworkScanCountsCmd(node)
 						if len(cmds) > 0 {
 							result.Cmd = tea.Sequence(cmds...)
 						}
@@ -120,18 +121,18 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 		if result.Model.Cursor >= 0 && result.Model.Cursor < len(result.Model.FlatList) {
 			node := result.Model.FlatList[result.Model.Cursor]
 			if node != nil && node.Expanded && (node.Type == NodeInterface || node.Type == NodeNetwork) {
-				cancelNodeLoads(node)
+				historytree.CancelLoads(node)
 				node.Expanded = false
-				result.Model.FlatList = flattenTree(result.Model.Tree)
+				result.Model.FlatList = historytree.Flatten(result.Model.Tree)
 			} else if node != nil && node.Level > 0 {
 				for i := result.Model.Cursor - 1; i >= 0; i-- {
 					parent := result.Model.FlatList[i]
 					if parent != nil && parent.Level == node.Level-1 {
 						result.Model.Cursor = i
 						if parent.Expanded && (parent.Type == NodeInterface || parent.Type == NodeNetwork) {
-							cancelNodeLoads(parent)
+							historytree.CancelLoads(parent)
 							parent.Expanded = false
-							result.Model.FlatList = flattenTree(result.Model.Tree)
+							result.Model.FlatList = historytree.Flatten(result.Model.Tree)
 						}
 						break
 					}
