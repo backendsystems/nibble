@@ -16,11 +16,9 @@ func (m Model) SetViewportSize(windowWidth, windowHeight int) Model {
 	if windowHeight > 0 {
 		// Reserve space for:
 		// - Title line (1)
-		// - Spacing after title (1)
 		// - Help text at bottom (1)
-		// - Buffer (1)
-		// Total reserved: 4 lines
-		reservedHeight := 4
+		// Total reserved: 3 lines
+		reservedHeight := 3
 		viewportHeight := windowHeight - reservedHeight
 		if viewportHeight < 3 {
 			// Minimum 3 lines for viewport content
@@ -41,8 +39,8 @@ func (m Model) UpdateViewportContent(content string, windowWidth, windowHeight i
 	}
 
 	if windowHeight > 0 {
-		// Reserve space for title, spacing, and help text
-		reservedHeight := 4
+		// Reserve space for title and help text
+		reservedHeight := 3
 		viewportHeight := windowHeight - reservedHeight
 		if viewportHeight < 3 {
 			viewportHeight = 3

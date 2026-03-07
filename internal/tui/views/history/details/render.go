@@ -109,40 +109,53 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	// Update viewport with content and dimensions
 	m = m.UpdateViewportContent(content.String(), windowWidth, windowHeight)
 
-	// Keep selected host visible by scrolling viewport
-	// Count lines to selected host
-	lineToHost := 0
+	// Keep selected host visible and reveal some of its ports without large jumps.
+	if len(m.History.ScanResults.Hosts) > 0 && m.Cursor >= 0 && m.Cursor < len(m.History.ScanResults.Hosts) {
+		hostStart := 0
 
-	// Count metadata lines
-	lineToHost++ // Duration line
-	lineToHost++ // Hosts found line
-	if m.History.ScanResults.PortsFound > 0 {
-		lineToHost++ // Ports found line
-	}
-	if !m.History.ScanMetadata.Updated.Equal(m.History.ScanMetadata.Created) {
-		lineToHost++ // Updated line
-	}
-	lineToHost++ // Blank line after metadata
+		// Count currently rendered metadata lines.
+		if m.History.ScanResults.PortsFound > 0 {
+			hostStart++
+		}
+		hostStart++ // Created/Updated line
 
-	// Count all hosts before the selected one
-	for i := 0; i < m.Cursor; i++ {
-		host := m.History.ScanResults.Hosts[i]
-		lineToHost++                  // Host line
-		lineToHost += len(host.Ports) // Port lines
-		lineToHost++                  // Blank line after host
-	}
+		// Count all hosts before the selected one.
+		for i := 0; i < m.Cursor; i++ {
+			host := m.History.ScanResults.Hosts[i]
+			hostStart++                  // Host line
+			hostStart += len(host.Ports) // Port lines
+		}
 
-	// Keep host visible, scrolling based on number of ports to show them
-	if lineToHost < m.Viewport.YOffset {
-		// Host is above viewport, scroll up to show metadata and host
-		m.Viewport.YOffset = 0
-	} else if lineToHost >= m.Viewport.YOffset+m.Viewport.Height-1 {
-		// Host is at or past bottom, scroll to keep it visible with ports below
 		selectedHost := m.History.ScanResults.Hosts[m.Cursor]
-		// Reserve space: 1 for host line + 2 buffer lines
-		portLines := len(selectedHost.Ports)
-		reserveLines := 1 + 2 // host line + buffer
-		m.Viewport.YOffset = lineToHost - m.Viewport.Height + reserveLines + (portLines / 2)
+		hostEnd := hostStart + len(selectedHost.Ports) // inclusive
+
+		top := m.Viewport.YOffset
+		bottom := m.Viewport.YOffset + m.Viewport.Height - 1
+
+		// If selection is above viewport, bring host line to top.
+		if hostStart < top {
+			m.Viewport.YOffset = hostStart
+		} else {
+			// Reveal additional selected-host ports as the cursor moves down.
+			revealPorts := m.Viewport.Height / 2
+			if revealPorts < 1 {
+				revealPorts = 1
+			}
+			if revealPorts > len(selectedHost.Ports) {
+				revealPorts = len(selectedHost.Ports)
+			}
+
+			targetBottom := hostStart + revealPorts
+			if targetBottom > hostEnd {
+				targetBottom = hostEnd
+			}
+
+			// If selected host (or its target ports) is below viewport, scroll minimally.
+			if hostStart > bottom || targetBottom > bottom {
+				m.Viewport.YOffset = targetBottom - m.Viewport.Height + 1
+			}
+		}
+
 		if m.Viewport.YOffset < 0 {
 			m.Viewport.YOffset = 0
 		}

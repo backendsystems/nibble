@@ -107,11 +107,6 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 		result.Model.ShowHelp = !result.Model.ShowHelp
 	}
 
-	// Update viewport for scrolling
-	var cmd tea.Cmd
-	result.Model.Viewport, cmd = m.Viewport.Update(key)
-	_ = cmd
-
 	return result
 }
 
