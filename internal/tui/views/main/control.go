@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const selectionHelpText = "←/→/↑/↓ a/d/w/s h/j/k/l • p: ports • t: target • r: history • ?: help • q: quit"
+const selectionHelpText = "←/→/↑/↓ a/d/w/s h/j/k/l • p: ports • r: history • t: target • ?: help • q: quit"
 
 type Action int
 

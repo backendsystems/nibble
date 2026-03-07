@@ -19,6 +19,7 @@ Select a network interface, and Nibble scans your local subnet. Lists hosts, har
 `↑/↓/←/→`, `w/s/a/d`, `h/j/k/l`: selection  
 `Enter`: confirm  
 `p`: select ports  
+`r`: history  
 `t`: target mode  
 `q`: cancel  
 `Ctrl+C`: quit  
