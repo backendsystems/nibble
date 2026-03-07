@@ -1,9 +1,13 @@
 package common
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+)
 
 func WrapWords(s string, maxWidth int) string {
-	if maxWidth <= 0 || len(s) <= maxWidth {
+	if maxWidth <= 0 || lipgloss.Width(s) <= maxWidth {
 		return s
 	}
 	words := strings.Fields(s)
@@ -14,7 +18,7 @@ func WrapWords(s string, maxWidth int) string {
 	lines := []string{words[0]}
 	for _, w := range words[1:] {
 		last := lines[len(lines)-1]
-		if len(last)+1+len(w) <= maxWidth {
+		if lipgloss.Width(last)+1+lipgloss.Width(w) <= maxWidth {
 			lines[len(lines)-1] = last + " " + w
 			continue
 		}
