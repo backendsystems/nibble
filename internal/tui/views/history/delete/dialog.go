@@ -32,7 +32,7 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 	unselectedButtonStyle := common.CardStyle.
 		Padding(0, 1).
 		MarginRight(1).
-		Foreground(common.Color.Help)
+		Foreground(common.Color.Info)
 
 	// Calculate box width early so help text can wrap to the dialog content width.
 	width := int(float64(viewWidth) * 0.6)
