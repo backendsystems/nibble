@@ -1,6 +1,7 @@
 package historyview
 
 import (
+	"github.com/backendsystems/nibble/internal/history"
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,8 +21,10 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		syncScanNode(result.Model.Tree, detailResult.Model.HistoryPath, detailResult.Model.History)
 		result.Cmd = detailResult.Cmd
 		if detailResult.Deleted {
+			history.DeleteDetailCursors([]string{detailResult.Model.HistoryPath})
+			delete(result.Model.DetailCursors, detailResult.Model.HistoryPath)
 			nextPath := nextSelectionPathAfterDelete(m.FlatList, detailResult.Model.HistoryPath)
-			tree, selectedPath, _ := historytree.Build()
+			tree, _ := historytree.Build()
 			if nextPath != "" {
 				historytree.ExpandAncestorsForPath(tree, nextPath)
 			}
@@ -29,8 +32,6 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 			result.Model.FlatList = historytree.Flatten(tree)
 			if nextPath != "" {
 				result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, nextPath)
-			} else if selectedPath != "" {
-				result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, selectedPath)
 			}
 			if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
 				result.Model.Cursor = len(result.Model.FlatList) - 1
@@ -40,6 +41,11 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 			saveViewState(result.Model.FlatList, result.Model.Cursor)
 			result.Cmd = tea.Batch(result.Cmd, historytree.LoadCountsForExpandedNodes(result.Model.Tree))
 		} else if detailResult.Quit {
+			if result.Model.DetailCursors == nil {
+				result.Model.DetailCursors = make(map[string]int)
+			}
+			result.Model.DetailCursors[detailResult.Model.HistoryPath] = detailResult.Model.Cursor
+			history.SaveDetailCursor(detailResult.Model.HistoryPath, detailResult.Model.Cursor)
 			result.Model.Mode = ViewList
 			result.Model.Details = detailsview.Model{}
 			saveViewState(result.Model.FlatList, result.Model.Cursor)
@@ -64,6 +70,7 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		if result.Model.Cursor >= len(result.Model.FlatList) {
 			result.Model.Cursor = 0
 		}
+		result.Model.DetailCursors = msg.detailCursors
 		// Fire count loads for any network nodes already expanded by state restore
 		result.Cmd = historytree.LoadCountsForExpandedNodes(result.Model.Tree)
 	case historytree.ScanCountLoadedMsg:

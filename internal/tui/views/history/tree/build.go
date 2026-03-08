@@ -11,10 +11,10 @@ import (
 )
 
 // Build constructs the history tree from on-disk scan files.
-func Build() ([]*Node, string, error) {
+func Build() ([]*Node, error) {
 	baseDir, err := history.HistoryDir()
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	type networkData struct {
@@ -64,7 +64,7 @@ func Build() ([]*Node, string, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	var result []*Node
@@ -110,12 +110,7 @@ func Build() ([]*Node, string, error) {
 		result = append(result, ifaceNode)
 	}
 
-	selectedPath, _ := history.LoadViewState()
-	if selectedPath != "" {
-		ExpandAncestorsForPath(result, selectedPath)
-	}
-
-	return result, selectedPath, nil
+	return result, nil
 }
 
 // Flatten converts an expanded tree into a visible list.

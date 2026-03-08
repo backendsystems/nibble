@@ -27,17 +27,18 @@ type ScanCounts = historytree.ScanCounts
 type TreeNode = historytree.Node
 
 type Model struct {
-	Mode         ViewMode
-	Tree         []*TreeNode
-	FlatList     []*TreeNode // Flattened view of expanded tree
-	Cursor       int
-	ShowHelp     bool
-	DeleteDialog *delete.HistoryDeleteDialog // nil when not shown
-	ErrorMsg     string
-	Viewport     viewport.Model
-	WindowW      int
-	WindowH      int
-	Details      detailsview.Model
+	Mode          ViewMode
+	Tree          []*TreeNode
+	FlatList      []*TreeNode // Flattened view of expanded tree
+	Cursor        int
+	ShowHelp      bool
+	DeleteDialog  *delete.HistoryDeleteDialog // nil when not shown
+	ErrorMsg      string
+	Viewport      viewport.Model
+	WindowW       int
+	WindowH       int
+	Details       detailsview.Model
+	DetailCursors map[string]int // remembered host cursor per scan file path
 }
 
 type UpdateResult struct {

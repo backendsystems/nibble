@@ -51,7 +51,7 @@ func executeDelete(result UpdateResult) UpdateResult {
 		nextPath = nextSelectionPathAfterDelete(result.Model.FlatList, node.Path)
 		performDeleteSync(node)
 	}
-	tree, _, _ := historytree.Build()
+	tree, _ := historytree.Build()
 	if nextPath != "" {
 		historytree.ExpandAncestorsForPath(tree, nextPath)
 	}
@@ -94,6 +94,10 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 					node.ScanData = &scanData
 				}
 				result.Model.Mode = ViewDetail
+				savedCursor := 0
+				if result.Model.DetailCursors != nil {
+					savedCursor = result.Model.DetailCursors[node.Path]
+				}
 				result.Model.Details = detailsview.Model{
 					History:      *node.ScanData,
 					HistoryPath:  node.Path,
@@ -102,6 +106,7 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 					NodeItemType: "scan",
 					WindowW:      result.Model.WindowW,
 					WindowH:      result.Model.WindowH,
+					Cursor:       savedCursor,
 				}
 				return result
 			}

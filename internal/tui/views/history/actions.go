@@ -59,21 +59,26 @@ func HandleKey(key string, inDeleteDialog bool) Action {
 	}
 }
 
-// performDeleteSync recursively deletes a node and all its children
+// performDeleteSync recursively deletes a node and all its children,
+// and cleans up any saved detail cursors for the removed scan files.
 func performDeleteSync(node *TreeNode) {
 	if node == nil {
 		return
 	}
 
+	var scanPaths []string
+
 	switch node.Type {
 	case NodeScan:
 		if node.Path != "" {
 			history.Delete(node.Path)
+			scanPaths = append(scanPaths, node.Path)
 		}
 	case NodeNetwork:
 		for _, child := range node.Children {
 			if child != nil && child.Path != "" {
 				history.Delete(child.Path)
+				scanPaths = append(scanPaths, child.Path)
 			}
 		}
 	case NodeInterface:
@@ -81,10 +86,13 @@ func performDeleteSync(node *TreeNode) {
 			for _, scanNode := range netNode.Children {
 				if scanNode != nil && scanNode.Path != "" {
 					history.Delete(scanNode.Path)
+					scanPaths = append(scanPaths, scanNode.Path)
 				}
 			}
 		}
 	}
+
+	history.DeleteDetailCursors(scanPaths)
 }
 
 // saveViewState saves the selected item path to persistent storage
@@ -98,18 +106,23 @@ func saveViewState(flatList []*TreeNode, cursor int) {
 
 // treeLoadedMsg is a message indicating the tree has been loaded
 type treeLoadedMsg struct {
-	tree         []*TreeNode
-	selectedPath string
+	tree          []*TreeNode
+	selectedPath  string
+	detailCursors map[string]int
 }
 
 // loadTreeCmd is a Bubble Tea command that loads the history tree asynchronously
 func loadTreeCmd() tea.Cmd {
 	return func() tea.Msg {
-		tree, selectedPath, err := historytree.Build()
+		selectedPath, detailCursors, _ := history.LoadViewState()
+		tree, err := historytree.Build()
 		if err != nil {
 			return treeLoadedMsg{tree: []*TreeNode{}, selectedPath: ""}
 		}
-		return treeLoadedMsg{tree: tree, selectedPath: selectedPath}
+		if selectedPath != "" {
+			historytree.ExpandAncestorsForPath(tree, selectedPath)
+		}
+		return treeLoadedMsg{tree: tree, selectedPath: selectedPath, detailCursors: detailCursors}
 	}
 }
 
