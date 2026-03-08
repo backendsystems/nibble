@@ -4,7 +4,7 @@ Set Theme "Dark+"
 Set FontFamily "DejaVu Sans Mono,Noto Color Emoji"
 Set FontSize 16
 Set Width 1000
-Set Height 570
+Set Height 600
 Set Shell "bash"
 Set TypingSpeed 0ms
 
