@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"runtime"
 	"sort"
 	"sync"
 	"time"
@@ -15,6 +16,15 @@ const (
 	dialTimeout = 100 * time.Millisecond
 	dialStagger = 30 * time.Millisecond
 )
+
+var dialExtra = func() time.Duration {
+	switch runtime.GOOS {
+	case "windows":
+		return 50 * time.Millisecond
+	default:
+		return 0
+	}
+}()
 
 type portResult struct {
 	port   int
@@ -87,7 +97,7 @@ func scanOpenPorts(ip string, ports []int) []portResult {
 
 func dialAndRecord(ip string, port int, mu *sync.Mutex, results *[]portResult) {
 	jitter := time.Duration(rand.Intn(int(dialStagger)))
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), dialTimeout+jitter)
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), dialTimeout+dialExtra+jitter)
 	if err != nil {
 		return
 	}
