@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
+
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
 
@@ -11,12 +13,39 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	var b strings.Builder
 
 	// Title (outside viewport)
-	title := fmt.Sprintf("%s - %s - %s",
-		m.History.ScanMetadata.TargetCIDR,
-		m.History.ScanMetadata.InterfaceName,
-		m.History.ScanMetadata.Created.Format("2006 Jan 2 15:04"),
-	)
-	b.WriteString(common.TitleStyle.Render(title) + "\n")
+	cidr := m.History.ScanMetadata.TargetCIDR
+	iface := m.History.ScanMetadata.InterfaceName
+	date := m.History.ScanMetadata.Created.Format("2006 Jan 2 15:04")
+
+	var counter string
+	if total := len(m.History.ScanResults.Hosts); total > 0 {
+		counter = common.MutedStyle.Render(fmt.Sprintf("%d/%d", m.Cursor+1, total))
+	}
+
+	titleFull := common.TitleStyle.Render(fmt.Sprintf("%s - %s - %s", cidr, iface, date))
+	titleShort := common.TitleStyle.Render(fmt.Sprintf("%s - %s", cidr, iface))
+
+	// Wrap date to second line when full title + counter won't fit.
+	// Always show cidr - iface and counter regardless of width.
+	counterW := lipgloss.Width(counter)
+	needsWrap := lipgloss.Width(titleFull)+counterW+1 > windowWidth
+
+	titleLine := titleFull
+	if needsWrap {
+		titleLine = titleShort
+	}
+	if counter != "" {
+		gap := windowWidth - lipgloss.Width(titleLine) - counterW
+		if gap > 0 {
+			titleLine += strings.Repeat(" ", gap) + counter
+		} else {
+			titleLine += " " + counter
+		}
+	}
+	b.WriteString(titleLine + "\n")
+	if needsWrap {
+		b.WriteString(common.TitleStyle.Render(date) + "\n")
+	}
 
 	// Content for viewport
 	var content strings.Builder
@@ -106,8 +135,15 @@ func Render(m Model, windowWidth, windowHeight int) string {
 		}
 	}
 
-	// Update viewport with content and dimensions
-	m = m.UpdateViewportContent(content.String(), windowWidth, windowHeight)
+	// Compute how many lines the title and help areas occupy at this width.
+	titleLines := 1
+	if needsWrap {
+		titleLines = 2
+	}
+	const helpText = "↑/↓: select host • Enter/→: scan all ports • ←/q: back • ?: help"
+	helpWrapped := common.WrapWords(helpText, windowWidth)
+	helpLines := strings.Count(helpWrapped, "\n") + 1 // +1 blank line before help
+	m = m.UpdateViewportContent(content.String(), windowWidth, windowHeight, titleLines+helpLines)
 
 	// Keep selected host visible and reveal some of its ports without large jumps.
 	if len(m.History.ScanResults.Hosts) > 0 && m.Cursor >= 0 && m.Cursor < len(m.History.ScanResults.Hosts) {
@@ -145,7 +181,7 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	// Build final output with viewport and help text
 	b.WriteString(m.Viewport.View())
 	b.WriteString("\n")
-	b.WriteString(common.HelpTextStyle.Render(common.WrapWords("↑/↓: select host • Enter/→: scan all ports • ←/q: back • ?: help", windowWidth)))
+	b.WriteString(common.HelpTextStyle.Render(helpWrapped))
 
 	if m.ErrorMsg != "" {
 		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))

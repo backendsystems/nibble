@@ -30,8 +30,9 @@ func (m Model) SetViewportSize(windowWidth, windowHeight int) Model {
 	return m
 }
 
-// UpdateViewportContent updates the viewport with new content and ensures proper dimensions
-func (m Model) UpdateViewportContent(content string, windowWidth, windowHeight int) Model {
+// UpdateViewportContent updates the viewport with new content and ensures proper dimensions.
+// reservedLines is the total number of non-viewport lines (title + help, accounting for wrapping).
+func (m Model) UpdateViewportContent(content string, windowWidth, windowHeight, reservedLines int) Model {
 	m.Viewport.SetContent(content)
 
 	if windowWidth > 0 {
@@ -39,9 +40,7 @@ func (m Model) UpdateViewportContent(content string, windowWidth, windowHeight i
 	}
 
 	if windowHeight > 0 {
-		// Reserve space for title and help text
-		reservedHeight := 3
-		viewportHeight := windowHeight - reservedHeight
+		viewportHeight := windowHeight - reservedLines
 		if viewportHeight < 3 {
 			viewportHeight = 3
 		}
