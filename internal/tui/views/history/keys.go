@@ -65,6 +65,7 @@ func executeDelete(result UpdateResult) UpdateResult {
 		result.Model.Cursor = 0
 	}
 	result.Cmd = historytree.LoadCountsForExpandedNodes(result.Model.Tree)
+	saveViewState(result.Model.FlatList, result.Model.Cursor)
 	return result
 }
 

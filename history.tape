@@ -41,6 +41,14 @@ Sleep 300ms
 Right
 Sleep 2s
 
+# Show delete
+Left
+Sleep 600ms
+Delete
+Sleep 2s
+Delete
+Sleep 1s
+
 Left
 Left
 Left
