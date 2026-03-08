@@ -34,21 +34,22 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 		MarginRight(1).
 		Foreground(common.Color.Help)
 
-	// Build content
-	warning := lipgloss.NewStyle().Bold(true).Foreground(common.Color.Info).Render(fmt.Sprintf("Delete %s: %s", d.ItemType, d.ItemName))
-	note := common.HelpTextStyle.Render("This action cannot be undone.")
 	// Calculate box width early so help text can wrap to the dialog content width.
 	width := int(float64(viewWidth) * 0.6)
 	width = max(min(width, 60), 46)
+
+	// Build content
+	warning := lipgloss.NewStyle().Bold(true).Foreground(common.Color.Info).Render(fmt.Sprintf("Delete %s: %s?", d.ItemType, d.ItemName))
+	note := common.HelpTextStyle.Render("This action cannot be undone.")
 
 	// Buttons (Cancel on left, Delete on right)
 	var cancelBtn, deleteBtn string
 	if d.CursorOnYes {
 		cancelBtn = unselectedButtonStyle.Render("Cancel")
-		deleteBtn = selectedButtonStyle.Render("Delete")
+		deleteBtn = selectedButtonStyle.Render("🔥 Delete")
 	} else {
 		cancelBtn = selectedButtonStyle.Render("Cancel")
-		deleteBtn = unselectedButtonStyle.Render("Delete")
+		deleteBtn = unselectedButtonStyle.Render("🔥 Delete")
 	}
 
 	buttons := lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, deleteBtn)
