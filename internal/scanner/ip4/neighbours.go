@@ -86,7 +86,7 @@ func scanOpenPorts(ip string, ports []int) []portResult {
 }
 
 func dialAndRecord(ip string, port int, mu *sync.Mutex, results *[]portResult) {
-	jitter := time.Duration(rand.Intn(int(2*dialStagger+1))) - dialStagger
+	jitter := time.Duration(rand.Intn(int(dialStagger)))
 	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), dialTimeout+jitter)
 	if err != nil {
 		return
