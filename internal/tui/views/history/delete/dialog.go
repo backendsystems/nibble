@@ -22,22 +22,20 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 		return view
 	}
 
-	// Button styles
-	buttonStyle := lipgloss.NewStyle().
-		Padding(0, 2).
-		Margin(0, 1)
-
-	selectedButtonStyle := buttonStyle.
-		Foreground(lipgloss.Color("0")).
-		Background(common.Color.Selection).
+	// Button styles - same card style used across views
+	selectedButtonStyle := common.SelectedCardStyle.
+		Padding(0, 1).
+		MarginRight(1).
+		Foreground(common.Color.Selection).
 		Bold(true)
 
-	unselectedButtonStyle := buttonStyle.
-		Foreground(common.Color.Info).
-		Background(lipgloss.Color("236"))
+	unselectedButtonStyle := common.CardStyle.
+		Padding(0, 1).
+		MarginRight(1).
+		Foreground(common.Color.Help)
 
 	// Build content
-	warning := common.ErrorStyle.Render(fmt.Sprintf("Delete %s: %s?", d.ItemType, d.ItemName))
+	warning := lipgloss.NewStyle().Bold(true).Foreground(common.Color.Info).Render(fmt.Sprintf("Delete %s: %s", d.ItemType, d.ItemName))
 	note := common.HelpTextStyle.Render("This action cannot be undone.")
 	// Calculate box width early so help text can wrap to the dialog content width.
 	width := int(float64(viewWidth) * 0.6)
@@ -60,9 +58,7 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 	content := strings.Join([]string{
 		warning,
 		note,
-		"",
 		buttons,
-		"",
 		help,
 	}, "\n")
 
@@ -82,8 +78,8 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 
 // HistoryDeleteDialog is a delete confirmation dialog specific to the history view
 type HistoryDeleteDialog struct {
-	Target      any   // *historyview.TreeNode
-	CursorOnYes bool  // true = Delete selected, false = Cancel selected
+	Target      any    // *historyview.TreeNode
+	CursorOnYes bool   // true = Delete selected, false = Cancel selected
 	ItemType    string // "scan", "network", "interface"
 	ItemName    string // Display name of the item
 }

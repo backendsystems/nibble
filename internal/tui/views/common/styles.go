@@ -71,6 +71,15 @@ var (
 	WarningStyle = lipgloss.NewStyle().
 			Foreground(Color.Warning).
 			Bold(true)
+
+	// Card styles - shared rounded-border card look used across views
+	CardStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("8"))
+
+	SelectedCardStyle = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(Color.Selection)
 )
 
 // FormTheme returns a custom huh theme with yellow selection colors
