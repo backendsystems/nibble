@@ -29,7 +29,6 @@ func Render(m Model, maxWidth int) string {
 
 	var rows []string
 	var currentRow []string
-	totalCards := len(m.Interfaces) + 1 // +1 for target card
 
 	// Render interface cards
 	for i, iface := range m.Interfaces {
@@ -41,13 +40,21 @@ func Render(m Model, maxWidth int) string {
 		}
 	}
 
-	// Add target card at the end
+	// Add target card
 	targetCardIndex := len(m.Interfaces)
 	targetCard := renderTargetCard(m, targetCardIndex)
 	currentRow = append(currentRow, targetCard)
-	if len(currentRow) == cardsPerRow || targetCardIndex == totalCards-1 {
+	if len(currentRow) == cardsPerRow {
 		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
 		currentRow = nil
+	}
+
+	// Add history card at the end
+	historyCardIndex := len(m.Interfaces) + 1
+	historyCard := renderHistoryCard(m, historyCardIndex)
+	currentRow = append(currentRow, historyCard)
+	if len(currentRow) > 0 {
+		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
 	}
 
 	b.WriteString(lipgloss.JoinVertical(lipgloss.Left, rows...))
@@ -114,6 +121,28 @@ func renderTargetCard(m Model, index int) string {
 
 	subtitleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	cardContent.WriteString(subtitleStyle.Render("enter IP/CIDR"))
+
+	return style.Render(cardContent.String())
+}
+
+func renderHistoryCard(m Model, index int) string {
+	isSelected := index == m.Cursor
+	style := cardStyle
+	if isSelected {
+		style = selectedCardStyle
+	}
+
+	var cardContent strings.Builder
+	icon := "📜"
+
+	nameStyle := lipgloss.NewStyle().Bold(true)
+	if isSelected {
+		nameStyle = nameStyle.Foreground(lipgloss.Color("226"))
+	}
+	cardContent.WriteString(nameStyle.Render(icon+" History") + "\n")
+
+	subtitleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cardContent.WriteString(subtitleStyle.Render("view past scans"))
 
 	return style.Render(cardContent.String())
 }

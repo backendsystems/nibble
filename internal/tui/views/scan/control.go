@@ -1,110 +1,18 @@
 package scanview
 
 import (
-	"net"
-	"strings"
-	"time"
-
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/charmbracelet/bubbles/stopwatch"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const scanHelpText = "j/k or ↑/↓: scroll • q: quit"
-
-// appendIfNew appends host to hosts only if no existing entry has the same IP.
-func appendIfNew(hosts []string, host string) []string {
-	newIP := hostIP(host)
-	for _, h := range hosts {
-		if hostIP(h) == newIP {
-			return hosts
-		}
-	}
-	return append(hosts, host)
-}
-
-// hostIP extracts the IP address from the first line of a host string.
-// Host format is "IP - vendor" or just "IP".
-func hostIP(host string) string {
-	line, _, _ := strings.Cut(host, "\n")
-	ip, _, _ := strings.Cut(line, " - ")
-	return strings.TrimSpace(ip)
-}
-
-type Action int
-
-const (
-	ActionNone Action = iota
-	ActionQuit
-	ActionQuitAndComplete
-)
-
-type ProgressMsg struct {
-	Update shared.ProgressUpdate
-}
-
-type CompleteMsg struct{}
-type QuitMsg struct{}
+const scanHelpText = "j/k or ↑/↓: scroll • q: back"
 
 type Result struct {
 	Model   Model
 	Handled bool
 	Quit    bool
 	Cmd     tea.Cmd
-}
-
-func HandleKey(scanning bool, scanComplete bool, key string) Action {
-	if !scanning && !scanComplete {
-		return ActionNone
-	}
-	if key != "ctrl+c" && key != "q" && key != "esc" {
-		return ActionNone
-	}
-	if scanning {
-		return ActionQuitAndComplete
-	}
-	return ActionQuit
-}
-
-func ListenForProgress(progressChan <-chan shared.ProgressUpdate) tea.Cmd {
-	return func() tea.Msg {
-		progress, ok := <-progressChan
-		if !ok {
-			return CompleteMsg{}
-		}
-		return ProgressMsg{Update: progress}
-	}
-}
-
-// continueScanLoop batches all ongoing scan operations: progress listening
-func continueScanLoop(m Model) tea.Cmd {
-	return ListenForProgress(m.ProgressChan)
-}
-
-func PerformScan(networkScanner shared.Scanner, ifaceName, targetAddr string, progressChan chan shared.ProgressUpdate) tea.Cmd {
-	return func() tea.Msg {
-		go networkScanner.ScanNetwork(ifaceName, targetAddr, progressChan)
-		return ListenForProgress(progressChan)()
-	}
-}
-
-func (m Model) Start(iface net.Interface, addrs []net.Addr, totalHosts int, targetAddr string) (Model, tea.Cmd) {
-	m.SelectedIface = iface
-	m.SelectedAddrs = addrs
-	m.TotalHosts = totalHosts
-	m.Scanning = true
-	m.ScanComplete = false
-	m.ShouldPrintFinal = false
-	m.FoundHosts = nil
-	m.FinalHosts = nil
-	m.ScannedCount = 0
-	m.NeighborSeen = 0
-	m.NeighborTotal = 0
-	m.ProgressChan = make(chan shared.ProgressUpdate, 256)
-	m.Stopwatch = stopwatch.NewWithInterval(10 * time.Millisecond)
-	m = m.RefreshResults(false)
-	return m, tea.Batch(m.Stopwatch.Init(), PerformScan(m.NetworkScan, iface.Name, targetAddr, m.ProgressChan))
 }
 
 func (m Model) Update(msg tea.Msg) Result {
@@ -134,31 +42,6 @@ func handleStopwatchMsg(m Model, msg tea.Msg) Result {
 	result.Model.Stopwatch, cmd = m.Stopwatch.Update(msg)
 	result.Cmd = cmd
 	result.Handled = true
-	return result
-}
-
-func handleKeyMsg(m Model, key tea.KeyMsg) Result {
-	result := Result{Model: m}
-	result.Handled = true
-	switch HandleKey(m.Scanning, m.ScanComplete, key.String()) {
-	case ActionQuitAndComplete:
-		result.Model = prepareForExit(result.Model, true)
-		result.Model.Scanning = false
-		result.Model.ScanComplete = true
-		result.Cmd = tea.Batch(m.Stopwatch.Stop(), sendQuitMsg())
-		return result
-	case ActionQuit:
-		result.Cmd = tea.Batch(m.Stopwatch.Stop(), sendQuitMsg())
-		return result
-	}
-	var cmd tea.Cmd
-	result.Model.Results, cmd = m.Results.Update(key)
-	// Batch viewport update with all scan operations
-	if cmd != nil {
-		result.Cmd = tea.Batch(cmd, continueScanLoop(result.Model))
-	} else {
-		result.Cmd = continueScanLoop(result.Model)
-	}
 	return result
 }
 
@@ -205,22 +88,13 @@ func handleCompleteMsg(m Model) Result {
 	result.Model = prepareForExit(result.Model, true)
 	result.Model.Scanning = false
 	result.Model.ScanComplete = true
+
+	// Save scan history
+	if err := result.Model.SaveHistory(); err != nil {
+		// Silently ignore history save errors - don't interrupt user flow
+		_ = err
+	}
+
 	result.Cmd = tea.Batch(m.Stopwatch.Stop(), sendQuitMsg())
 	return result
-}
-
-func sendQuitMsg() tea.Cmd {
-	return func() tea.Msg { return QuitMsg{} }
-}
-
-// prepareForExit preserves discovered hosts for optional final output, then clears
-// the live viewport data to avoid duplicate terminal content on exit.
-func prepareForExit(m Model, shouldPrint bool) Model {
-	m.ShouldPrintFinal = shouldPrint
-	if len(m.FinalHosts) == 0 && len(m.FoundHosts) > 0 {
-		m.FinalHosts = append([]string(nil), m.FoundHosts...)
-	}
-	m.FoundHosts = nil
-	m.Results.SetContent("")
-	return m
 }

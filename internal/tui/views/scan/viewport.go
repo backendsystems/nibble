@@ -21,10 +21,12 @@ func (m Model) SetViewportSize(maxWidth, windowHeight int) Model {
 
 	height := defaultResultsHeight
 	if windowHeight > 0 {
-		// Header + status + progress + footer reserve space so results stay bounded.
-		reserved := 10
-		if m.Scanning {
-			reserved = 12
+		// Header (title+network+neighbor+sweep+progress) = 5 lines
+		// Footer (blank+help) = 2 lines, "N active:" label = 1 line → total 8
+		reserved := 8
+		if !m.Scanning {
+			// No help line when not scanning
+			reserved = 7
 		}
 		height = windowHeight - reserved
 	}
