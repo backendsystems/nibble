@@ -8,10 +8,9 @@ func renderHelpOverlay(view string, maxWidth int) string {
 		ViewWidth: maxWidth,
 		Content: []string{
 			"Scans local networks for active hosts.",
-			"• Scans TCP ports",
-			"  • Press p to configure ports",
-			"• Grabs service banners (SSH, HTTP Server)",
-			"• Identifies hardware via MAC OUI (IEEE)",
+			"• Press p to configure ports",
+			"• Press t for target mode scan",
+			"• Press r to view scan history",
 			"",
 			"any key: close",
 		},

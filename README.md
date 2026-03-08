@@ -15,10 +15,17 @@ Select a network interface, and Nibble scans your local subnet. Lists hosts, har
 - Looks up hardware vendors: 
   - Raspberry Pi, Ubiquiti, Apple and 40,000 other vendor ids
 
+## History
+See past scans, the found hosts and re-scan all hosts ports. hotkey: `r`  
+History remembers your position between sessions, so jump right back in to your last viewed scan.
+
+![Nibble history](history.gif "Made with Bubble Tea VHS")
+
 ## Hotkeys
 `↑/↓/←/→`, `w/s/a/d`, `h/j/k/l`: selection  
 `Enter`: confirm  
 `p`: select ports  
+`r`: history  
 `t`: target mode  
 `q`: cancel  
 `Ctrl+C`: quit  

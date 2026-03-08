@@ -2,7 +2,9 @@ package ip4
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
+	"runtime"
 	"sort"
 	"sync"
 	"time"
@@ -10,7 +12,19 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
-const portDialTimeout = 70 * time.Millisecond
+const (
+	dialTimeout = 100 * time.Millisecond
+	dialStagger = 30 * time.Millisecond
+)
+
+var dialExtra = func() time.Duration {
+	switch runtime.GOOS {
+	case "windows":
+		return 50 * time.Millisecond
+	default:
+		return 0
+	}
+}()
 
 type portResult struct {
 	port   int
@@ -82,7 +96,8 @@ func scanOpenPorts(ip string, ports []int) []portResult {
 }
 
 func dialAndRecord(ip string, port int, mu *sync.Mutex, results *[]portResult) {
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), portDialTimeout)
+	jitter := time.Duration(rand.Intn(int(dialStagger)))
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), dialTimeout+dialExtra+jitter)
 	if err != nil {
 		return
 	}
@@ -92,7 +107,6 @@ func dialAndRecord(ip string, port int, mu *sync.Mutex, results *[]portResult) {
 	*results = append(*results, portResult{port: port, banner: banner})
 	mu.Unlock()
 }
-
 
 func resolveHardware(targetIP net.IP, knownMAC string) string {
 	if knownMAC != "" {

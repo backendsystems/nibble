@@ -1,6 +1,8 @@
 package mainview
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/backendsystems/nibble/internal/tui/views/common"
+)
 
 const (
 	cardWidth    = 20
@@ -18,12 +20,6 @@ func CardsPerRow(windowWidth int) int {
 }
 
 var (
-	baseCardStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			Padding(0, cardPaddingX).
-			Width(cardWidth).
-			MarginBottom(0)
-
-	cardStyle         = baseCardStyle.BorderForeground(lipgloss.Color("8"))
-	selectedCardStyle = baseCardStyle.BorderForeground(lipgloss.Color("226"))
+	cardStyle         = common.CardStyle.Padding(0, cardPaddingX).Width(cardWidth)
+	selectedCardStyle = common.SelectedCardStyle.Padding(0, cardPaddingX).Width(cardWidth)
 )

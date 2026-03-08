@@ -2,14 +2,13 @@ package targetview
 
 import (
 	"github.com/backendsystems/nibble/internal/scanner/shared"
+	targetform "github.com/backendsystems/nibble/internal/tui/views/target/form"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 	"github.com/charmbracelet/huh"
 )
 
-type InterfaceInfo struct {
-	Name string
-	IP   string
-}
+// InterfaceInfo is an alias for targetform.InterfaceInfo.
+type InterfaceInfo = targetform.InterfaceInfo
 
 type Model struct {
 	ShowHelp          bool
