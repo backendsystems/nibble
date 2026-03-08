@@ -33,30 +33,38 @@ func handleDeleteDialog(result UpdateResult, action Action) UpdateResult {
 		result.Model.DeleteDialog.Toggle()
 	case ActionConfirmYes:
 		if result.Model.DeleteDialog.IsDeleteSelected() {
-			nextPath := ""
-			if node, ok := result.Model.DeleteDialog.Target.(*TreeNode); ok {
-				nextPath = nextSelectionPathAfterDelete(result.Model.FlatList, node.Path)
-				performDeleteSync(node)
-			}
-			tree, _, _ := historytree.Build()
-			if nextPath != "" {
-				historytree.ExpandAncestorsForPath(tree, nextPath)
-			}
-			result.Model.Tree = tree
-			result.Model.FlatList = historytree.Flatten(tree)
-			if nextPath != "" {
-				result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, nextPath)
-			} else if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
-				result.Model.Cursor = len(result.Model.FlatList) - 1
-			} else if len(result.Model.FlatList) == 0 {
-				result.Model.Cursor = 0
-			}
-			result.Cmd = historytree.LoadCountsForExpandedNodes(result.Model.Tree)
+			result = executeDelete(result)
 		}
+		result.Model.DeleteDialog = nil
+	case ActionConfirmDelete:
+		result = executeDelete(result)
 		result.Model.DeleteDialog = nil
 	case ActionConfirmNo:
 		result.Model.DeleteDialog = nil
 	}
+	return result
+}
+
+func executeDelete(result UpdateResult) UpdateResult {
+	nextPath := ""
+	if node, ok := result.Model.DeleteDialog.Target.(*TreeNode); ok {
+		nextPath = nextSelectionPathAfterDelete(result.Model.FlatList, node.Path)
+		performDeleteSync(node)
+	}
+	tree, _, _ := historytree.Build()
+	if nextPath != "" {
+		historytree.ExpandAncestorsForPath(tree, nextPath)
+	}
+	result.Model.Tree = tree
+	result.Model.FlatList = historytree.Flatten(tree)
+	if nextPath != "" {
+		result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, nextPath)
+	} else if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
+		result.Model.Cursor = len(result.Model.FlatList) - 1
+	} else if len(result.Model.FlatList) == 0 {
+		result.Model.Cursor = 0
+	}
+	result.Cmd = historytree.LoadCountsForExpandedNodes(result.Model.Tree)
 	return result
 }
 

@@ -18,6 +18,7 @@ const (
 	ActionDelete
 	ActionConfirmYes
 	ActionConfirmNo
+	ActionConfirmDelete
 	ActionHelp
 )
 
@@ -29,6 +30,8 @@ func HandleKey(key string, inDeleteDialog bool) Action {
 			return ActionToggle // Toggle between Delete/Cancel
 		case "enter":
 			return ActionConfirmYes // Confirm selection
+		case "delete":
+			return ActionConfirmDelete // Always delete
 		case "esc", "q":
 			return ActionConfirmNo // Cancel
 		default:

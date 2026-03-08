@@ -49,6 +49,13 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 				result.Quit = true
 			}
 			return result
+		case "delete":
+			// Delete key always confirms delete regardless of cursor position
+			performDeleteSync(m.NodePath)
+			result.Deleted = true
+			result.Model.DeleteDialog = nil
+			result.Quit = true
+			return result
 		default:
 			// Any other key closes the dialog and returns to detail view
 			result.Model.DeleteDialog = nil
