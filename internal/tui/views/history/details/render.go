@@ -126,34 +126,15 @@ func Render(m Model, windowWidth, windowHeight int) string {
 			hostStart += len(host.Ports) // Port lines
 		}
 
-		selectedHost := m.History.ScanResults.Hosts[m.Cursor]
-		hostEnd := hostStart + len(selectedHost.Ports) // inclusive
-
 		top := m.Viewport.YOffset
 		bottom := m.Viewport.YOffset + m.Viewport.Height - 1
 
 		// If selection is above viewport, bring host line to top.
 		if hostStart < top {
 			m.Viewport.YOffset = hostStart
-		} else {
-			// Reveal additional selected-host ports as the cursor moves down.
-			revealPorts := m.Viewport.Height / 2
-			if revealPorts < 1 {
-				revealPorts = 1
-			}
-			if revealPorts > len(selectedHost.Ports) {
-				revealPorts = len(selectedHost.Ports)
-			}
-
-			targetBottom := hostStart + revealPorts
-			if targetBottom > hostEnd {
-				targetBottom = hostEnd
-			}
-
-			// If selected host (or its target ports) is below viewport, scroll minimally.
-			if hostStart > bottom || targetBottom > bottom {
-				m.Viewport.YOffset = targetBottom - m.Viewport.Height + 1
-			}
+		} else if hostStart > bottom {
+			// Host is below viewport: pin host line at top of viewport.
+			m.Viewport.YOffset = hostStart
 		}
 
 		if m.Viewport.YOffset < 0 {
