@@ -54,7 +54,7 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 	}
 
 	buttons := lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, deleteBtn)
-	help := common.HelpTextStyle.Render(common.WrapWords("←/→: navigate • Enter/Del: confirm • q: back", width-4))
+	help := common.HelpTextStyle.Render(common.WrapWords("←/→: navigate • Enter: confirm • q: back", width-4))
 
 	// Combine content
 	content := strings.Join([]string{

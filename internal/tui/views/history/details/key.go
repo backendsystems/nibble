@@ -15,7 +15,7 @@ func HandleKey(key string) Action {
 		return ActionMoveUp
 	case "down", "s", "j":
 		return ActionMoveDown
-	case "enter":
+	case "enter", "right", "d", "l":
 		return ActionScanAllPorts
 	case "delete":
 		return ActionDelete
