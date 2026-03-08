@@ -1,4 +1,4 @@
-.PHONY: all build demo update run pip npm goreleaser fix
+.PHONY: all build demo history update run pip npm goreleaser fix
 
 all: run
 
@@ -18,6 +18,14 @@ demo: nibble
 	fi
 	@TERM=xterm-256color COLORTERM=truecolor VHS_NO_SANDBOX=1 vhs demo.tape
 	@echo "Generated demo.gif"
+
+history: nibble
+	@if ! command -v vhs >/dev/null 2>&1; then \
+		echo "vhs not found. Install it from https://github.com/charmbracelet/vhs"; \
+		exit 1; \
+	fi
+	@TERM=xterm-256color COLORTERM=truecolor VHS_NO_SANDBOX=1 vhs history.tape
+	@echo "Generated history.gif"
 
 pip:
 	@cd python-package && \
