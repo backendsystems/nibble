@@ -165,12 +165,20 @@ func Render(m Model, windowWidth, windowHeight int) string {
 		top := m.Viewport.YOffset
 		bottom := m.Viewport.YOffset + m.Viewport.Height - 1
 
+		selectedHost := m.History.ScanResults.Hosts[m.Cursor]
+		hostEnd := hostStart + len(selectedHost.Ports)
+
 		// If selection is above viewport, bring host line to top.
 		if hostStart < top {
 			m.Viewport.YOffset = hostStart
 		} else if hostStart > bottom {
-			// Host is below viewport: pin host line at top of viewport.
-			m.Viewport.YOffset = hostStart
+			// Scroll so host IP + all its ports are visible if they fit.
+			// Target: hostEnd at the bottom. Cap at hostStart so host IP stays at top, never off-screen.
+			offset := hostEnd - m.Viewport.Height + 1
+			if offset > hostStart {
+				offset = hostStart
+			}
+			m.Viewport.YOffset = offset
 		}
 
 		if m.Viewport.YOffset < 0 {
