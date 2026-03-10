@@ -38,6 +38,9 @@ jobs:
         run: |
           node -e "const fs=require('fs');const v='${{ steps.version.outputs.VERSION }}';const p='npm-package/package.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.version=v;fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n');"
 
+      - name: Copy README into npm package
+        run: cp README.md *.gif npm-package/
+
       - name: Publish npm package
         working-directory: npm-package
         env:
