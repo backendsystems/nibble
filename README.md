@@ -7,6 +7,7 @@ Select a network interface, and Nibble scans your local subnet. Lists hosts, har
 
 - Lightning fast scans using lightweight threads
 - Stealthy, emits no network signals before a scan is started
+- Colors uses your terminal theme colors
 - Skips loopback and irrelevant adapters
 - Defaults to SSH, Telnet, HTTP, HTTPS, SMB, RDP, and more
 - Can be set to a list of custom ports that are stored for future use
