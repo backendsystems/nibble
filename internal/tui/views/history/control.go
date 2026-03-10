@@ -19,53 +19,16 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		if mouseMsg, ok := msg.(tea.MouseMsg); ok {
 			detailResult := m.Details.HandleMouse(mouseMsg)
 			result.Model.Details = detailResult.Model
+			syncScanNode(result.Model.Tree, detailResult.Model.HistoryPath, detailResult.Model.History)
 			result.Cmd = detailResult.Cmd
-			if detailResult.ScanAllPorts {
-				result.ScanAllPorts = true
-				result.SelectedHostIP = detailResult.SelectedHostIP
-				result.ScanHistoryPath = detailResult.ScanHistoryPath
-			}
+			applyDetailResult(&result, detailResult)
 			return result
 		}
 		detailResult := m.Details.Update(msg)
 		result.Model.Details = detailResult.Model
 		syncScanNode(result.Model.Tree, detailResult.Model.HistoryPath, detailResult.Model.History)
 		result.Cmd = detailResult.Cmd
-		if detailResult.Deleted {
-			history.DeleteDetailCursors([]string{detailResult.Model.HistoryPath})
-			delete(result.Model.DetailCursors, detailResult.Model.HistoryPath)
-			nextPath := nextSelectionPathAfterDelete(m.FlatList, detailResult.Model.HistoryPath)
-			tree, _ := historytree.Build()
-			if nextPath != "" {
-				historytree.ExpandAncestorsForPath(tree, nextPath)
-			}
-			result.Model.Tree = tree
-			result.Model.FlatList = historytree.Flatten(tree)
-			if nextPath != "" {
-				result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, nextPath)
-			}
-			if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
-				result.Model.Cursor = len(result.Model.FlatList) - 1
-			}
-			result.Model.Mode = ViewList
-			result.Model.Details = detailsview.Model{}
-			saveViewState(result.Model.FlatList, result.Model.Cursor)
-			result.Cmd = tea.Batch(result.Cmd, historytree.LoadCountsForExpandedNodes(result.Model.Tree))
-		} else if detailResult.Quit {
-			if result.Model.DetailCursors == nil {
-				result.Model.DetailCursors = make(map[string]int)
-			}
-			result.Model.DetailCursors[detailResult.Model.HistoryPath] = detailResult.Model.Cursor
-			history.SaveDetailCursor(detailResult.Model.HistoryPath, detailResult.Model.Cursor)
-			result.Model.Mode = ViewList
-			result.Model.Details = detailsview.Model{}
-			saveViewState(result.Model.FlatList, result.Model.Cursor)
-		}
-		if detailResult.ScanAllPorts {
-			result.ScanAllPorts = true
-			result.SelectedHostIP = detailResult.SelectedHostIP
-			result.ScanHistoryPath = detailResult.ScanHistoryPath
-		}
+		applyDetailResult(&result, detailResult)
 		return result
 	}
 
@@ -107,4 +70,42 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 	}
 
 	return result
+}
+
+func applyDetailResult(result *UpdateResult, detailResult detailsview.UpdateResult) {
+	if detailResult.Deleted {
+		history.DeleteDetailCursors([]string{detailResult.Model.HistoryPath})
+		delete(result.Model.DetailCursors, detailResult.Model.HistoryPath)
+		nextPath := nextSelectionPathAfterDelete(result.Model.FlatList, detailResult.Model.HistoryPath)
+		tree, _ := historytree.Build()
+		if nextPath != "" {
+			historytree.ExpandAncestorsForPath(tree, nextPath)
+		}
+		result.Model.Tree = tree
+		result.Model.FlatList = historytree.Flatten(tree)
+		if nextPath != "" {
+			result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, nextPath)
+		}
+		if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
+			result.Model.Cursor = len(result.Model.FlatList) - 1
+		}
+		result.Model.Mode = ViewList
+		result.Model.Details = detailsview.Model{}
+		saveViewState(result.Model.FlatList, result.Model.Cursor)
+		result.Cmd = tea.Batch(result.Cmd, historytree.LoadCountsForExpandedNodes(result.Model.Tree))
+	} else if detailResult.Quit {
+		if result.Model.DetailCursors == nil {
+			result.Model.DetailCursors = make(map[string]int)
+		}
+		result.Model.DetailCursors[detailResult.Model.HistoryPath] = detailResult.Model.Cursor
+		history.SaveDetailCursor(detailResult.Model.HistoryPath, detailResult.Model.Cursor)
+		result.Model.Mode = ViewList
+		result.Model.Details = detailsview.Model{}
+		saveViewState(result.Model.FlatList, result.Model.Cursor)
+	}
+	if detailResult.ScanAllPorts {
+		result.ScanAllPorts = true
+		result.SelectedHostIP = detailResult.SelectedHostIP
+		result.ScanHistoryPath = detailResult.ScanHistoryPath
+	}
 }

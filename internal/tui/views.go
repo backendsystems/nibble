@@ -11,6 +11,17 @@ import (
 )
 
 func (m model) handleViewScan(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if mouseMsg, ok := msg.(tea.MouseMsg); ok {
+		result := m.scan.HandleMouse(mouseMsg)
+		if !result.Handled {
+			return m, nil
+		}
+		m.scan = result.Model
+		if result.Quit {
+			return m, tea.Quit
+		}
+		return m, result.Cmd
+	}
 	result := m.scan.Update(msg)
 	if !result.Handled {
 		return m, nil
@@ -61,6 +72,11 @@ func (m model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if mouseMsg, ok := msg.(tea.MouseMsg); ok && m.history.Mode == historyview.ViewList {
 		result := m.history.HandleMouse(mouseMsg)
 		m.history = result.Model
+		if result.Quit {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+			return m, nil
+		}
 		return m, result.Cmd
 	}
 	result := m.history.Update(msg)
@@ -82,6 +98,15 @@ func (m model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleViewTarget(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if mouseMsg, ok := msg.(tea.MouseMsg); ok {
+		result, cmd := (&m.target).HandleMouse(mouseMsg)
+		if result.Quit {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+			return m, nil
+		}
+		return m, cmd
+	}
 	result, cmd := (&m.target).Update(msg)
 	if result.Quit {
 		m.main.ErrorMsg = ""
