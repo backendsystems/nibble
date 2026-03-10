@@ -52,7 +52,7 @@ var (
 				Foreground(Color.Scanned)
 
 	WarningStyle = lipgloss.NewStyle().
-			Foreground(Color.Warning).
+			Foreground(Color.Scanning).
 			Bold(true)
 
 	// Card styles - shared rounded-border card look used across views

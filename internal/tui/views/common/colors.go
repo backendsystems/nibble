@@ -13,7 +13,7 @@ var Color = struct {
 	Info      lipgloss.Color
 	Error     lipgloss.Color
 	Scanned   lipgloss.Color
-	Warning   lipgloss.Color
+	Scanning  lipgloss.Color
 	Folder    lipgloss.Color
 }{
 	Black:     colors.Black,
@@ -22,6 +22,6 @@ var Color = struct {
 	Info:      colors.White,
 	Error:     colors.Red,
 	Scanned:   colors.Green,
-	Warning:   colors.BrightYellow,
+	Scanning:  colors.Cyan,
 	Folder:    colors.Blue,
 }
