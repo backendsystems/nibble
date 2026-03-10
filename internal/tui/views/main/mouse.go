@@ -37,7 +37,10 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 		result.Model.Viewport.YOffset = max(0, result.Model.Viewport.YOffset-cardHeight)
 		return result
 	case tea.MouseButtonWheelDown:
-		result.Model.Viewport.YOffset += cardHeight
+		totalCards := len(m.Interfaces) + 2
+		totalRows := (totalCards + m.CardsPerRow - 1) / m.CardsPerRow
+		maxOffset := max(0, totalRows*cardHeight-m.Viewport.Height)
+		result.Model.Viewport.YOffset = min(result.Model.Viewport.YOffset+cardHeight, maxOffset)
 		return result
 	}
 
