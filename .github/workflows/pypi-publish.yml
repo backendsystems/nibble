@@ -35,7 +35,7 @@ jobs:
         run: rm -rf python-package/dist
 
       - name: Copy README into python package
-        run: cp README.md *.gif python-package/
+        run: sed 's|](\([^ ")]*\.gif\)[^)]*)|](https://raw.githubusercontent.com/backendsystems/nibble/main/\1)|g' README.md > python-package/README.md
 
       - name: Build Python package
         run: cd python-package && python -m build --sdist --wheel
