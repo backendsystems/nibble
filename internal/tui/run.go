@@ -59,7 +59,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 	}
 	initialModel.scan = initialModel.scan.SetViewportSize(scanViewWidth(initialModel.windowW), initialModel.windowH)
 
-	prog := tea.NewProgram(initialModel)
+	prog := tea.NewProgram(initialModel, tea.WithMouseCellMotion())
 	finalModel, err := prog.Run()
 	if err != nil {
 		return err

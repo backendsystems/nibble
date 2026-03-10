@@ -3,6 +3,7 @@ package tui
 import (
 	scannerconfig "github.com/backendsystems/nibble/internal/scanner/config"
 	historyview "github.com/backendsystems/nibble/internal/tui/views/history"
+	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	targetview "github.com/backendsystems/nibble/internal/tui/views/target"
 	tea "github.com/charmbracelet/bubbletea"
@@ -84,12 +85,15 @@ func (m model) handleViewTarget(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleViewMain(msg tea.Msg) (tea.Model, tea.Cmd) {
-	key, ok := msg.(tea.KeyMsg)
-	if !ok {
+	var result mainview.UpdateResult
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		result = m.main.Update(msg)
+	case tea.MouseMsg:
+		result = m.main.HandleMouse(msg)
+	default:
 		return m, nil
 	}
-
-	result := m.main.Update(key)
 	m.main = result.Model
 	if result.Quit {
 		return m, tea.Quit
