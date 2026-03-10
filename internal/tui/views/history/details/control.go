@@ -68,6 +68,7 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 	case SavedMsg:
 		if msg.Updated.Version != "" {
 			result.Model.History = msg.Updated
+			result.Model = result.Model.ScrollToSelected()
 		}
 		return result
 	}
