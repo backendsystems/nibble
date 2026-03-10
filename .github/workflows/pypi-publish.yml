@@ -34,6 +34,9 @@ jobs:
       - name: Clean Python dist directory
         run: rm -rf python-package/dist
 
+      - name: Copy README into python package
+        run: cp README.md *.gif python-package/
+
       - name: Build Python package
         run: cd python-package && python -m build --sdist --wheel
 
