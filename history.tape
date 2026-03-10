@@ -1,6 +1,5 @@
 Output history.gif
 
-Set Theme "Dark+"
 Set FontFamily "DejaVu Sans Mono,Noto Color Emoji"
 Set FontSize 16
 Set Width 1000
