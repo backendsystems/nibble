@@ -10,7 +10,7 @@ import (
 
 var (
 	selectedStyle = common.HighlightStyle
-	folderStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("33"))
+	folderStyle   = common.FolderStyle
 	scanStyle     = lipgloss.NewStyle().Foreground(common.Color.Info)
 )
 

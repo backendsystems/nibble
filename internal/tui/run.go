@@ -6,7 +6,9 @@ import (
 	"os"
 
 	scannerconfig "github.com/backendsystems/nibble/internal/scanner/config"
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
+
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	scanview "github.com/backendsystems/nibble/internal/tui/views/scan"
 	targetview "github.com/backendsystems/nibble/internal/tui/views/target"
@@ -46,9 +48,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 		ports: portsModel,
 		scan: scanview.Model{
 			NetworkScan: networkScanner,
-			Progress: progress.New(
-				progress.WithScaledGradient("#FFD700", "#B8B000"),
-			),
+			Progress:    progress.New(progress.WithSolidFill(string(common.Color.Selection))),
 		},
 		target: targetview.Model{
 			NetworkScan:    networkScanner,

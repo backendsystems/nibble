@@ -16,10 +16,7 @@ func Render(m Model, maxWidth int) string {
 	}
 	var b strings.Builder
 
-	titleText := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("15")).
-		Render("Nibble Network Scanner")
+	titleText := common.TitleStyle.Render("Nibble Network Scanner")
 	b.WriteString(titleText + "\n")
 
 	icons := make(map[string]string, len(m.Interfaces))
@@ -61,11 +58,11 @@ func Render(m Model, maxWidth int) string {
 	view := b.String()
 
 	if m.ErrorMsg != "" {
-		errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
+		errorStyle := common.ErrorStyle
 		view += "\n\n" + errorStyle.Render("Error: "+m.ErrorMsg)
 	}
 
-	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	helpStyle := common.HelpTextStyle
 	view += "\n" + helpStyle.Render(common.WrapWords(selectionHelpText, maxWidth))
 
 	if m.ShowHelp {
@@ -90,12 +87,12 @@ func renderInterfaceCard(m Model, icons map[string]string, index int, iface net.
 
 	nameStyle := lipgloss.NewStyle().Bold(true)
 	if isSelected {
-		nameStyle = nameStyle.Foreground(lipgloss.Color("226"))
+		nameStyle = nameStyle.Foreground(common.Color.Selection)
 	}
 	cardContent.WriteString(nameStyle.Render(icon+" "+name) + "\n")
 
 	addrs := ipv4Labels(m.InterfaceMap, name)
-	addrStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	addrStyle := common.HelpTextStyle
 	if len(addrs) > 0 {
 		cardContent.WriteString(addrStyle.Render(addrs[0]))
 	}
@@ -115,11 +112,11 @@ func renderTargetCard(m Model, index int) string {
 
 	nameStyle := lipgloss.NewStyle().Bold(true)
 	if isSelected {
-		nameStyle = nameStyle.Foreground(lipgloss.Color("226"))
+		nameStyle = nameStyle.Foreground(common.Color.Selection)
 	}
 	cardContent.WriteString(nameStyle.Render(icon+" Custom Target") + "\n")
 
-	subtitleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	subtitleStyle := common.HelpTextStyle
 	cardContent.WriteString(subtitleStyle.Render("enter IP/CIDR"))
 
 	return style.Render(cardContent.String())
@@ -137,11 +134,11 @@ func renderHistoryCard(m Model, index int) string {
 
 	nameStyle := lipgloss.NewStyle().Bold(true)
 	if isSelected {
-		nameStyle = nameStyle.Foreground(lipgloss.Color("226"))
+		nameStyle = nameStyle.Foreground(common.Color.Selection)
 	}
 	cardContent.WriteString(nameStyle.Render(icon+" History") + "\n")
 
-	subtitleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	subtitleStyle := common.HelpTextStyle
 	cardContent.WriteString(subtitleStyle.Render("view past scans"))
 
 	return style.Render(cardContent.String())

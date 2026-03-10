@@ -3,7 +3,7 @@ package portsview
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
 
 // wrapPortList wraps comma-separated content window max width
@@ -64,7 +64,7 @@ func invalidPorts(errMsg string) []string {
 }
 
 func highlightInvalidPorts(s string, tokens []string) string {
-	invalidStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
+	invalidStyle := common.ErrorStyle
 	for _, token := range tokens {
 		if token == "" {
 			continue

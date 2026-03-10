@@ -29,7 +29,7 @@ func Render(m Model, maxWidth int) string {
 		if available > 0 {
 			input.Width = available
 		}
-		b.WriteString("custom:  " + input.View() + "\n")
+		b.WriteString(common.HighlightStyle.Render("custom:  ") + input.View() + "\n")
 
 		guide := "  • " + common.CustomPortsDescription
 		b.WriteString(common.ItalicHelpStyle.Render(guide) + "\n")
