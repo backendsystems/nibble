@@ -16,6 +16,17 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 
 	// Route detail view messages
 	if m.Mode == ViewDetail {
+		if mouseMsg, ok := msg.(tea.MouseMsg); ok {
+			detailResult := m.Details.HandleMouse(mouseMsg)
+			result.Model.Details = detailResult.Model
+			result.Cmd = detailResult.Cmd
+			if detailResult.ScanAllPorts {
+				result.ScanAllPorts = true
+				result.SelectedHostIP = detailResult.SelectedHostIP
+				result.ScanHistoryPath = detailResult.ScanHistoryPath
+			}
+			return result
+		}
 		detailResult := m.Details.Update(msg)
 		result.Model.Details = detailResult.Model
 		syncScanNode(result.Model.Tree, detailResult.Model.HistoryPath, detailResult.Model.History)

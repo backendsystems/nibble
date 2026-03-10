@@ -93,9 +93,11 @@ func renderInterfaceCard(m Model, icons map[string]string, index int, iface net.
 
 	addrs := ipv4Labels(m.InterfaceMap, name)
 	addrStyle := common.HelpTextStyle
+	addr := ""
 	if len(addrs) > 0 {
-		cardContent.WriteString(addrStyle.Render(addrs[0]))
+		addr = addrs[0]
 	}
+	cardContent.WriteString(addrStyle.Render(addr))
 
 	return style.Render(cardContent.String())
 }
