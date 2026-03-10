@@ -23,6 +23,23 @@ func (m model) handleViewScan(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleViewPorts(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if mouseMsg, ok := msg.(tea.MouseMsg); ok {
+		result := m.ports.HandleMouse(mouseMsg, scanViewWidth(m.windowW))
+		m.ports = result.Model
+		if result.Quit {
+			return m, tea.Quit
+		}
+		if result.Back {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+			return m, nil
+		}
+		if result.Done {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+		}
+		return m, result.Cmd
+	}
 	result := m.ports.Update(msg)
 	m.ports = result.Model
 	if result.Quit {
@@ -41,6 +58,11 @@ func (m model) handleViewPorts(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if mouseMsg, ok := msg.(tea.MouseMsg); ok && m.history.Mode == historyview.ViewList {
+		result := m.history.HandleMouse(mouseMsg)
+		m.history = result.Model
+		return m, result.Cmd
+	}
 	result := m.history.Update(msg)
 	m.history = result.Model
 
