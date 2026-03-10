@@ -9,10 +9,26 @@ const (
 	historyListTitleRows = 2
 )
 
-// HandleMouse processes a mouse event for the history list view.
-// Clicking a tree row selects it; clicking the already-selected row toggles it.
+// HandleMouse processes mouse events for the history list view.
+// Scroll wheel scrolls the list; clicking a row selects or toggles it.
 func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	result := UpdateResult{Model: m}
+
+	switch msg.Button {
+	case tea.MouseButtonWheelUp:
+		if result.Model.Cursor > 0 {
+			result.Model.Cursor--
+			saveViewState(result.Model.FlatList, result.Model.Cursor)
+		}
+		return result
+	case tea.MouseButtonWheelDown:
+		if result.Model.Cursor < len(result.Model.FlatList)-1 {
+			result.Model.Cursor++
+			saveViewState(result.Model.FlatList, result.Model.Cursor)
+		}
+		return result
+	}
+
 	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
 		return result
 	}

@@ -44,10 +44,20 @@ func detailTitleLines(m Model, windowWidth int) int {
 	return 1
 }
 
-// HandleMouse processes a left-click in the detail host list.
-// Single click selects a host; clicking the already-selected host triggers scan all ports.
+// HandleMouse processes mouse events in the detail host list:
+// scroll wheel scrolls the viewport; left-click selects or activates a host.
 func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	result := UpdateResult{Model: m}
+
+	switch msg.Button {
+	case tea.MouseButtonWheelUp:
+		result.Model.Viewport.YOffset = max(0, result.Model.Viewport.YOffset-3)
+		return result
+	case tea.MouseButtonWheelDown:
+		result.Model.Viewport.YOffset += 3
+		return result
+	}
+
 	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
 		return result
 	}

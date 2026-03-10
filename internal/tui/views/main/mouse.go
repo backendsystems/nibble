@@ -9,13 +9,15 @@ const (
 	cardTitleOffset = 1 // title line before cards
 )
 
-// CardIndexAt returns the card index at the given terminal (x, y) position,
-// or -1 if the position doesn't land on a card.
-func CardIndexAt(x, y, cardsPerRow, totalCards int) int {
+// CardIndexAt returns the card index at the given terminal (x, y) position
+// accounting for the viewport scroll offset, or -1 if the position misses all cards.
+func CardIndexAt(x, y, yOffset, cardsPerRow, totalCards int) int {
 	if y < cardTitleOffset {
 		return -1
 	}
-	row := (y - cardTitleOffset) / cardHeight
+	// Convert screen Y to content Y by adding the viewport scroll offset.
+	contentY := (y - cardTitleOffset) + yOffset
+	row := contentY / cardHeight
 	col := x / cardTotalWidth
 	if col >= cardsPerRow {
 		return -1
@@ -29,11 +31,21 @@ func CardIndexAt(x, y, cardsPerRow, totalCards int) int {
 
 func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	result := UpdateResult{Model: m}
+
+	switch msg.Button {
+	case tea.MouseButtonWheelUp:
+		result.Model.Viewport.YOffset = max(0, result.Model.Viewport.YOffset-cardHeight)
+		return result
+	case tea.MouseButtonWheelDown:
+		result.Model.Viewport.YOffset += cardHeight
+		return result
+	}
+
 	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
 		return result
 	}
 	totalCards := len(m.Interfaces) + 2
-	index := CardIndexAt(msg.X, msg.Y, m.CardsPerRow, totalCards)
+	index := CardIndexAt(msg.X, msg.Y, m.Viewport.YOffset, m.CardsPerRow, totalCards)
 	if index < 0 {
 		return result
 	}

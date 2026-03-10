@@ -1,6 +1,10 @@
 package mainview
 
-import "net"
+import (
+	"net"
+
+	"github.com/charmbracelet/bubbles/viewport"
+)
 
 type Model struct {
 	Interfaces   []net.Interface
@@ -9,4 +13,6 @@ type Model struct {
 	CardsPerRow  int
 	ShowHelp     bool
 	ErrorMsg     string
+	Viewport     viewport.Model
+	WindowH      int
 }

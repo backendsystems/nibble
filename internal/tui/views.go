@@ -116,7 +116,11 @@ func (m model) handleViewMain(msg tea.Msg) (tea.Model, tea.Cmd) {
 	default:
 		return m, nil
 	}
-	m.main = result.Model
+	next := result.Model.UpdateViewport(scanViewWidth(m.windowW))
+	if result.Model.Cursor != m.main.Cursor {
+		next = next.ScrollToSelected()
+	}
+	m.main = next
 	if result.Quit {
 		return m, tea.Quit
 	}

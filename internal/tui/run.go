@@ -44,6 +44,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 			Interfaces:   ifaces,
 			InterfaceMap: addrsByIface,
 			CardsPerRow:  initialCardsPerRow,
+			WindowH:      initialWindowH,
 		},
 		ports: portsModel,
 		scan: scanview.Model{
