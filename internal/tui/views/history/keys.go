@@ -99,7 +99,7 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 				if result.Model.DetailCursors != nil {
 					savedCursor = result.Model.DetailCursors[node.Path]
 				}
-				result.Model.Details = detailsview.Model{
+				details := detailsview.Model{
 					History:      *node.ScanData,
 					HistoryPath:  node.Path,
 					NodePath:     node.Path,
@@ -109,6 +109,9 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 					WindowH:      result.Model.WindowH,
 					Cursor:       savedCursor,
 				}
+				details = details.SetViewportSize(result.Model.WindowW, result.Model.WindowH)
+				details = details.ScrollToSelected()
+				result.Model.Details = details
 				return result
 			}
 			if node != nil {

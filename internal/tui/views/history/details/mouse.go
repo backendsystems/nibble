@@ -54,7 +54,12 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 		result.Model.Viewport.YOffset = max(0, result.Model.Viewport.YOffset-3)
 		return result
 	case tea.MouseButtonWheelDown:
-		result.Model.Viewport.YOffset += 3
+		totalLines := 1
+		for _, host := range m.History.ScanResults.Hosts {
+			totalLines += 1 + len(host.Ports)
+		}
+		maxOffset := max(0, totalLines-m.Viewport.Height)
+		result.Model.Viewport.YOffset = min(result.Model.Viewport.YOffset+3, maxOffset)
 		return result
 	}
 
@@ -87,5 +92,6 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	}
 
 	result.Model.Cursor = index
+	result.Model = result.Model.ScrollToSelected()
 	return result
 }

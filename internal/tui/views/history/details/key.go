@@ -89,10 +89,12 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	case ActionMoveUp:
 		if !m.Scanning && m.Cursor > 0 {
 			result.Model.Cursor--
+			result.Model = result.Model.ScrollToSelected()
 		}
 	case ActionMoveDown:
 		if !m.Scanning && m.Cursor < len(m.History.ScanResults.Hosts)-1 {
 			result.Model.Cursor++
+			result.Model = result.Model.ScrollToSelected()
 		}
 	case ActionScanAllPorts:
 		if m.Cursor < len(m.History.ScanResults.Hosts) {

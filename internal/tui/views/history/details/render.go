@@ -145,7 +145,11 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	helpLines := strings.Count(helpWrapped, "\n") + 1 // +1 blank line before help
 	m = m.UpdateViewportContent(content.String(), windowWidth, windowHeight, titleLines+helpLines)
 
-	m = m.scrollToSelected()
+	// Only auto-scroll during active scanning (to follow new ports).
+	// Normal cursor-driven scrolling is handled by the controller via ScrollToSelected.
+	if m.Scanning {
+		m = m.ScrollToSelected()
+	}
 
 	// Build final output with viewport and help text
 	b.WriteString(m.Viewport.View())
