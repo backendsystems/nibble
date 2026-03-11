@@ -71,7 +71,11 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
 		return result
 	}
-	if m.ShowHelp || m.DeleteDialog != nil || m.Scanning {
+	if m.ShowHelp {
+		result.Model.ShowHelp = false
+		return result
+	}
+	if m.DeleteDialog != nil || m.Scanning {
 		return result
 	}
 

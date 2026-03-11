@@ -57,6 +57,7 @@ func (m Model) HandleMouse(msg tea.MouseMsg, maxWidth int) UpdateResult {
 		}
 	}
 	if m.ShowHelp {
+		result.Model.ShowHelp = false
 		return result
 	}
 
