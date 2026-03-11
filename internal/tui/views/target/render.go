@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	guideText = "?: help • q: back • enter: submit"
+	guideText = "enter: submit • ?: help • q: back"
 )
 
 func Render(m Model, maxWidth int) string {

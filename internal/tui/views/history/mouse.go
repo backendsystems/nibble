@@ -18,12 +18,14 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	case tea.MouseButtonWheelUp:
 		if result.Model.Cursor > 0 {
 			result.Model.Cursor--
+			result.Model = updateViewportContent(result.Model)
 			saveViewState(result.Model.FlatList, result.Model.Cursor)
 		}
 		return result
 	case tea.MouseButtonWheelDown:
 		if result.Model.Cursor < len(result.Model.FlatList)-1 {
 			result.Model.Cursor++
+			result.Model = updateViewportContent(result.Model)
 			saveViewState(result.Model.FlatList, result.Model.Cursor)
 		}
 		return result
@@ -51,6 +53,7 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 		return handleListKey(result, ActionToggle)
 	}
 	result.Model.Cursor = index
+	result.Model = updateViewportContent(result.Model)
 	saveViewState(result.Model.FlatList, result.Model.Cursor)
 	return result
 }
