@@ -21,16 +21,7 @@ func (m *Model) Init() tea.Cmd {
 		m.initializeInputs()
 	}
 
-	// Auto-transition to custom input if returning from back/esc with custom selected
-	if m.PortPack == "custom" && !m.InCustomPortInput {
-		m.InCustomPortInput = true
-		m.PortInput.Value = m.CustomPorts
-		m.PortInput.Cursor = len(m.CustomPorts)
-		m.PortInput.Ready = false
-		_, cmd := m.PortInput.Prepare(true)
-		return cmd
-	}
-
+	// Ensure we start at the form view, not custom port input
 	m.InCustomPortInput = false
 	return m.focusField(m.FocusedField)
 }
