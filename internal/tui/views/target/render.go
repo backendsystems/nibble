@@ -44,8 +44,11 @@ func Render(m *Model, maxWidth int) string {
 	} else {
 		// Stage 1: Custom fields
 		b.WriteString("\n")
+		m.FieldY[fieldIP] = strings.Count(b.String(), "\n")
 		b.WriteString(renderField(m, fieldIP, maxWidth))
+		m.FieldY[fieldCIDR] = strings.Count(b.String(), "\n")
 		b.WriteString(renderField(m, fieldCIDR, maxWidth))
+		m.FieldY[fieldPortMode] = strings.Count(b.String(), "\n")
 		b.WriteString(renderPortModeField(m))
 	}
 

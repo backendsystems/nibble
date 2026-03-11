@@ -89,12 +89,22 @@ func (m *model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) handleViewTarget(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if mouseMsg, ok := msg.(tea.MouseMsg); ok {
-		helpResult, _ := (&m.target).HandleMouse(mouseMsg, scanViewWidth(m.windowW))
-		if helpResult.Quit {
+		result, cmd := (&m.target).HandleMouse(mouseMsg, scanViewWidth(m.windowW))
+		if result.Quit {
 			m.main.ErrorMsg = ""
 			m.active = viewMain
 			return m, nil
 		}
+		if result.StartScan {
+			m.main.ErrorMsg = ""
+			scannerconfig.SetPorts(m.scan.NetworkScan, result.Ports)
+			nextScan, scanCmd := m.scan.Start(net.Interface{}, nil, result.TotalHosts, result.TargetAddr)
+			nextScan = nextScan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
+			m.scan = nextScan
+			m.active = viewScan
+			return m, tea.Sequence(exitAltScreenCmd(), scanCmd)
+		}
+		return m, cmd
 	}
 	result, cmd := (&m.target).Update(msg)
 	if result.Quit {
