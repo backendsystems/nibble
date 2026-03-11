@@ -6,11 +6,7 @@ import (
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
 
-const (
-	guideText = "enter: submit • ?: help • q: back"
-)
-
-func Render(m Model, maxWidth int) string {
+func Render(m *Model, maxWidth int) string {
 	var b strings.Builder
 
 	if m.InCustomPortInput {
@@ -46,12 +42,13 @@ func Render(m Model, maxWidth int) string {
 		b.WriteString("\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg) + "\n")
 	}
 
-	// Guide text
-	b.WriteString("\n" + common.HelpTextStyle.Render(common.WrapWords(guideText, maxWidth)))
+	m.HelpLineY = strings.Count(b.String(), "\n") + 1
+	layout := common.BuildHelpLineLayout(targetHelpItems, targetHelpPrefix, maxWidth)
+	b.WriteString("\n" + common.RenderHelpLine(layout, targetHelpPrefix, maxWidth, m.HoveredHelpItem))
 
 	view := b.String()
 	if m.ShowHelp {
-		return renderHelpOverlay(view, m, maxWidth)
+		return renderHelpOverlay(view, *m, maxWidth)
 	}
 
 	return view

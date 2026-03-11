@@ -6,8 +6,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const scanHelpText = "j/k or ↑/↓: scroll • q: back"
-
 type Result struct {
 	Model   Model
 	Handled bool

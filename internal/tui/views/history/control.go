@@ -90,7 +90,7 @@ func applyDetailResult(result *UpdateResult, detailResult detailsview.UpdateResu
 			result.Model.Cursor = len(result.Model.FlatList) - 1
 		}
 		result.Model.Mode = ViewList
-		result.Model.Details = detailsview.Model{}
+		result.Model.Details = detailsview.Model{HoveredHelpItem: -1}
 		saveViewState(result.Model.FlatList, result.Model.Cursor)
 		result.Cmd = tea.Batch(result.Cmd, historytree.LoadCountsForExpandedNodes(result.Model.Tree))
 	} else if detailResult.Quit {
@@ -100,7 +100,7 @@ func applyDetailResult(result *UpdateResult, detailResult detailsview.UpdateResu
 		result.Model.DetailCursors[detailResult.Model.HistoryPath] = detailResult.Model.Cursor
 		history.SaveDetailCursor(detailResult.Model.HistoryPath, detailResult.Model.Cursor)
 		result.Model.Mode = ViewList
-		result.Model.Details = detailsview.Model{}
+		result.Model.Details = detailsview.Model{HoveredHelpItem: -1}
 		saveViewState(result.Model.FlatList, result.Model.Cursor)
 	}
 	if detailResult.ScanAllPorts {

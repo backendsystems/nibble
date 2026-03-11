@@ -1,11 +1,8 @@
 package historydetailview
 
 import (
-	"fmt"
-
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // hostAtViewportLine returns the host index that occupies the given line within
@@ -34,28 +31,21 @@ func hostAtViewportLine(m Model, viewportLine int) int {
 	return -1
 }
 
-// detailTitleLines returns how many terminal lines the detail title occupies.
-// Mirrors the wrap logic in render.go exactly.
-func detailTitleLines(m Model, windowWidth int) int {
-	cidr := m.History.ScanMetadata.TargetCIDR
-	iface := m.History.ScanMetadata.InterfaceName
-	date := m.History.ScanMetadata.Created.Format("2006 Jan 2 15:04")
-	titleFull := common.TitleStyle.Render(fmt.Sprintf("%s - %s - %s", cidr, iface, date))
-	total := len(m.History.ScanResults.Hosts)
-	counterW := 0
-	if total > 0 {
-		counterW = lipgloss.Width(common.MutedStyle.Render(fmt.Sprintf("%d/%d", m.Cursor+1, total)))
-	}
-	if lipgloss.Width(titleFull)+counterW+1 > windowWidth {
-		return 2
-	}
-	return 1
-}
-
 // HandleMouse processes mouse events in the detail host list:
 // scroll wheel scrolls the viewport; left-click selects or activates a host.
 func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	result := UpdateResult{Model: m}
+
+	helpLineY := m.HelpLineY
+	helpLayout := common.BuildHelpLineLayout(detailHelpItems, detailHelpPrefix, m.WindowW)
+	helpLineEndY := helpLineY + helpLayout.LineCount - 1
+
+	// Update hover state for all mouse events
+	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
+		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
+	} else {
+		result.Model.HoveredHelpItem = -1
+	}
 
 	switch msg.Button {
 	case tea.MouseButtonWheelUp:
@@ -85,7 +75,31 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 		return result
 	}
 
-	titleLines := detailTitleLines(m, m.WindowW)
+	// Check if clicking on helpline item
+	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
+		itemIndex := common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
+		if itemIndex >= 0 {
+			switch Action(helpLayout.Items[itemIndex].Action) {
+			case ActionScanAllPorts:
+				if len(m.History.ScanResults.Hosts) > 0 {
+					result.ScanAllPorts = true
+					result.SelectedHostIP = m.History.ScanResults.Hosts[m.Cursor].IP
+					result.ScanHistoryPath = m.HistoryPath
+					result.Model.ScanningHostIdx = m.Cursor
+				}
+			case ActionQuit:
+				result.Quit = true
+			case ActionHelp:
+				result.Model.ShowHelp = true
+			}
+			return result
+		}
+	}
+
+	titleLines := m.HelpLineY - m.Viewport.Height
+	if titleLines < 1 {
+		titleLines = 1
+	}
 	contentY := msg.Y - titleLines
 	if contentY < 0 {
 		return result

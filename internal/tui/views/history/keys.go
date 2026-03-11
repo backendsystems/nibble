@@ -108,6 +108,7 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 					WindowW:      result.Model.WindowW,
 					WindowH:      result.Model.WindowH,
 					Cursor:       savedCursor,
+					HoveredHelpItem: -1,
 				}
 				details = details.SetViewportSize(result.Model.WindowW, result.Model.WindowH)
 				details = details.ScrollToSelected()

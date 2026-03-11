@@ -8,19 +8,16 @@ import (
 	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
 )
 
-var (
-	titleStyle = common.TitleStyle
-	helpStyle  = common.HelpTextStyle
-)
+var titleStyle = common.TitleStyle
 
-func Render(m Model, maxWidth int) string {
+func Render(m *Model, maxWidth int) string {
 	if m.Mode == ViewDetail {
-		return detailsview.Render(m.Details, maxWidth, m.WindowH)
+		return detailsview.Render(&m.Details, maxWidth, m.WindowH)
 	}
 	return renderList(m, maxWidth)
 }
 
-func renderList(m Model, maxWidth int) string {
+func renderList(m *Model, maxWidth int) string {
 	var b strings.Builder
 
 	// Title (outside viewport)
@@ -35,7 +32,9 @@ func renderList(m Model, maxWidth int) string {
 		m.Viewport.Height,
 	))
 	b.WriteString("\n")
-	b.WriteString(helpStyle.Render(common.WrapWords("↑/↓/←/→ • Del: delete • ?: help • q: back", maxWidth)))
+	m.HelpLineY = strings.Count(b.String(), "\n")
+	layout := common.BuildHelpLineLayout(historyHelpItems, historyHelpPrefix, maxWidth)
+	b.WriteString(common.RenderHelpLine(layout, historyHelpPrefix, maxWidth, m.HoveredHelpItem))
 
 	if m.ErrorMsg != "" {
 		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))

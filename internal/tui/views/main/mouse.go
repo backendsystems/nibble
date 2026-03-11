@@ -1,6 +1,7 @@
 package mainview
 
 import (
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -41,22 +42,13 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 		return result
 	}
 
-	// Calculate helpline Y position:
-	// Y=0: title
-	// Y=1 to Y=vpHeight: viewport (vpHeight lines)
-	// Y=(1+vpHeight): helpline (no error) OR blank line (with error)
-	// Y=(1+vpHeight+1): error line (with error)
-	// Y=(1+vpHeight+2): helpline (with error)
-	helpLineY := 1 + m.Viewport.Height
-	if m.ErrorMsg != "" {
-		helpLineY += 2 // +2 for "\n\n" + error, then helpline is next line
-	}
-	helpLayout := BuildHelpLineLayout(m.Viewport.Width)
+	helpLineY := m.HelpLineY
+	helpLayout := common.BuildHelpLineLayout(mainHelpItems, helpPrefixText, m.Viewport.Width)
 	helpLineEndY := helpLineY + helpLayout.LineCount - 1
 
 	// Handle hover for helpline items (update hover state for all mouse events)
-	if msg.Y >= helpLineY && msg.Y <= helpLineEndY {
-		result.Model.HoveredHelpItem = GetHelpItemAt(msg.X, msg.Y-helpLineY, m.Viewport.Width)
+	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
+		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
 	} else {
 		result.Model.HoveredHelpItem = -1
 	}
@@ -78,11 +70,10 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	}
 
 	// Check if clicking on helpline item
-	if msg.Y >= helpLineY && msg.Y <= helpLineEndY {
-		itemIndex := GetHelpItemAt(msg.X, msg.Y-helpLineY, m.Viewport.Width)
+	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
+		itemIndex := common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
 		if itemIndex >= 0 {
-			action := GetHelpItemAction(itemIndex, m.Viewport.Width)
-			switch action {
+			switch Action(helpLayout.Items[itemIndex].Action) {
 			case ActionOpenPorts:
 				result.OpenPorts = true
 			case ActionOpenHistory:

@@ -11,7 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func (m model) handleViewScan(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) handleViewScan(msg tea.Msg) (tea.Model, tea.Cmd) {
 	result := m.scan.Update(msg)
 	if !result.Handled {
 		return m, nil
@@ -23,7 +23,7 @@ func (m model) handleViewScan(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, result.Cmd
 }
 
-func (m model) handleViewPorts(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) handleViewPorts(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if mouseMsg, ok := msg.(tea.MouseMsg); ok {
 		result := m.ports.HandleMouse(mouseMsg, scanViewWidth(m.windowW))
 		m.ports = result.Model
@@ -58,9 +58,9 @@ func (m model) handleViewPorts(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, result.Cmd
 }
 
-func (m model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if mouseMsg, ok := msg.(tea.MouseMsg); ok && m.history.Mode == historyview.ViewList {
-		result := m.history.HandleMouse(mouseMsg)
+		result := m.history.HandleMouse(mouseMsg, scanViewWidth(m.windowW))
 		m.history = result.Model
 		if result.Quit {
 			m.main.ErrorMsg = ""
@@ -87,9 +87,9 @@ func (m model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, result.Cmd
 }
 
-func (m model) handleViewTarget(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) handleViewTarget(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if mouseMsg, ok := msg.(tea.MouseMsg); ok {
-		result, cmd := (&m.target).HandleMouse(mouseMsg)
+		result, cmd := (&m.target).HandleMouse(mouseMsg, scanViewWidth(m.windowW))
 		if result.Quit {
 			m.main.ErrorMsg = ""
 			m.active = viewMain
@@ -121,7 +121,7 @@ func (m model) handleViewTarget(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) handleViewMain(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) handleViewMain(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var result mainview.UpdateResult
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -155,6 +155,7 @@ func (m model) handleViewMain(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.history = historyview.Model{
 			WindowW: m.windowW,
 			WindowH: m.windowH,
+			HoveredHelpItem: -1,
 		}
 		m.active = viewHistory
 		return m, m.history.Init()

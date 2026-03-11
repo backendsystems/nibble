@@ -24,4 +24,6 @@ type Model struct {
 	InterfaceIPs      []string        // Available interface IPs (deprecated, use InterfaceInfos)
 	InterfaceInfos    []InterfaceInfo // Available interfaces with names and IPs
 	IPIndex           int             // Current index in InterfaceInfos
+	HoveredHelpItem   int             // -1 means no hover, otherwise index of helpline item
+	HelpLineY         int             // Y row where the helpline starts, set during render
 }

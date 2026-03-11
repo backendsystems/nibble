@@ -16,4 +16,5 @@ type Model struct {
 	Viewport        viewport.Model
 	WindowH         int
 	HoveredHelpItem int // -1 means no hover, otherwise index of helpline item
+	HelpLineY       int // Y row where the helpline starts, set during render
 }

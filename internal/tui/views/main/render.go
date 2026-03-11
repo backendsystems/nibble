@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func Render(m Model, maxWidth int) string {
+func Render(m *Model, maxWidth int) string {
 	cardsPerRow := m.CardsPerRow
 	if cardsPerRow == 0 {
 		cardsPerRow = 1
@@ -24,7 +24,7 @@ func Render(m Model, maxWidth int) string {
 	var currentRow []string
 
 	for i, iface := range m.Interfaces {
-		card := renderInterfaceCard(m, icons, i, iface)
+		card := renderInterfaceCard(*m, icons, i, iface)
 		currentRow = append(currentRow, card)
 		if len(currentRow) == cardsPerRow {
 			rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
@@ -33,7 +33,7 @@ func Render(m Model, maxWidth int) string {
 	}
 
 	targetCardIndex := len(m.Interfaces)
-	targetCard := renderTargetCard(m, targetCardIndex)
+	targetCard := renderTargetCard(*m, targetCardIndex)
 	currentRow = append(currentRow, targetCard)
 	if len(currentRow) == cardsPerRow {
 		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
@@ -41,7 +41,7 @@ func Render(m Model, maxWidth int) string {
 	}
 
 	historyCardIndex := len(m.Interfaces) + 1
-	historyCard := renderHistoryCard(m, historyCardIndex)
+	historyCard := renderHistoryCard(*m, historyCardIndex)
 	currentRow = append(currentRow, historyCard)
 	if len(currentRow) > 0 {
 		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
@@ -60,7 +60,9 @@ func Render(m Model, maxWidth int) string {
 	if m.ErrorMsg != "" {
 		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))
 	}
-	b.WriteString("\n" + RenderHelpLine(maxWidth, m.HoveredHelpItem))
+	m.HelpLineY = strings.Count(b.String(), "\n") + 1
+	layout := common.BuildHelpLineLayout(mainHelpItems, helpPrefixText, maxWidth)
+	b.WriteString("\n" + common.RenderHelpLine(layout, helpPrefixText, maxWidth, m.HoveredHelpItem))
 
 	view := b.String()
 	if m.ShowHelp {

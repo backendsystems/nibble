@@ -1,19 +1,26 @@
 package historyview
 
 import (
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const (
-	// "Scan History\n\n" = title line + blank line before the tree viewport
-	historyListTitleRows = 2
-)
-
 // HandleMouse processes mouse events for the history list view.
 // Scroll wheel scrolls the list; clicking a row selects or toggles it.
-func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
+func (m Model) HandleMouse(msg tea.MouseMsg, maxWidth int) UpdateResult {
 	result := UpdateResult{Model: m}
+
+	helpLineY := m.HelpLineY
+	helpLayout := common.BuildHelpLineLayout(historyHelpItems, historyHelpPrefix, maxWidth)
+	helpLineEndY := helpLineY + helpLayout.LineCount - 1
+
+	// Update hover state for all mouse events
+	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
+		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
+	} else {
+		result.Model.HoveredHelpItem = -1
+	}
 
 	switch msg.Button {
 	case tea.MouseButtonWheelUp:
@@ -53,7 +60,27 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 		return result
 	}
 
-	contentY := msg.Y - historyListTitleRows
+	// Check if clicking on helpline item
+	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
+		itemIndex := common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
+		if itemIndex >= 0 {
+			switch Action(helpLayout.Items[itemIndex].Action) {
+			case ActionDelete:
+				result = handleListKey(result, ActionDelete)
+			case ActionHelp:
+				result.Model.ShowHelp = true
+			case ActionQuit:
+				result.Quit = true
+			}
+			return result
+		}
+	}
+
+	titleRows := m.HelpLineY - m.Viewport.Height - 1
+	if titleRows < 2 {
+		titleRows = 2
+	}
+	contentY := msg.Y - titleRows
 	if contentY < 0 {
 		return result
 	}

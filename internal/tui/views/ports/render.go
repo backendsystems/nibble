@@ -8,7 +8,7 @@ import (
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
 
-func Render(m Model, maxWidth int) string {
+func Render(m *Model, maxWidth int) string {
 	var b strings.Builder
 
 	b.WriteString(common.TitleStyle.Render("Configure Scan Ports") + "\n")
@@ -48,7 +48,9 @@ func Render(m Model, maxWidth int) string {
 		b.WriteString("\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg) + "\n")
 	}
 
-	b.WriteString("\n" + common.HelpTextStyle.Render(common.WrapWords(portsHelpText, maxWidth)))
+	m.HelpLineY = strings.Count(b.String(), "\n") + 1
+	layout := common.BuildHelpLineLayout(portsHelpItems, portsHelpPrefix, maxWidth)
+	b.WriteString("\n" + common.RenderHelpLine(layout, portsHelpPrefix, maxWidth, m.HoveredHelpItem))
 
 	view := b.String()
 	if m.ShowHelp {
