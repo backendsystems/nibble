@@ -34,7 +34,7 @@ History remembers your position between sessions, so jump right back in to your 
 
 ## Mouse
 Click to select, click again to confirm. Scroll to navigate lists.
-Right-click to go back (same as pressing `q`).  Hold `Shift` and drag to select text.
+Hold `Shift` and drag to select text.
 
 ## Installation
 you may have to restart terminal to run `nibble` after install.

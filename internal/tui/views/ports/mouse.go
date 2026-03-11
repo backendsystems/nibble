@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/backendsystems/nibble/internal/ports"
-	"github.com/backendsystems/nibble/internal/tui/views/common"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -21,9 +20,6 @@ func defaultRowCount(maxWidth int) int {
 // Clicking the default or custom row selects it; clicking the active row applies.
 func (m Model) HandleMouse(msg tea.MouseMsg, maxWidth int) Result {
 	result := Result{Model: m}
-	if common.IsRightClick(msg) {
-		return m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-	}
 	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
 		return result
 	}

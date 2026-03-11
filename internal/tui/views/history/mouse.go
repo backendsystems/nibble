@@ -1,7 +1,6 @@
 package historyview
 
 import (
-	"github.com/backendsystems/nibble/internal/tui/views/common"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -30,9 +29,6 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 		return result
 	}
 
-	if common.IsRightClick(msg) {
-		return m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-	}
 	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
 		return result
 	}

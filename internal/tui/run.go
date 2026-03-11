@@ -6,7 +6,6 @@ import (
 	"os"
 
 	scannerconfig "github.com/backendsystems/nibble/internal/scanner/config"
-	"github.com/backendsystems/nibble/internal/tui/runtime"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 
@@ -22,9 +21,6 @@ import (
 )
 
 func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map[string][]net.Addr) error {
-	runtime.PrepareRuntime()
-	defer runtime.RestoreRuntime()
-
 	cfg, _ := ports.LoadConfig("ports")
 	if resolvedPorts, err := resolvePortsConfig(cfg); err == nil {
 		scannerconfig.SetPorts(networkScanner, resolvedPorts)

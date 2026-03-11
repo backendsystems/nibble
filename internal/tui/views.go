@@ -1,27 +1,17 @@
 package tui
 
 import (
+	"net"
+
 	scannerconfig "github.com/backendsystems/nibble/internal/scanner/config"
 	historyview "github.com/backendsystems/nibble/internal/tui/views/history"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	targetview "github.com/backendsystems/nibble/internal/tui/views/target"
 	tea "github.com/charmbracelet/bubbletea"
-	"net"
 )
 
 func (m model) handleViewScan(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if mouseMsg, ok := msg.(tea.MouseMsg); ok {
-		result := m.scan.HandleMouse(mouseMsg)
-		if !result.Handled {
-			return m, nil
-		}
-		m.scan = result.Model
-		if result.Quit {
-			return m, tea.Quit
-		}
-		return m, result.Cmd
-	}
 	result := m.scan.Update(msg)
 	if !result.Handled {
 		return m, nil
