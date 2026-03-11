@@ -21,6 +21,8 @@ import (
 )
 
 func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map[string][]net.Addr) error {
+	prepareRuntime()
+
 	cfg, _ := ports.LoadConfig("ports")
 	if resolvedPorts, err := resolvePortsConfig(cfg); err == nil {
 		scannerconfig.SetPorts(networkScanner, resolvedPorts)
