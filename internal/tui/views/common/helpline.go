@@ -36,36 +36,31 @@ func BuildHelpLineLayout(items []HelpItem, navPrefix string, maxWidth int) *Help
 	currentX := len([]rune(prefixLines[line]))
 	sepWidth := len([]rune(HelpSeparator))
 
-	for i := range items {
-		itemWidth := len([]rune(items[i].Text))
+	laid := make([]HelpItem, len(items))
+	for i, item := range items {
+		itemWidth := len([]rune(item.Text))
 		candidateWidth := currentX + sepWidth + itemWidth
 
 		if currentX == 0 {
-			items[i].StartX = 0
-			items[i].EndX = itemWidth
-			items[i].Line = line
+			laid[i] = HelpItem{Text: item.Text, Action: item.Action, StartX: 0, EndX: itemWidth, Line: line}
 			currentX = itemWidth
 			continue
 		}
 
 		if candidateWidth <= maxWidth {
-			items[i].StartX = currentX + sepWidth
-			items[i].EndX = items[i].StartX + itemWidth
-			items[i].Line = line
+			laid[i] = HelpItem{Text: item.Text, Action: item.Action, StartX: currentX + sepWidth, EndX: currentX + sepWidth + itemWidth, Line: line}
 			currentX = candidateWidth
 			continue
 		}
 
 		line++
 		currentX = 0
-		items[i].StartX = 0
-		items[i].EndX = itemWidth
-		items[i].Line = line
+		laid[i] = HelpItem{Text: item.Text, Action: item.Action, StartX: 0, EndX: itemWidth, Line: line}
 		currentX = itemWidth
 	}
 
 	return &HelpLineLayout{
-		Items:     items,
+		Items:     laid,
 		LineCount: line + 1,
 	}
 }
