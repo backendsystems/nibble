@@ -89,13 +89,12 @@ func (m *model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) handleViewTarget(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if mouseMsg, ok := msg.(tea.MouseMsg); ok {
-		result, cmd := (&m.target).HandleMouse(mouseMsg, scanViewWidth(m.windowW))
-		if result.Quit {
+		helpResult, _ := (&m.target).HandleMouse(mouseMsg, scanViewWidth(m.windowW))
+		if helpResult.Quit {
 			m.main.ErrorMsg = ""
 			m.active = viewMain
 			return m, nil
 		}
-		return m, cmd
 	}
 	result, cmd := (&m.target).Update(msg)
 	if result.Quit {
