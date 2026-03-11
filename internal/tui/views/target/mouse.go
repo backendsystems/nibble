@@ -31,7 +31,12 @@ func (m *Model) HandleMouse(msg tea.MouseMsg, maxWidth int) (Result, tea.Cmd) {
 			case targetActionHelp:
 				m.ShowHelp = true
 			case targetActionQuit:
-				return Result{Quit: true}, nil
+			if m.InCustomPortInput {
+				m.InCustomPortInput = false
+				cmd := m.focusField(fieldPortMode)
+				return Result{Cmd: cmd}, cmd
+			}
+			return Result{Quit: true}, nil
 			}
 		}
 	}
