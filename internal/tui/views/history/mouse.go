@@ -65,7 +65,11 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 
 	if index == m.Cursor {
 		// Second click on same row: activate (toggle/enter)
-		return handleListKey(result, ActionToggle)
+		result = handleListKey(result, ActionToggle)
+		if !result.Quit && result.Model.Mode == ViewList {
+			result.Model = updateViewportContent(result.Model)
+		}
+		return result
 	}
 	result.Model.Cursor = index
 	result.Model = updateViewportContent(result.Model)
