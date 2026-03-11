@@ -9,12 +9,3 @@ e.g. macOS 14 arm64, Ubuntu 22.04 amd64
 
 **How you installed Nibble**
 e.g. `go install`, brew, pip, npm
-
-**Steps to reproduce**
-
-
-**Expected behavior**
-
-
-**What happened instead**
-
