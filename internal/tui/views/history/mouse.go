@@ -1,6 +1,7 @@
 package historyview
 
 import (
+	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -34,7 +35,21 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
 		return result
 	}
-	if m.ShowHelp || m.DeleteDialog != nil {
+	if m.DeleteDialog != nil {
+		handled, action := result.Model.DeleteDialog.HandleMouseClick(msg.X, msg.Y, m.WindowW, m.WindowH)
+		if !handled {
+			return result
+		}
+		switch action {
+		case delete.MouseActionConfirmYes:
+			return handleDeleteDialog(result, ActionConfirmYes)
+		case delete.MouseActionConfirmNo:
+			return handleDeleteDialog(result, ActionConfirmNo)
+		default:
+			return result
+		}
+	}
+	if m.ShowHelp {
 		return result
 	}
 
