@@ -60,7 +60,7 @@ func Render(m Model, maxWidth int) string {
 	if m.ErrorMsg != "" {
 		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))
 	}
-	b.WriteString("\n" + common.HelpTextStyle.Render(common.WrapWords(selectionHelpText, maxWidth)))
+	b.WriteString("\n" + RenderHelpLine(maxWidth, m.HoveredHelpItem))
 
 	view := b.String()
 	if m.ShowHelp {

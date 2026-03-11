@@ -41,10 +41,11 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 		windowW: initialWindowW,
 		windowH: initialWindowH,
 		main: mainview.Model{
-			Interfaces:   ifaces,
-			InterfaceMap: addrsByIface,
-			CardsPerRow:  initialCardsPerRow,
-			WindowH:      initialWindowH,
+			Interfaces:      ifaces,
+			InterfaceMap:    addrsByIface,
+			CardsPerRow:     initialCardsPerRow,
+			WindowH:         initialWindowH,
+			HoveredHelpItem: -1,
 		},
 		ports: portsModel,
 		scan: scanview.Model{
@@ -60,7 +61,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 	}
 	initialModel.scan = initialModel.scan.SetViewportSize(scanViewWidth(initialModel.windowW), initialModel.windowH)
 
-	prog := tea.NewProgram(initialModel, tea.WithMouseCellMotion())
+	prog := tea.NewProgram(initialModel, tea.WithMouseAllMotion())
 	finalModel, err := prog.Run()
 	if err != nil {
 		return err
