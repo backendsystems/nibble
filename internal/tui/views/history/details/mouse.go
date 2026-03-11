@@ -9,13 +9,21 @@ import (
 )
 
 // hostAtViewportLine returns the host index that occupies the given line within
-// the viewport content, or -1 if the line falls on the metadata line.
-// Line 0 = metadata (ports found / created date); hosts start at line 1.
+// the viewport content, or -1 if the line falls on a metadata line.
+// Metadata lines (1-2 lines): optional "Ports found" + "Created/Updated" date
 func hostAtViewportLine(m Model, viewportLine int) int {
-	if viewportLine <= 0 {
+	// Calculate metadata lines (matches render.go and scroll.go logic)
+	metadataLines := 0
+	if m.History.ScanResults.PortsFound > 0 {
+		metadataLines++
+	}
+	metadataLines++ // Created/Updated line
+
+	if viewportLine < metadataLines {
 		return -1
 	}
-	line := 1
+
+	line := metadataLines
 	for i, host := range m.History.ScanResults.Hosts {
 		end := line + 1 + len(host.Ports)
 		if viewportLine < end {
@@ -54,7 +62,14 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 		result.Model.Viewport.YOffset = max(0, result.Model.Viewport.YOffset-3)
 		return result
 	case tea.MouseButtonWheelDown:
-		totalLines := 1
+		// Calculate total lines: metadata + all hosts and their ports
+		totalLines := 0
+		// Metadata lines
+		if m.History.ScanResults.PortsFound > 0 {
+			totalLines++
+		}
+		totalLines++ // Created/Updated line
+		// Host lines
 		for _, host := range m.History.ScanResults.Hosts {
 			totalLines += 1 + len(host.Ports)
 		}
