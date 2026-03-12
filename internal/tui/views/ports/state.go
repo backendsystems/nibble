@@ -11,6 +11,8 @@ type Model struct {
 	CustomPorts  string
 	CustomCursor int
 	PortInput    common.CustomPortInput
-	ErrorMsg     string
-	NetworkScan  shared.Scanner
+	ErrorMsg        string
+	NetworkScan     shared.Scanner
+	HoveredHelpItem int // -1 means no hover, otherwise index of helpline item
+	HelpLineY       int // Y row where the helpline starts, set during render
 }

@@ -40,7 +40,11 @@ func Render(m Model, maxWidth int) string {
 		b.WriteString(common.MutedStyle.Render("Searching...") + "\n")
 	}
 	if m.Scanning {
-		b.WriteString("\n" + common.HelpTextStyle.Render(common.WrapWords(scanHelpText, maxWidth)))
+		scanLayout := common.BuildHelpLineLayout([]common.HelpItem{
+			{Text: "j/k or ↑/↓: scroll"},
+			{Text: "q: back"},
+		}, "", maxWidth)
+		b.WriteString("\n" + common.RenderHelpLine(scanLayout, "", maxWidth, -1))
 	}
 
 	// Clear the rest of the screen when frame height shrinks so stale lines don't linger.

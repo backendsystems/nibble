@@ -12,6 +12,8 @@ func renderHelpOverlay(view string, maxWidth int) string {
 			"• enter/→: rescan all 65535 ports",
 			"• del: delete scan",
 			"• ←/q: back",
+			"• Click to select host, click again to rescan",
+			"• Scroll to navigate, Shift+drag to select text",
 			"",
 			common.ProgressGreenStyle.Render("✓") + " means all 65535 ports scanned on host",
 			"any key: close",

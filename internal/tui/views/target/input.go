@@ -35,11 +35,8 @@ func (m *Model) updateCustomPortInput(msg tea.Msg) (Result, tea.Cmd) {
 	case "q", "esc":
 		// Go back to stage 1 (port_mode select)
 		m.InCustomPortInput = false
-		m.initializeForm()
-		// Navigate form to port_mode field
-		m.Form.NextField() // ip -> cidr
-		m.Form.NextField() // cidr -> port_mode
-		return result, m.Form.Init()
+		cmd := m.focusField(fieldPortMode)
+		return result, cmd
 	case "?":
 		m.ShowHelp = true
 		return result, nil

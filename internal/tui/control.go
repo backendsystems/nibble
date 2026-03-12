@@ -30,7 +30,7 @@ type model struct {
 	history historyview.Model
 }
 
-func (m model) Init() tea.Cmd {
+func (m *model) Init() tea.Cmd {
 	if m.ports.PortPack == "" {
 		m.ports.PortPack = "default"
 	}
@@ -40,7 +40,7 @@ func (m model) Init() tea.Cmd {
 	return enterAltScreenCmd()
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "ctrl+c" {
 		return m, tea.Quit
 	}
@@ -49,6 +49,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.windowW = resize.Width
 		m.windowH = resize.Height
 		m.main.CardsPerRow = mainview.CardsPerRow(resize.Width)
+		m.main.WindowH = resize.Height
+		m.main = m.main.UpdateViewport(scanViewWidth(resize.Width))
 		m.scan = m.scan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
 		m.history.WindowW = resize.Width
 		m.history.WindowH = resize.Height
@@ -73,18 +75,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m model) View() string {
+func (m *model) View() string {
 	maxWidth := scanViewWidth(m.windowW)
 	switch m.active {
 	case viewScan:
 		return scanview.Render(m.scan, maxWidth)
 	case viewPorts:
-		return portsview.Render(m.ports, maxWidth)
+		return portsview.Render(&m.ports, maxWidth)
 	case viewTarget:
-		return targetview.Render(m.target, maxWidth)
+		return targetview.Render(&m.target, maxWidth)
 	case viewHistory:
-		return historyview.Render(m.history, maxWidth)
+		return historyview.Render(&m.history, maxWidth)
 	default:
-		return mainview.Render(m.main, maxWidth)
+		return mainview.Render(&m.main, maxWidth)
 	}
 }

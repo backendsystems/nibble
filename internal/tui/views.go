@@ -1,15 +1,17 @@
 package tui
 
 import (
+	"net"
+
 	scannerconfig "github.com/backendsystems/nibble/internal/scanner/config"
 	historyview "github.com/backendsystems/nibble/internal/tui/views/history"
+	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	targetview "github.com/backendsystems/nibble/internal/tui/views/target"
 	tea "github.com/charmbracelet/bubbletea"
-	"net"
 )
 
-func (m model) handleViewScan(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) handleViewScan(msg tea.Msg) (tea.Model, tea.Cmd) {
 	result := m.scan.Update(msg)
 	if !result.Handled {
 		return m, nil
@@ -21,7 +23,24 @@ func (m model) handleViewScan(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, result.Cmd
 }
 
-func (m model) handleViewPorts(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) handleViewPorts(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if mouseMsg, ok := msg.(tea.MouseMsg); ok {
+		result := m.ports.HandleMouse(mouseMsg, scanViewWidth(m.windowW))
+		m.ports = result.Model
+		if result.Quit {
+			return m, tea.Quit
+		}
+		if result.Back {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+			return m, nil
+		}
+		if result.Done {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+		}
+		return m, result.Cmd
+	}
 	result := m.ports.Update(msg)
 	m.ports = result.Model
 	if result.Quit {
@@ -39,7 +58,17 @@ func (m model) handleViewPorts(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, result.Cmd
 }
 
-func (m model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if mouseMsg, ok := msg.(tea.MouseMsg); ok && m.history.Mode == historyview.ViewList {
+		result := m.history.HandleMouse(mouseMsg, scanViewWidth(m.windowW))
+		m.history = result.Model
+		if result.Quit {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+			return m, nil
+		}
+		return m, result.Cmd
+	}
 	result := m.history.Update(msg)
 	m.history = result.Model
 
@@ -58,7 +87,25 @@ func (m model) handleViewHistory(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, result.Cmd
 }
 
-func (m model) handleViewTarget(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) handleViewTarget(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if mouseMsg, ok := msg.(tea.MouseMsg); ok {
+		result, cmd := (&m.target).HandleMouse(mouseMsg, scanViewWidth(m.windowW))
+		if result.Quit {
+			m.main.ErrorMsg = ""
+			m.active = viewMain
+			return m, nil
+		}
+		if result.StartScan {
+			m.main.ErrorMsg = ""
+			scannerconfig.SetPorts(m.scan.NetworkScan, result.Ports)
+			nextScan, scanCmd := m.scan.Start(net.Interface{}, nil, result.TotalHosts, result.TargetAddr)
+			nextScan = nextScan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
+			m.scan = nextScan
+			m.active = viewScan
+			return m, tea.Sequence(exitAltScreenCmd(), scanCmd)
+		}
+		return m, cmd
+	}
 	result, cmd := (&m.target).Update(msg)
 	if result.Quit {
 		m.main.ErrorMsg = ""
@@ -83,14 +130,21 @@ func (m model) handleViewTarget(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) handleViewMain(msg tea.Msg) (tea.Model, tea.Cmd) {
-	key, ok := msg.(tea.KeyMsg)
-	if !ok {
+func (m *model) handleViewMain(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var result mainview.UpdateResult
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		result = m.main.Update(msg)
+	case tea.MouseMsg:
+		result = m.main.HandleMouse(msg)
+	default:
 		return m, nil
 	}
-
-	result := m.main.Update(key)
-	m.main = result.Model
+	next := result.Model.UpdateViewport(scanViewWidth(m.windowW))
+	if result.Model.Cursor != m.main.Cursor {
+		next = next.ScrollToSelected()
+	}
+	m.main = next
 	if result.Quit {
 		return m, tea.Quit
 	}
@@ -110,6 +164,7 @@ func (m model) handleViewMain(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.history = historyview.Model{
 			WindowW: m.windowW,
 			WindowH: m.windowH,
+			HoveredHelpItem: -1,
 		}
 		m.active = viewHistory
 		return m, m.history.Init()

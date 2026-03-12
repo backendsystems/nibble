@@ -18,8 +18,8 @@ func (m *Model) finalizeScan(result Result) (Result, tea.Cmd) {
 	if err != nil {
 		m.ErrorMsg = err.Error()
 		m.InCustomPortInput = false
-		m.initializeForm()
-		return result, m.Form.Init()
+		cmd := m.focusField(m.FocusedField)
+		return result, cmd
 	}
 	if err := ports.SaveConfig("target", ports.Config{Mode: m.PortPack, Custom: m.CustomPorts}); err != nil {
 		m.ErrorMsg = err.Error()
