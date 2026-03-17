@@ -1,8 +1,11 @@
-# Nibble
-
 [![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](https://www.npmjs.com/package/@backendsystems/nibble)
 [![PyPI](https://img.shields.io/pypi/v/nibble-cli)](https://pypi.org/project/nibble-cli/)
 [![Go Reference](https://pkg.go.dev/badge/github.com/backendsystems/nibble.svg)](https://pkg.go.dev/github.com/backendsystems/nibble)
+
+<div align="center">
+  <img src="nibble.svg" alt="Nibble" width="200">
+</div>
+
 
 Nibble is a CLI tool for local network scanning that focuses on speed and ease of use.
 
