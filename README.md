@@ -41,8 +41,10 @@ History remembers your position between sessions, so jump right back in to your 
 `?`: help
 
 ## Mouse
-Click to select, click again to confirm. Scroll to navigate lists.
+Full mouse support. Click to select, click again to confirm. Scroll to navigate lists.
 Hold `Shift` and drag to select text.
+
+![Nibble click interface](click.gif "Clickable interface with mouse support")
 
 ## Installation
 you may have to restart terminal to run `nibble` after install.
