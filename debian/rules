@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+export GOFLAGS = -mod=vendor
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	go build -mod=vendor -ldflags="-X main.version=$(shell dpkg-parsechangelog -S Version | sed 's/-.*$$//')" -o nibble .
+
+override_dh_auto_install:
+	install -D -m 0755 nibble debian/nibble/usr/local/bin/nibble
+
+override_dh_auto_test:

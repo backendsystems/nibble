@@ -10,3 +10,5 @@ nibble.exe
 post.md
 
 .gocache/
+vendor/
+.env

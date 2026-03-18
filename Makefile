@@ -1,4 +1,4 @@
-.PHONY: all build demo history update run pip npm goreleaser fix
+.PHONY: all build demo history update run pip npm goreleaser apt fix
 
 all: run
 
@@ -57,6 +57,22 @@ goreleaser:
 	@goreleaser check
 	@goreleaser release --snapshot --clean
 	@echo "GoReleaser snapshot validation passed"
+
+apt:
+	@if ! command -v debuild >/dev/null 2>&1; then \
+		echo "debuild not found. Install with: sudo apt install devscripts build-essential"; \
+		exit 1; \
+	fi
+	@if ! command -v dput >/dev/null 2>&1; then \
+		echo "dput not found. Install with: sudo apt install dput"; \
+		exit 1; \
+	fi
+	@echo "Vendoring Go modules..."
+	@go mod vendor
+	@echo "Building source package..."
+	@debuild -S -sa
+	@echo "Source package built. Upload to PPA with:"
+	@echo "  dput ppa:backendsystems/ppa ../nibble_*_source.changes"
 
 fix:
 	@go fmt ./...

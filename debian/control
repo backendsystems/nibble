@@ -1,0 +1,19 @@
+Source: nibble
+Section: net
+Priority: optional
+Maintainer: saberd <mail@saberd.com>
+Build-Depends: debhelper-compat (= 13), golang-go (>= 1.21)
+Standards-Version: 4.6.2
+Homepage: https://github.com/backendsystems/nibble
+Rules-Requires-Root: no
+
+Package: nibble
+Architecture: any
+Depends: ${misc:Depends}
+Description: Fast local network scanner with terminal UI
+ Nibble is a CLI tool for local network scanning that focuses on speed
+ and ease of use. Select a network interface, and Nibble scans your local
+ subnet, listing hosts, hardware manufacturer, open ports and services.
+ .
+ Features include lightning fast scans, hardware vendor lookup, port
+ banner reading, scan history, and a terminal UI built with Bubble Tea.
