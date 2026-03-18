@@ -121,4 +121,11 @@ var ports = map[int]Info{
 	9443:  {Name: "Portainer", Description: "Portainer HTTPS"},
 	19999: {Name: "Netdata", Description: "Netdata monitoring"},
 	32400: {Name: "Plex", Description: "Plex Media Server"},
+
+	// Mobile Development
+	4723:  {Name: "Appium", Description: "Appium mobile testing"},
+	5037:  {Name: "ADB", Description: "Android Debug Bridge daemon"},
+	5555:  {Name: "ADB", Description: "Android Debug Bridge"},
+	19000: {Name: "Expo", Description: "Expo development server"},
+	19001: {Name: "Expo", Description: "Expo development server"},
 }
