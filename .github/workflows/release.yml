@@ -76,3 +76,51 @@ jobs:
     steps:
       - name: Mark Homebrew publish complete
         run: echo "Homebrew cask is published by GoReleaser in the release job."
+
+  ppa:
+    if: ${{ github.event_name == 'push' }}
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        series: [noble, jammy, oracular]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24.2'
+
+      - name: Vendor Go modules
+        run: go mod vendor
+
+      - name: Install packaging tools
+        run: sudo apt-get install -y devscripts debhelper build-essential dput gnupg
+
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.PPA_GPG_PRIVATE_KEY }}" | gpg --batch --import
+          GPG_KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec/{print $5; exit}')
+          echo "GPG_KEY_ID=$GPG_KEY_ID" >> "$GITHUB_ENV"
+
+      - name: Update debian/changelog
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          DEBEMAIL="mail@saberd.com"
+          DEBFULLNAME="saberd"
+          export DEBEMAIL DEBFULLNAME
+          dch --newversion "${VERSION}-1~${{ matrix.series }}" \
+              --distribution "${{ matrix.series }}" \
+              --force-distribution \
+              "Release ${VERSION}"
+
+      - name: Build source package
+        run: debuild -S -sa -d -k"$GPG_KEY_ID"
+
+      - name: Upload to PPA
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          dput ppa:backendsystems/ppa ../nibble_${VERSION}-1~${{ matrix.series }}_source.changes
