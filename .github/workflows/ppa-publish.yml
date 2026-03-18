@@ -39,7 +39,9 @@ jobs:
           DEBEMAIL="mail@saberd.com"
           DEBFULLNAME="saberd"
           export DEBEMAIL DEBFULLNAME
-          dch --newversion "${{ github.event.inputs.version }}-1~${{ matrix.series }}" \
+          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${VERSION#v}"
+          dch --newversion "${VERSION}-1~${{ matrix.series }}" \
               --distribution "${{ matrix.series }}" \
               --force-distribution \
               "Release ${{ github.event.inputs.version }}"
@@ -48,4 +50,7 @@ jobs:
         run: debuild -S -sa -k"$GPG_KEY_ID"
 
       - name: Upload to PPA
-        run: dput ppa:backendsystems/ppa ../nibble_${{ github.event.inputs.version }}-1~${{ matrix.series }}_source.changes
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${VERSION#v}"
+          dput ppa:backendsystems/ppa ../nibble_${VERSION}-1~${{ matrix.series }}_source.changes
