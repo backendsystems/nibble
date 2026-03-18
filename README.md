@@ -1,3 +1,4 @@
+[![GitHub Stars](https://img.shields.io/github/stars/backendsystems/nibble?style=social)](https://github.com/backendsystems/nibble)
 [![PPA](https://img.shields.io/badge/Ubuntu-PPA-E95420?logo=ubuntu&logoColor=white)](https://launchpad.net/~backendsystems/+archive/ubuntu/ppa)
 [![COPR](https://img.shields.io/badge/Fedora-COPR-51A2DA?logo=fedora&logoColor=white)](https://copr.fedorainfracloud.org/coprs/saberd/nibble)
 [![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](https://www.npmjs.com/package/@backendsystems/nibble)
