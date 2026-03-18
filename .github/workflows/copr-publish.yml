@@ -54,10 +54,11 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           mkdir -p nibble-${VERSION}
           rsync -a --exclude=".git" --exclude="nibble-${VERSION}" . nibble-${VERSION}/
+          cp fedora/nibble.spec nibble-${VERSION}/nibble.spec
           tar czf nibble-${VERSION}.tar.gz nibble-${VERSION}/
           rm -rf nibble-${VERSION}/
 
       - name: Upload source and build on COPR
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          copr-cli build saberd/nibble --spec fedora/nibble.spec nibble-${VERSION}.tar.gz --nowait
+          copr-cli build saberd/nibble nibble-${VERSION}.tar.gz --nowait
