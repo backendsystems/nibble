@@ -11,8 +11,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const portsHelpText = "tab • backspace • delete: clear all • enter • ?: help • q: back"
-
 type Action struct {
 	Handled    bool
 	Quit       bool

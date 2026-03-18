@@ -15,6 +15,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      packages: write
     env:
       RELEASE_TAG: ${{ github.event.inputs.tag }}
     steps:
@@ -27,6 +28,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Extract version from release tag
         id: version
@@ -41,9 +43,22 @@ jobs:
       - name: Copy README into npm package
         run: sed 's|](\([^ ")]*\.gif\)[^)]*)|](https://raw.githubusercontent.com/backendsystems/nibble/main/\1)|g' README.md > npm-package/README.md
 
-      - name: Publish npm package
+      - name: Publish to npmjs.org
         working-directory: npm-package
         env:
-          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
         run: npm publish --access public
+
+      - name: Set up Node for GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@backendsystems'
+
+      - name: Publish to GitHub Packages
+        working-directory: npm-package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish

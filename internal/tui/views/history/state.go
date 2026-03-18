@@ -37,8 +37,10 @@ type Model struct {
 	Viewport      viewport.Model
 	WindowW       int
 	WindowH       int
-	Details       detailsview.Model
-	DetailCursors map[string]int // remembered host cursor per scan file path
+	Details         detailsview.Model
+	DetailCursors   map[string]int // remembered host cursor per scan file path
+	HoveredHelpItem int            // -1 means no hover, otherwise index of helpline item
+	HelpLineY       int            // Y row where the helpline starts, set during render
 }
 
 type UpdateResult struct {

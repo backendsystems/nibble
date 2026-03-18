@@ -63,3 +63,7 @@ fix:
 	@go vet ./...
 	@go fix ./...
 	@echo "Code formatted, vetted and fixed"
+
+move: build
+	@sudo cp nibble /usr/local/bin/
+	@echo "Installed nibble binary to /usr/local/bin/"

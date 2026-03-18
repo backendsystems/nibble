@@ -18,9 +18,11 @@ type Model struct {
 	DeleteDialog *deletepkg.HistoryDeleteDialog
 	WindowW      int
 	WindowH      int
-	NodePath     string
-	NodeName     string
-	NodeItemType string
+	NodePath        string
+	NodeName        string
+	NodeItemType    string
+	HoveredHelpItem int // -1 means no hover, otherwise index of helpline item
+	HelpLineY       int // Y row where the helpline starts, set during render
 
 	// Rescan state
 	Scanning         bool

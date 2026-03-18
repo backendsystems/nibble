@@ -1,4 +1,12 @@
-# Nibble
+[![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](https://www.npmjs.com/package/@backendsystems/nibble)
+[![PyPI](https://img.shields.io/pypi/v/nibble-cli)](https://pypi.org/project/nibble-cli/)
+[![Go Reference](https://pkg.go.dev/badge/github.com/backendsystems/nibble.svg)](https://pkg.go.dev/github.com/backendsystems/nibble)
+
+<div align="center">
+  <img src="nibble.svg" alt="Nibble" width="200">
+</div>
+
+
 Nibble is a CLI tool for local network scanning that focuses on speed and ease of use.
 
 Select a network interface, and Nibble scans your local subnet. Lists hosts, hardware manufacturer, open ports and their services.
@@ -23,14 +31,20 @@ History remembers your position between sessions, so jump right back in to your 
 ![Nibble history](history.gif "Made with Bubble Tea VHS")
 
 ## Hotkeys
-`↑/↓/←/→`, `w/s/a/d`, `h/j/k/l`: selection  
-`Enter`: confirm  
-`p`: select ports  
-`r`: history  
-`t`: target mode  
-`q`: cancel  
-`Ctrl+C`: quit  
+`↑/↓/←/→`, `w/s/a/d`, `h/j/k/l`: selection
+`Enter`: confirm
+`p`: select ports
+`r`: history
+`t`: target mode
+`q`: cancel
+`Ctrl+C`: quit
 `?`: help
+
+## Mouse
+Full mouse support. Click to select, click again to confirm. Scroll to navigate lists.
+Hold `Shift` and drag to select text.
+
+![Nibble click interface](click.gif "Clickable interface with mouse support")
 
 ## Installation
 you may have to restart terminal to run `nibble` after install.

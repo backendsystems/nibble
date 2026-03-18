@@ -11,6 +11,8 @@ func renderHelpOverlay(view string, maxWidth int) string {
 			"• Press p to configure ports",
 			"• Press t for target mode scan",
 			"• Press r to view scan history",
+			"• Click a card to select, click again to confirm",
+			"• Shift+drag to select text",
 			"",
 			"any key: close",
 		},

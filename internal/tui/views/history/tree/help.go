@@ -13,6 +13,8 @@ func RenderHelpOverlay(view string, viewWidth, viewHeight int) string {
 			"• →: expand folder or view scan",
 			"• ←: collapse folder",
 			"• Del: delete",
+			"• Click to select, click again to open/expand",
+			"• Shift+drag to select text",
 			"",
 			"any key: close",
 		},

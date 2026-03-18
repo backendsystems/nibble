@@ -3,6 +3,9 @@ package shared
 import (
 	"fmt"
 	"strings"
+
+	"github.com/backendsystems/nibble/internal/ports/services"
+	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
 
 // PortInfo holds a port number and its service banner
@@ -30,7 +33,14 @@ func FormatHost(h HostResult) string {
 		if p.Banner != "" {
 			lines = append(lines, fmt.Sprintf("port %d: %s", p.Port, p.Banner))
 		} else {
-			lines = append(lines, fmt.Sprintf("port %d", p.Port))
+			// No banner - try to identify the service
+			if info := services.Lookup(p.Port); info != nil {
+				// Style with muted style - show both name and description
+				serviceText := fmt.Sprintf("%s - %s", info.Name, info.Description)
+				lines = append(lines, fmt.Sprintf("port %d: %s", p.Port, common.MutedStyle.Render(serviceText)))
+			} else {
+				lines = append(lines, fmt.Sprintf("port %d", p.Port))
+			}
 		}
 	}
 	return strings.Join(lines, "\n")

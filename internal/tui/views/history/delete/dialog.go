@@ -8,6 +8,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	dialogMinWidth = 46
+	dialogMaxWidth = 60
+)
+
 // Dialog is a reusable delete confirmation dialog
 type Dialog struct {
 	Target      any    // Generic target being deleted
@@ -16,12 +21,12 @@ type Dialog struct {
 	CursorOnYes bool   // true = Delete selected, false = Cancel selected
 }
 
-// Render displays the delete confirmation dialog
-func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
-	if d.Target == nil {
-		return view
-	}
+func dialogWidth(viewWidth int) int {
+	width := int(float64(viewWidth) * 0.6)
+	return max(min(width, dialogMaxWidth), dialogMinWidth)
+}
 
+func dialogButtonStyles() (lipgloss.Style, lipgloss.Style) {
 	// Button styles - same card style used across views
 	selectedButtonStyle := common.SelectedCardStyle.
 		Padding(0, 1).
@@ -34,17 +39,15 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 		MarginRight(1).
 		Foreground(common.Color.Info)
 
-	// Calculate box width early so help text can wrap to the dialog content width.
-	width := int(float64(viewWidth) * 0.6)
-	width = max(min(width, 60), 46)
+	return selectedButtonStyle, unselectedButtonStyle
+}
 
-	// Build content
-	warning := lipgloss.NewStyle().Bold(true).Foreground(common.Color.Info).Render(fmt.Sprintf("Delete %s: %s?", d.ItemType, d.ItemName))
-	note := common.HelpTextStyle.Render("This action cannot be undone.")
+func dialogButtons(cursorOnYes bool) (string, string, string) {
+	selectedButtonStyle, unselectedButtonStyle := dialogButtonStyles()
 
 	// Buttons (Cancel on left, Delete on right)
 	var cancelBtn, deleteBtn string
-	if d.CursorOnYes {
+	if cursorOnYes {
 		cancelBtn = unselectedButtonStyle.Render("Cancel")
 		deleteBtn = selectedButtonStyle.Render("🔥 Delete")
 	} else {
@@ -52,7 +55,22 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 		deleteBtn = unselectedButtonStyle.Render("🔥 Delete")
 	}
 
-	buttons := lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, deleteBtn)
+	return cancelBtn, deleteBtn, lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, deleteBtn)
+}
+
+// Render displays the delete confirmation dialog
+func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
+	if d.Target == nil {
+		return view
+	}
+
+	// Calculate box width early so help text can wrap to the dialog content width.
+	width := dialogWidth(viewWidth)
+
+	// Build content
+	warning := lipgloss.NewStyle().Bold(true).Foreground(common.Color.Info).Render(fmt.Sprintf("Delete %s: %s?", d.ItemType, d.ItemName))
+	note := common.HelpTextStyle.Render("This action cannot be undone.")
+	_, _, buttons := dialogButtons(d.CursorOnYes)
 	help := common.HelpTextStyle.Render(common.WrapWords("←/→: navigate • Enter • Del: delete • q: back", width-4))
 
 	// Combine content
@@ -76,6 +94,7 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 		lipgloss.WithWhitespaceChars(" "),
 	)
 }
+
 
 // HistoryDeleteDialog is a delete confirmation dialog specific to the history view
 type HistoryDeleteDialog struct {

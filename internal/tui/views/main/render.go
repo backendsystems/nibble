@@ -9,15 +9,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func Render(m Model, maxWidth int) string {
+func Render(m *Model, maxWidth int) string {
 	cardsPerRow := m.CardsPerRow
 	if cardsPerRow == 0 {
 		cardsPerRow = 1
 	}
-	var b strings.Builder
-
-	titleText := common.TitleStyle.Render("Nibble Network Scanner")
-	b.WriteString(titleText + "\n")
 
 	icons := make(map[string]string, len(m.Interfaces))
 	for _, iface := range m.Interfaces {
@@ -27,9 +23,8 @@ func Render(m Model, maxWidth int) string {
 	var rows []string
 	var currentRow []string
 
-	// Render interface cards
 	for i, iface := range m.Interfaces {
-		card := renderInterfaceCard(m, icons, i, iface)
+		card := renderInterfaceCard(*m, icons, i, iface)
 		currentRow = append(currentRow, card)
 		if len(currentRow) == cardsPerRow {
 			rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
@@ -37,38 +32,97 @@ func Render(m Model, maxWidth int) string {
 		}
 	}
 
-	// Add target card
 	targetCardIndex := len(m.Interfaces)
-	targetCard := renderTargetCard(m, targetCardIndex)
+	targetCard := renderTargetCard(*m, targetCardIndex)
 	currentRow = append(currentRow, targetCard)
 	if len(currentRow) == cardsPerRow {
 		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
 		currentRow = nil
 	}
 
-	// Add history card at the end
 	historyCardIndex := len(m.Interfaces) + 1
-	historyCard := renderHistoryCard(m, historyCardIndex)
+	historyCard := renderHistoryCard(*m, historyCardIndex)
 	currentRow = append(currentRow, historyCard)
 	if len(currentRow) > 0 {
 		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
 	}
 
-	b.WriteString(lipgloss.JoinVertical(lipgloss.Left, rows...))
-	view := b.String()
+	cardContent := lipgloss.JoinVertical(lipgloss.Left, rows...)
+
+	// UpdateViewport must have already been called by the controller so YOffset
+	// is current. Here we just refresh the content and dimensions before rendering.
+	m.Viewport.SetContent(cardContent)
+
+	var b strings.Builder
+	b.WriteString(common.TitleStyle.Render("Nibble Network Scanner") + "\n")
+	b.WriteString(m.Viewport.View())
 
 	if m.ErrorMsg != "" {
-		errorStyle := common.ErrorStyle
-		view += "\n\n" + errorStyle.Render("Error: "+m.ErrorMsg)
+		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))
 	}
+	m.HelpLineY = strings.Count(b.String(), "\n") + 1
+	layout := common.BuildHelpLineLayout(mainHelpItems, helpPrefixText, maxWidth)
+	b.WriteString("\n" + common.RenderHelpLine(layout, helpPrefixText, maxWidth, m.HoveredHelpItem))
 
-	helpStyle := common.HelpTextStyle
-	view += "\n" + helpStyle.Render(common.WrapWords(selectionHelpText, maxWidth))
-
+	view := b.String()
 	if m.ShowHelp {
 		return renderHelpOverlay(view, maxWidth)
 	}
 	return view
+}
+
+// UpdateViewport refreshes viewport dimensions. Call after every model change
+// so Viewport.Width/Height are current for mouse hit-testing.
+func (m Model) UpdateViewport(maxWidth int) Model {
+	reserved := 4
+	vpHeight := m.WindowH - reserved
+	if vpHeight < 1 {
+		vpHeight = 1
+	}
+	m.Viewport.Width = maxWidth
+	m.Viewport.Height = vpHeight
+	return m
+}
+
+// ScrollToSelected adjusts the viewport offset so the selected card row is
+// visible. Call this only when the cursor has moved, not on every update.
+func (m Model) ScrollToSelected() Model {
+	vpHeight := m.Viewport.Height
+	if vpHeight < 1 {
+		vpHeight = 1
+	}
+	totalCards := len(m.Interfaces) + 2
+	totalRows := (totalCards + m.CardsPerRow - 1) / m.CardsPerRow
+	maxOffset := totalRows*cardHeight - vpHeight
+	if maxOffset < 0 {
+		maxOffset = 0
+	}
+
+	selectedRow := cursorCardRow(m.Cursor, m.CardsPerRow)
+	rowTop := selectedRow * cardHeight
+	rowBottom := rowTop + cardHeight - 1
+
+	offset := m.Viewport.YOffset
+	if rowTop < offset {
+		offset = rowTop
+	} else if rowBottom >= offset+vpHeight {
+		offset = rowBottom - vpHeight + 1
+	}
+	if offset > maxOffset {
+		offset = maxOffset
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	m.Viewport.YOffset = offset
+	return m
+}
+
+func cursorCardRow(cursor, cardsPerRow int) int {
+	if cardsPerRow < 1 {
+		cardsPerRow = 1
+	}
+	return cursor / cardsPerRow
 }
 
 func renderInterfaceCard(m Model, icons map[string]string, index int, iface net.Interface) string {
@@ -93,9 +147,11 @@ func renderInterfaceCard(m Model, icons map[string]string, index int, iface net.
 
 	addrs := ipv4Labels(m.InterfaceMap, name)
 	addrStyle := common.HelpTextStyle
+	addr := ""
 	if len(addrs) > 0 {
-		cardContent.WriteString(addrStyle.Render(addrs[0]))
+		addr = addrs[0]
 	}
+	cardContent.WriteString(addrStyle.Render(addr))
 
 	return style.Render(cardContent.String())
 }

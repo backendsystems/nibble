@@ -31,9 +31,10 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 
 	initialWindowW, initialWindowH, initialCardsPerRow := initialLayoutMetrics()
 	portsModel, _ := portsview.Prepare(portsview.Model{
-		PortPack:    cfg.Mode,
-		CustomPorts: cfg.Custom,
-		NetworkScan: networkScanner,
+		PortPack:        cfg.Mode,
+		CustomPorts:     cfg.Custom,
+		NetworkScan:     networkScanner,
+		HoveredHelpItem: -1,
 	})
 
 	initialModel := model{
@@ -41,9 +42,11 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 		windowW: initialWindowW,
 		windowH: initialWindowH,
 		main: mainview.Model{
-			Interfaces:   ifaces,
-			InterfaceMap: addrsByIface,
-			CardsPerRow:  initialCardsPerRow,
+			Interfaces:      ifaces,
+			InterfaceMap:    addrsByIface,
+			CardsPerRow:     initialCardsPerRow,
+			WindowH:         initialWindowH,
+			HoveredHelpItem: -1,
 		},
 		ports: portsModel,
 		scan: scanview.Model{
@@ -51,21 +54,22 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 			Progress:    progress.New(progress.WithSolidFill(string(common.Color.Selection))),
 		},
 		target: targetview.Model{
-			NetworkScan:    networkScanner,
-			PortPack:       targetPack,
-			CustomPorts:    targetCfg.Custom,
-			InterfaceInfos: targetview.BuildInterfaceInfos(ifaces, addrsByIface),
+			NetworkScan:     networkScanner,
+			PortPack:        targetPack,
+			CustomPorts:     targetCfg.Custom,
+			InterfaceInfos:  targetview.BuildInterfaceInfos(ifaces, addrsByIface),
+			HoveredHelpItem: -1,
 		},
 	}
 	initialModel.scan = initialModel.scan.SetViewportSize(scanViewWidth(initialModel.windowW), initialModel.windowH)
 
-	prog := tea.NewProgram(initialModel)
+	prog := tea.NewProgram(&initialModel, tea.WithMouseAllMotion())
 	finalModel, err := prog.Run()
 	if err != nil {
 		return err
 	}
 
-	finalState, ok := finalModel.(model)
+	finalState, ok := finalModel.(*model)
 	if !ok {
 		return nil
 	}

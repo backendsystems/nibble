@@ -27,6 +27,43 @@ func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
 	return handleListKey(result, action)
 }
 
+// toggleFolder expands or collapses a folder, scrolling to show all children without losing the cursor.
+func toggleFolder(result UpdateResult, node *historytree.Node) UpdateResult {
+	// Cancel background loads before collapsing
+	if node.Expanded {
+		historytree.CancelLoads(node)
+	}
+	node.Expanded = !node.Expanded
+	result.Model.FlatList = historytree.Flatten(result.Model.Tree)
+	if !node.Expanded || len(node.Children) == 0 {
+		return result
+	}
+	// Move cursor to first child
+	if result.Model.Cursor+1 < len(result.Model.FlatList) {
+		if next := result.Model.FlatList[result.Model.Cursor+1]; next != nil && next.Level == node.Level+1 {
+			result.Model.Cursor++
+		}
+	}
+	// Scroll down to reveal the last child, capped so the cursor stays on screen
+	lastChildIdx := result.Model.Cursor + len(node.Children) - 1
+	if lastChildIdx >= len(result.Model.FlatList) {
+		lastChildIdx = len(result.Model.FlatList) - 1
+	}
+	if h := result.Model.Viewport.Height; h > 0 {
+		wantOffset := min(lastChildIdx-h+1, result.Model.Cursor)
+		if wantOffset > result.Model.Viewport.YOffset {
+			result.Model.Viewport.YOffset = wantOffset
+		}
+	}
+	// Kick off background host/port count loads for newly visible scans
+	if node.Type == NodeNetwork {
+		if cmds := historytree.LoadNetworkScanCountsCmd(node); len(cmds) > 0 {
+			result.Cmd = tea.Sequence(cmds...)
+		}
+	}
+	return result
+}
+
 func handleDeleteDialog(result UpdateResult, action Action) UpdateResult {
 	switch action {
 	case ActionToggle:
@@ -99,7 +136,7 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 				if result.Model.DetailCursors != nil {
 					savedCursor = result.Model.DetailCursors[node.Path]
 				}
-				result.Model.Details = detailsview.Model{
+				details := detailsview.Model{
 					History:      *node.ScanData,
 					HistoryPath:  node.Path,
 					NodePath:     node.Path,
@@ -108,32 +145,15 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 					WindowW:      result.Model.WindowW,
 					WindowH:      result.Model.WindowH,
 					Cursor:       savedCursor,
+					HoveredHelpItem: -1,
 				}
+				details = details.SetViewportSize(result.Model.WindowW, result.Model.WindowH)
+				details = details.ScrollToSelected()
+				result.Model.Details = details
 				return result
 			}
 			if node != nil {
-				wasExpanded := node.Expanded
-				// Cancel any in-flight lazy loads when collapsing this node or its descendants.
-				if wasExpanded {
-					historytree.CancelLoads(node)
-				}
-				node.Expanded = !node.Expanded
-				result.Model.FlatList = historytree.Flatten(result.Model.Tree)
-				if !wasExpanded && node.Expanded && len(node.Children) > 0 {
-					if result.Model.Cursor+1 < len(result.Model.FlatList) {
-						next := result.Model.FlatList[result.Model.Cursor+1]
-						if next != nil && next.Level == node.Level+1 {
-							result.Model.Cursor++
-						}
-					}
-					// Load counts for scan children that don't have them yet
-					if node.Type == NodeNetwork {
-						cmds := historytree.LoadNetworkScanCountsCmd(node)
-						if len(cmds) > 0 {
-							result.Cmd = tea.Sequence(cmds...)
-						}
-					}
-				}
+				result = toggleFolder(result, node)
 			}
 		}
 	case ActionCollapse:

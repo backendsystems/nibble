@@ -14,6 +14,8 @@ func renderHelpOverlay(view string, maxWidth int) string {
 			"• backspace: remove",
 			"• delete: clear all",
 			"• enter: save and return",
+			"• Click a mode to select, click again to apply",
+			"• Shift+drag to select text",
 			"",
 			"any key: close",
 		},

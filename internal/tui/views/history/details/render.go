@@ -9,7 +9,7 @@ import (
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
 
-func Render(m Model, windowWidth, windowHeight int) string {
+func Render(m *Model, windowWidth, windowHeight int) string {
 	var b strings.Builder
 
 	// Title (outside viewport)
@@ -140,17 +140,21 @@ func Render(m Model, windowWidth, windowHeight int) string {
 	if needsWrap {
 		titleLines = 2
 	}
-	const helpText = "↑/↓: select host • Enter/→: scan all ports • ←/q: back • ?: help"
-	helpWrapped := common.WrapWords(helpText, windowWidth)
-	helpLines := strings.Count(helpWrapped, "\n") + 1 // +1 blank line before help
-	m = m.UpdateViewportContent(content.String(), windowWidth, windowHeight, titleLines+helpLines)
+	helpLayout := common.BuildHelpLineLayout(detailHelpItems, detailHelpPrefix, windowWidth)
+	helpLines := helpLayout.LineCount + 1 // +1 blank line before help
+	*m = m.UpdateViewportContent(content.String(), windowWidth, windowHeight, titleLines+helpLines)
 
-	m = m.scrollToSelected()
+	// Only auto-scroll during active scanning (to follow new ports).
+	// Normal cursor-driven scrolling is handled by the controller via ScrollToSelected.
+	if m.Scanning {
+		*m = m.ScrollToSelected()
+	}
 
 	// Build final output with viewport and help text
 	b.WriteString(m.Viewport.View())
 	b.WriteString("\n")
-	b.WriteString(common.HelpTextStyle.Render(helpWrapped))
+	m.HelpLineY = strings.Count(b.String(), "\n")
+	b.WriteString(common.RenderHelpLine(helpLayout, detailHelpPrefix, windowWidth, m.HoveredHelpItem))
 
 	if m.ErrorMsg != "" {
 		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))
