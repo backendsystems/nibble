@@ -1,3 +1,5 @@
+[![PPA](https://img.shields.io/badge/Ubuntu-PPA-E95420?logo=ubuntu&logoColor=white)](https://launchpad.net/~backendsystems/+archive/ubuntu/ppa)
+[![COPR](https://img.shields.io/badge/Fedora-COPR-51A2DA?logo=fedora&logoColor=white)](https://copr.fedorainfracloud.org/coprs/saberd/nibble)
 [![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](https://www.npmjs.com/package/@backendsystems/nibble)
 [![PyPI](https://img.shields.io/pypi/v/nibble-cli)](https://pypi.org/project/nibble-cli/)
 [![Go Reference](https://pkg.go.dev/badge/github.com/backendsystems/nibble.svg)](https://pkg.go.dev/github.com/backendsystems/nibble)
@@ -50,10 +52,15 @@ Hold `Shift` and drag to select text.
 you may have to restart terminal to run `nibble` after install.
 
 
-apt:
+apt (Ubuntu, Mint, Pop!_OS, Zorin, Elementary, KDE Neon):
 ```bash
 sudo add-apt-repository ppa:backendsystems/ppa
 sudo apt install nibble
+```
+dnf (Fedora, RHEL, CentOS Stream):
+```bash
+sudo dnf copr enable saberd/nibble
+sudo dnf install nibble
 ```
 go:
 ```bash

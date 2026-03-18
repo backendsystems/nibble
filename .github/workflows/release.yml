@@ -164,8 +164,8 @@ jobs:
 
       - name: Update spec version
         run: |
-          sed -i "s/^Version:.*/Version:        ${{ steps.version.outputs.version }}/" nibble.spec
-          sed -i "s/^- Initial release/- Release ${{ steps.version.outputs.version }}/" nibble.spec
+          sed -i "s/^Version:.*/Version:        ${{ steps.version.outputs.version }}/" fedora/nibble.spec
+          sed -i "s/^- Initial release/- Release ${{ steps.version.outputs.version }}/" fedora/nibble.spec
 
       - name: Create source tarball
         run: |
@@ -178,4 +178,4 @@ jobs:
       - name: Upload source and build on COPR
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          copr-cli build backendsystems/nibble nibble-${VERSION}.tar.gz --nowait
+          copr-cli build saberd/nibble --spec fedora/nibble.spec nibble-${VERSION}.tar.gz --nowait

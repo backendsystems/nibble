@@ -1,0 +1,63 @@
+name: COPR Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (e.g. 0.1.0 or v0.1.0)
+        required: true
+        type: string
+
+jobs:
+  copr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.2'
+
+      - name: Vendor Go modules
+        run: go mod vendor
+
+      - name: Install copr-cli
+        run: |
+          sudo apt-get install -y python3-pip
+          pip3 install copr-cli
+
+      - name: Configure copr-cli
+        run: |
+          mkdir -p ~/.config
+          cat > ~/.config/copr <<EOF
+          [copr-cli]
+          login = ${{ secrets.COPR_LOGIN }}
+          username = backendsystems
+          token = ${{ secrets.COPR_TOKEN }}
+          copr_url = https://copr.fedorainfracloud.org
+          EOF
+
+      - name: Set version
+        id: version
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Update spec version
+        run: |
+          sed -i "s/^Version:.*/Version:        ${{ steps.version.outputs.version }}/" fedora/nibble.spec
+          sed -i "s/^- Initial release/- Release ${{ steps.version.outputs.version }}/" fedora/nibble.spec
+
+      - name: Create source tarball
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p nibble-${VERSION}
+          rsync -a --exclude=".git" --exclude="nibble-${VERSION}" . nibble-${VERSION}/
+          tar czf nibble-${VERSION}.tar.gz nibble-${VERSION}/
+          rm -rf nibble-${VERSION}/
+
+      - name: Upload source and build on COPR
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          copr-cli build saberd/nibble --spec fedora/nibble.spec nibble-${VERSION}.tar.gz --nowait
