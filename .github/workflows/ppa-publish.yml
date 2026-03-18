@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        series: [noble, jammy]
+        series: [noble, jammy, oracular]
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +47,7 @@ jobs:
               "Release ${{ github.event.inputs.version }}"
 
       - name: Build source package
-        run: debuild -S -sa -k"$GPG_KEY_ID"
+        run: debuild -S -sa -d -k"$GPG_KEY_ID"
 
       - name: Upload to PPA
         run: |
