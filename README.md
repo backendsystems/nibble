@@ -3,7 +3,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/backendsystems/nibble.svg)](https://pkg.go.dev/github.com/backendsystems/nibble)
 
 <div align="center">
-  <img src="nibble.svg" alt="Nibble" width="200">
+  <img src="assets/nibble.svg" alt="Nibble" width="200">
 </div>
 
 
@@ -76,3 +76,9 @@ Run the CLI with `nibble`, select a network interface.
 Interface icons: `🔌` = Ethernet, `📶` = Wi-Fi, `📦` = Container, `🔒` = VPN.
 
 Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea)
+
+## License
+
+This project is MIT licensed. See the [LICENSE](LICENSE) file for details.
+
+Note: The "nibble" name and branding assets are excluded from this license, see the sepperate [LICENSE](assets/LICENSE) for branding terms.
