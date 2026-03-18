@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        series: [noble, jammy, oracular]
+        series: [noble, jammy, questing]
     steps:
       - uses: actions/checkout@v5
 

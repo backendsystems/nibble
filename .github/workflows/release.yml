@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        series: [noble, jammy, oracular]
+        series: [noble, jammy, questing]
     steps:
       - uses: actions/checkout@v5
 
@@ -124,3 +124,58 @@ jobs:
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
           dput ppa:backendsystems/ppa ../nibble_${VERSION}-1~${{ matrix.series }}_source.changes
+
+  copr:
+    if: ${{ github.event_name == 'push' }}
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.2'
+
+      - name: Vendor Go modules
+        run: go mod vendor
+
+      - name: Install copr-cli
+        run: |
+          sudo apt-get install -y python3-pip
+          pip3 install copr-cli
+
+      - name: Configure copr-cli
+        run: |
+          mkdir -p ~/.config
+          cat > ~/.config/copr <<EOF
+          [copr-cli]
+          login = ${{ secrets.COPR_LOGIN }}
+          username = backendsystems
+          token = ${{ secrets.COPR_TOKEN }}
+          copr_url = https://copr.fedorainfracloud.org
+          EOF
+
+      - name: Set version
+        id: version
+        run: |
+          VERSION="${{ github.ref_name }}"
+          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Update spec version
+        run: |
+          sed -i "s/^Version:.*/Version:        ${{ steps.version.outputs.version }}/" nibble.spec
+          sed -i "s/^- Initial release/- Release ${{ steps.version.outputs.version }}/" nibble.spec
+
+      - name: Create source tarball
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p nibble-${VERSION}
+          rsync -a --exclude=".git" --exclude="nibble-${VERSION}" . nibble-${VERSION}/
+          tar czf nibble-${VERSION}.tar.gz nibble-${VERSION}/
+          rm -rf nibble-${VERSION}/
+
+      - name: Upload source and build on COPR
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          copr-cli build backendsystems/nibble nibble-${VERSION}.tar.gz --nowait
