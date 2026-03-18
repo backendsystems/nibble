@@ -15,6 +15,7 @@ func main() {
 	var demoMode bool
 	var showVersion bool
 	flag.BoolVar(&demoMode, "demo", false, "use demo interfaces")
+	flag.BoolVar(&showVersion, "v", false, "")
 	flag.BoolVar(&showVersion, "version", false, "print version and exit")
 	flag.Parse()
 
