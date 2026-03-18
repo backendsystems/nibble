@@ -52,29 +52,29 @@ Hold `Shift` and drag to select text.
 you may have to restart terminal to run `nibble` after install.
 
 
-apt (Ubuntu, Mint, Pop!_OS, Zorin, Elementary, KDE Neon):
+<img src="https://cdn.simpleicons.org/ubuntu/E95420" width="16" style="vertical-align:middle"> apt (Ubuntu, Mint, Pop!_OS, Zorin, Elementary, KDE Neon):
 ```bash
 sudo add-apt-repository ppa:backendsystems/ppa
 sudo apt install nibble
 ```
-dnf (Fedora, RHEL, CentOS Stream):
+<img src="https://cdn.simpleicons.org/fedora/51A2DA" width="16" style="vertical-align:middle"> dnf (Fedora, RHEL, CentOS Stream):
 ```bash
 sudo dnf copr enable saberd/nibble
 sudo dnf install nibble
 ```
-brew:
+<img src="https://cdn.simpleicons.org/homebrew/FBB040" width="16" style="vertical-align:middle"> brew:
 ```bash
 brew install backendsystems/tap/nibble
 ```
-go:
+<img src="https://cdn.simpleicons.org/go/00ADD8" width="16" style="vertical-align:middle"> go:
 ```bash
 go install github.com/backendsystems/nibble@latest
 ```
-pip:
+<img src="https://cdn.simpleicons.org/python/3776AB" width="16" style="vertical-align:middle"> pip:
 ```bash
 pipx install nibble-cli
 ```
-npm:
+<img src="https://cdn.simpleicons.org/npm/CB3837" width="16" style="vertical-align:middle"> npm:
 ```bash
 npm install -g @backendsystems/nibble
 ```
