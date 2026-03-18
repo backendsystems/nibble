@@ -140,9 +140,9 @@ jobs:
       - name: Vendor Go modules
         run: go mod vendor
 
-      - name: Install copr-cli
+      - name: Install copr-cli and rpm tools
         run: |
-          sudo apt-get install -y python3-pip
+          sudo apt-get install -y python3-pip rpm
           pip3 install copr-cli
 
       - name: Configure copr-cli
@@ -167,16 +167,19 @@ jobs:
           sed -i "s/^Version:.*/Version:        ${{ steps.version.outputs.version }}/" fedora/nibble.spec
           sed -i "s/^- Initial release/- Release ${{ steps.version.outputs.version }}/" fedora/nibble.spec
 
-      - name: Create source tarball
+      - name: Create source tarball and srpm
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p ~/rpmbuild/{SOURCES,SPECS}
           mkdir -p nibble-${VERSION}
           rsync -a --exclude=".git" --exclude="nibble-${VERSION}" . nibble-${VERSION}/
-          cp fedora/nibble.spec nibble-${VERSION}/nibble.spec
-          tar czf nibble-${VERSION}.tar.gz nibble-${VERSION}/
+          tar czf ~/rpmbuild/SOURCES/nibble-${VERSION}.tar.gz nibble-${VERSION}/
           rm -rf nibble-${VERSION}/
+          cp fedora/nibble.spec ~/rpmbuild/SPECS/nibble.spec
+          rpmbuild -bs ~/rpmbuild/SPECS/nibble.spec
 
-      - name: Upload source and build on COPR
+      - name: Upload srpm to COPR
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          copr-cli build saberd/nibble nibble-${VERSION}.tar.gz --nowait
+          SRPM=$(ls ~/rpmbuild/SRPMS/nibble-${VERSION}*.src.rpm)
+          copr-cli build saberd/nibble "$SRPM" --nowait
