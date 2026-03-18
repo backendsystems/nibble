@@ -50,6 +50,11 @@ Hold `Shift` and drag to select text.
 you may have to restart terminal to run `nibble` after install.
 
 
+apt:
+```bash
+sudo add-apt-repository ppa:backendsystems/ppa
+sudo apt install nibble
+```
 go:
 ```bash
 go install github.com/backendsystems/nibble@latest
