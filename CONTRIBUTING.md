@@ -29,12 +29,27 @@ Fork the repository on GitHub.
 ```
 main.go              Entry point
 internal/
-  scanner/
-    demo/            Demo mode scanner
-    ip4/             Real IPv4 scanner
-    shared/          Shared types: Scanner interface, progress, results
+  history/           Scan history storage and retrieval
+    delete/          History deletion logic
+    paths/           History file path management
   ports/             Port list management
+    services/        Port-to-service name lookup
+  scanner/           Network scanning
+    config/          Scanner configuration (port lists)
+    demo/            Demo mode scanner
+    ip4/             Real IPv4 scanner (ARP, banners, OS detection)
+      linux/         Linux-specific network code
+      macos/         macOS-specific network code
+      windows/       Windows-specific network code
+    shared/          Shared types: Scanner interface, results, OUI lookup
   tui/               Bubble Tea UI (views, models, rendering)
+    views/
+      common/        Shared UI components and styles
+      history/       Scan history browser view
+      main/          Main/home view
+      ports/         Port configuration view
+      scan/          Live scan view
+      target/        Target host detail view
 ```
 
 ## Submitting a PR
