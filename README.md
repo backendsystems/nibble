@@ -62,13 +62,13 @@ dnf (Fedora, RHEL, CentOS Stream):
 sudo dnf copr enable saberd/nibble
 sudo dnf install nibble
 ```
-go:
-```bash
-go install github.com/backendsystems/nibble@latest
-```
 brew:
 ```bash
 brew install backendsystems/tap/nibble
+```
+go:
+```bash
+go install github.com/backendsystems/nibble@latest
 ```
 pip:
 ```bash
