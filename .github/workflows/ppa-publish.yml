@@ -42,11 +42,13 @@ jobs:
           echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v5
+        if: ${{ github.event.inputs.revision == '1' }}
         with:
           ref: ${{ steps.ref.outputs.ref }}
           path: source
 
       - name: Get current debian files
+        if: ${{ github.event.inputs.revision == '1' }}
         uses: actions/checkout@v5
         with:
           sparse-checkout: debian
@@ -54,9 +56,11 @@ jobs:
           path: debian-files
 
       - name: Copy current debian packaging
+        if: ${{ github.event.inputs.revision == '1' }}
         run: cp -r debian-files/debian source/
 
       - name: Download release binaries
+        if: ${{ github.event.inputs.revision == '1' }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           mkdir -p source/prebuilt
@@ -72,6 +76,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Create orig tarball with prebuilt binaries
+        if: ${{ github.event.inputs.revision == '1' }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           tar --exclude=source/.git \
@@ -81,6 +86,22 @@ jobs:
               -czf nibble_${VERSION}.orig.tar.gz source
 
       - name: Upload orig tarball
+        if: ${{ github.event.inputs.revision == '1' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: orig-tarball
+          path: nibble_${{ steps.version.outputs.version }}.orig.tar.gz
+          retention-days: 1
+
+      - name: Fetch orig tarball from Launchpad
+        if: ${{ github.event.inputs.revision != '1' }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          curl -fsSL "https://ppa.launchpadcontent.net/backendsystems/ppa/ubuntu/pool/main/n/nibble/nibble_${VERSION}.orig.tar.gz" \
+            -o "nibble_${VERSION}.orig.tar.gz"
+
+      - name: Upload orig tarball
+        if: ${{ github.event.inputs.revision != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: orig-tarball
@@ -155,7 +176,8 @@ jobs:
         run: |
           cd source
           REVISION="${{ github.event.inputs.revision }}"
-          if [[ "$REVISION" == "1" ]]; then
+          SERIES="${{ matrix.series }}"
+          if [[ "$REVISION" == "1" && "$SERIES" == "noble" ]]; then
             debuild -S -d -sa -k"$GPG_KEY_ID"
           else
             debuild -S -d -sd -k"$GPG_KEY_ID"
