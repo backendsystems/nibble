@@ -1,15 +1,19 @@
 #!/usr/bin/make -f
 
 export DH_VERBOSE = 1
-export GOFLAGS = -mod=vendor
+
+ARCH = $(shell dpkg-architecture -qDEB_HOST_ARCH)
 
 %:
 	dh $@
 
 override_dh_auto_build:
-	go build -mod=vendor -ldflags="-X main.version=$(shell dpkg-parsechangelog -S Version | sed 's/-.*$$//')" -o nibble .
+	cp prebuilt/nibble_linux_$(ARCH) nibble
 
 override_dh_auto_install:
-	install -D -m 0755 nibble debian/nibble/usr/local/bin/nibble
+	install -D -m 0755 nibble debian/nibble/usr/bin/nibble
 
 override_dh_auto_test:
+
+override_dh_auto_clean:
+	rm -f nibble

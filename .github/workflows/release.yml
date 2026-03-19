@@ -68,6 +68,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
 
+      - name: Upload Linux binaries as artifacts
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: |
+            .artifacts/goreleaser/nibble_linux_amd64_*/nibble
+            .artifacts/goreleaser/nibble_linux_arm64_*/nibble
+          retention-days: 1
+
   brew:
     if: ${{ github.event_name == 'push' }}
     needs: release
@@ -87,16 +97,27 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Download and prepare binaries
+        uses: actions/download-artifact@v4
         with:
-          go-version: '1.24.2'
+          name: linux-binaries
+          path: prebuilt/
 
-      - name: Vendor Go modules
-        run: go mod vendor
+      - name: Rename binaries
+        run: |
+          cd prebuilt
+          find . -name nibble -type f | while read binary; do
+            if [[ "$binary" == *"amd64"* ]]; then
+              mv "$binary" nibble_linux_amd64
+            elif [[ "$binary" == *"arm64"* ]]; then
+              mv "$binary" nibble_linux_arm64
+            fi
+          done
+          chmod +x nibble_linux_*
+          ls -lh
 
       - name: Install packaging tools
-        run: sudo apt-get install -y devscripts debhelper build-essential dput gnupg
+        run: sudo apt-get update && sudo apt-get install -y devscripts debhelper build-essential dput gnupg
 
       - name: Import GPG key
         run: |
@@ -116,8 +137,20 @@ jobs:
               --force-distribution \
               "Release ${VERSION}"
 
+      - name: Create orig tarball with prebuilt binaries
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          cd ..
+          tar --exclude=nibble/.git \
+              --exclude=nibble/.github \
+              --exclude=nibble/debian \
+              --transform="s,^nibble,nibble-${VERSION}," \
+              -czf nibble_${VERSION}.orig.tar.gz nibble
+          cd nibble
+
       - name: Build source package
-        run: debuild -S -sa -d -k"$GPG_KEY_ID"
+        run: debuild -S -d -k"$GPG_KEY_ID"
 
       - name: Upload to PPA
         run: |
