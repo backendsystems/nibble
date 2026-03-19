@@ -1,6 +1,6 @@
 [![GitHub Stars](https://img.shields.io/github/stars/backendsystems/nibble?style=social)](https://github.com/backendsystems/nibble)
 [![PPA](https://img.shields.io/badge/Ubuntu-PPA-E95420?logo=ubuntu&logoColor=white)](https://launchpad.net/~backendsystems/+archive/ubuntu/ppa)
-[![COPR](https://img.shields.io/badge/Fedora-COPR-51A2DA?logo=fedora&logoColor=white)](https://copr.fedorainfracloud.org/coprs/saberd/nibble)
+[![COPR](https://img.shields.io/badge/Fedora-COPR-51A2DA?logo=fedora&logoColor=white)](https://copr.fedorainfracloud.org/coprs/g/backendsystems/nibble)
 [![AUR](https://img.shields.io/aur/version/nibble-bin)](https://aur.archlinux.org/packages/nibble-bin)
 [![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](https://www.npmjs.com/package/@backendsystems/nibble)
 [![PyPI](https://img.shields.io/pypi/v/nibble-cli)](https://pypi.org/project/nibble-cli/)
@@ -61,7 +61,7 @@ sudo apt install nibble
 ```
 <img src="https://cdn.simpleicons.org/fedora/51A2DA" width="16" style="vertical-align:middle"> dnf (Fedora, RHEL, CentOS Stream):
 ```bash
-sudo dnf copr enable saberd/nibble
+sudo dnf copr enable @backendsystems/nibble
 sudo dnf install nibble
 ```
 <img src="https://cdn.simpleicons.org/archlinux/1793D1" width="16" style="vertical-align:middle"> aur (Arch Linux):

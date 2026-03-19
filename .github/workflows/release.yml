@@ -274,4 +274,4 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           SRPM=$(ls ~/rpmbuild/SRPMS/nibble-${VERSION}*.src.rpm)
-          copr-cli build saberd/nibble "$SRPM" --nowait
+          copr-cli build @backendsystems/nibble "$SRPM" --nowait
