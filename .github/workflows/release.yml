@@ -205,7 +205,12 @@ jobs:
               "Release ${VERSION}"
 
       - name: Build source package
-        run: debuild -S -d -k"$GPG_KEY_ID"
+        run: |
+          if [[ "${{ matrix.series }}" == "noble" ]]; then
+            debuild -S -d -sa -k"$GPG_KEY_ID"
+          else
+            debuild -S -d -sd -k"$GPG_KEY_ID"
+          fi
 
       - name: Upload to PPA
         run: |
