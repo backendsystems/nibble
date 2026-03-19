@@ -15,7 +15,7 @@ on:
       upload:
         description: Upload to PPA
         required: false
-        default: true
+        default: false
         type: boolean
 
 jobs:
@@ -54,6 +54,19 @@ jobs:
           rm -f nibble_linux_*.tar.gz
         env:
           GH_TOKEN: ${{ github.token }}
+
+      - name: Ensure debian/source files exist
+        run: |
+          mkdir -p debian/source
+          if [ ! -f debian/source/format ]; then
+            echo "3.0 (quilt)" > debian/source/format
+          fi
+          if [ ! -f debian/source/options ]; then
+            cat > debian/source/options << 'EOF'
+          extend-diff-ignore = "^\.git/"
+          extend-diff-ignore = "^\.github/"
+          EOF
+          fi
 
       - name: Install packaging tools
         run: sudo apt-get update && sudo apt-get install -y devscripts debhelper build-essential dput gnupg
