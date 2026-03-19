@@ -113,14 +113,18 @@ jobs:
           REVISION="${{ github.event.inputs.revision }}"
           dput ppa:backendsystems/ppa ../nibble_${VERSION}-${REVISION}~${{ matrix.series }}_source.changes
 
+      - name: Copy artifacts to current directory
+        if: ${{ github.event.inputs.upload != 'true' }}
+        run: cp ../*.{dsc,tar.gz,changes,buildinfo} . 2>/dev/null || true
+
       - name: Upload artifacts
         if: ${{ github.event.inputs.upload != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ppa-source-${{ matrix.series }}
           path: |
-            ../*.dsc
-            ../*.tar.gz
-            ../*.changes
-            ../*.buildinfo
+            *.dsc
+            *.tar.gz
+            *.changes
+            *.buildinfo
           retention-days: 7
