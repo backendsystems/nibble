@@ -25,7 +25,19 @@ jobs:
       matrix:
         series: [noble, jammy, questing]
     steps:
+      - name: Determine git ref
+        id: ref
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [[ "$VERSION" == v* ]]; then
+            echo "ref=$VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=v$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.ref.outputs.ref }}
 
       - name: Download release binaries
         run: |
