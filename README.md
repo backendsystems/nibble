@@ -51,9 +51,10 @@ Hold `Shift` and drag to select text.
 ![Nibble click interface](click.gif "Clickable interface with mouse support")
 
 ## Installation
-you may have to restart terminal to run `nibble` after install.
+#### Manual download:
+Pre-built binaries for Linux, macOS and Windows (amd64/arm64) are available on the [Releases](https://github.com/backendsystems/nibble/releases) page.
 
-
+#### Package managers:
 <img src="https://cdn.simpleicons.org/ubuntu/E95420" width="16" style="vertical-align:middle"> apt (Ubuntu, Mint, Pop!_OS, Zorin, Elementary, KDE Neon):
 ```bash
 sudo add-apt-repository ppa:backendsystems/ppa
