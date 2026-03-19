@@ -15,5 +15,7 @@ override_dh_auto_install:
 
 override_dh_auto_test:
 
+override_dh_dwz:
+
 override_dh_auto_clean:
 	rm -f nibble

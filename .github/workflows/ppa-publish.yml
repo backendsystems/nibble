@@ -61,13 +61,11 @@ jobs:
           echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v5
-        if: ${{ inputs.revision == '1' }}
         with:
           ref: ${{ steps.ref.outputs.ref }}
           path: source
 
       - name: Get current debian files
-        if: ${{ inputs.revision == '1' }}
         uses: actions/checkout@v5
         with:
           sparse-checkout: debian
@@ -75,11 +73,9 @@ jobs:
           path: debian-files
 
       - name: Copy current debian packaging
-        if: ${{ inputs.revision == '1' }}
         run: cp -r debian-files/debian source/
 
       - name: Download release binaries
-        if: ${{ inputs.revision == '1' }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           mkdir -p source/prebuilt
@@ -95,7 +91,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Create orig tarball with prebuilt binaries
-        if: ${{ inputs.revision == '1' }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           tar --exclude=source/.git \
@@ -105,22 +100,6 @@ jobs:
               -czf nibble_${VERSION}.orig.tar.gz source
 
       - name: Upload orig tarball
-        if: ${{ inputs.revision == '1' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: orig-tarball
-          path: nibble_${{ steps.version.outputs.version }}.orig.tar.gz
-          retention-days: 1
-
-      - name: Fetch orig tarball from Launchpad
-        if: ${{ inputs.revision != '1' }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          curl -fsSL "https://ppa.launchpadcontent.net/backendsystems/ppa/ubuntu/pool/main/n/nibble/nibble_${VERSION}.orig.tar.gz" \
-            -o "nibble_${VERSION}.orig.tar.gz"
-
-      - name: Upload orig tarball
-        if: ${{ inputs.revision != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: orig-tarball
