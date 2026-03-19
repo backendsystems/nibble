@@ -61,8 +61,8 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           mkdir -p source/prebuilt
-          gh release download "v${VERSION}" -p "nibble_linux_amd64.tar.gz"
-          gh release download "v${VERSION}" -p "nibble_linux_arm64.tar.gz"
+          gh release download "v${VERSION}" -R "${{ github.repository }}" -p "nibble_linux_amd64.tar.gz"
+          gh release download "v${VERSION}" -R "${{ github.repository }}" -p "nibble_linux_arm64.tar.gz"
           tar -xzf nibble_linux_amd64.tar.gz nibble
           mv nibble source/prebuilt/nibble_linux_amd64
           tar -xzf nibble_linux_arm64.tar.gz nibble
@@ -114,8 +114,8 @@ jobs:
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
           mkdir -p source/prebuilt
-          gh release download "v${VERSION}" -p "nibble_linux_amd64.tar.gz"
-          gh release download "v${VERSION}" -p "nibble_linux_arm64.tar.gz"
+          gh release download "v${VERSION}" -R "${{ github.repository }}" -p "nibble_linux_amd64.tar.gz"
+          gh release download "v${VERSION}" -R "${{ github.repository }}" -p "nibble_linux_arm64.tar.gz"
           tar -xzf nibble_linux_amd64.tar.gz nibble
           mv nibble source/prebuilt/nibble_linux_amd64
           tar -xzf nibble_linux_arm64.tar.gz nibble
