@@ -19,11 +19,11 @@ on:
         type: boolean
 
 jobs:
-  ppa:
+  prepare:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        series: [noble, jammy, questing]
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      ref: ${{ steps.ref.outputs.ref }}
     steps:
       - name: Determine git ref
         id: ref
@@ -35,14 +35,19 @@ jobs:
             echo "ref=v$VERSION" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Set version
+        id: version
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v5
         with:
           ref: ${{ steps.ref.outputs.ref }}
 
       - name: Download release binaries
         run: |
-          VERSION="${{ github.event.inputs.version }}"
-          VERSION="${VERSION#v}"
+          VERSION="${{ steps.version.outputs.version }}"
           mkdir -p prebuilt
           gh release download "v${VERSION}" -p "nibble_linux_amd64.tar.gz"
           gh release download "v${VERSION}" -p "nibble_linux_arm64.tar.gz"
@@ -54,6 +59,55 @@ jobs:
           rm -f nibble_linux_*.tar.gz
         env:
           GH_TOKEN: ${{ github.token }}
+
+      - name: Create orig tarball with prebuilt binaries
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cd ..
+          tar --exclude=nibble/.git \
+              --exclude=nibble/.github \
+              --exclude=nibble/debian \
+              --transform="s,^nibble,nibble-${VERSION}," \
+              -czf nibble_${VERSION}.orig.tar.gz nibble
+
+      - name: Upload orig tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: orig-tarball
+          path: ../nibble_${{ steps.version.outputs.version }}.orig.tar.gz
+          retention-days: 1
+
+  ppa:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        series: [noble, jammy, questing]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.ref }}
+
+      - name: Download release binaries
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          mkdir -p prebuilt
+          gh release download "v${VERSION}" -p "nibble_linux_amd64.tar.gz"
+          gh release download "v${VERSION}" -p "nibble_linux_arm64.tar.gz"
+          tar -xzf nibble_linux_amd64.tar.gz nibble
+          mv nibble prebuilt/nibble_linux_amd64
+          tar -xzf nibble_linux_arm64.tar.gz nibble
+          mv nibble prebuilt/nibble_linux_arm64
+          chmod +x prebuilt/nibble_linux_*
+          rm -f nibble_linux_*.tar.gz
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Download orig tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: orig-tarball
+          path: ../
 
       - name: Ensure debian/source files exist
         run: |
@@ -79,8 +133,7 @@ jobs:
 
       - name: Update debian/changelog
         run: |
-          VERSION="${{ github.event.inputs.version }}"
-          VERSION="${VERSION#v}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           REVISION="${{ github.event.inputs.revision }}"
           DEBEMAIL="mail@saberd.com"
           DEBFULLNAME="saberd"
@@ -90,26 +143,13 @@ jobs:
               --force-distribution \
               "Release ${VERSION}"
 
-      - name: Create orig tarball with prebuilt binaries
-        run: |
-          VERSION="${{ github.event.inputs.version }}"
-          VERSION="${VERSION#v}"
-          cd ..
-          tar --exclude=nibble/.git \
-              --exclude=nibble/.github \
-              --exclude=nibble/debian \
-              --transform="s,^nibble,nibble-${VERSION}," \
-              -czf nibble_${VERSION}.orig.tar.gz nibble
-          cd nibble
-
       - name: Build source package
         run: debuild -S -d -k"$GPG_KEY_ID"
 
       - name: Upload to PPA
         if: ${{ github.event.inputs.upload == 'true' }}
         run: |
-          VERSION="${{ github.event.inputs.version }}"
-          VERSION="${VERSION#v}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           REVISION="${{ github.event.inputs.revision }}"
           dput ppa:backendsystems/ppa ../nibble_${VERSION}-${REVISION}~${{ matrix.series }}_source.changes
 

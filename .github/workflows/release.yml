@@ -87,9 +87,59 @@ jobs:
       - name: Mark Homebrew publish complete
         run: echo "Homebrew cask is published by GoReleaser in the release job."
 
-  ppa:
+  ppa-prepare:
     if: ${{ github.event_name == 'push' }}
     needs: release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set version
+        id: version
+        run: |
+          VERSION="${{ github.ref_name }}"
+          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download and prepare binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-binaries
+          path: prebuilt/
+
+      - name: Rename binaries
+        run: |
+          cd prebuilt
+          find . -name nibble -type f | while read binary; do
+            if [[ "$binary" == *"amd64"* ]]; then
+              mv "$binary" nibble_linux_amd64
+            elif [[ "$binary" == *"arm64"* ]]; then
+              mv "$binary" nibble_linux_arm64
+            fi
+          done
+          chmod +x nibble_linux_*
+
+      - name: Create orig tarball with prebuilt binaries
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cd ..
+          tar --exclude=nibble/.git \
+              --exclude=nibble/.github \
+              --exclude=nibble/debian \
+              --transform="s,^nibble,nibble-${VERSION}," \
+              -czf nibble_${VERSION}.orig.tar.gz nibble
+
+      - name: Upload orig tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: ppa-orig-tarball
+          path: ../nibble_${{ steps.version.outputs.version }}.orig.tar.gz
+          retention-days: 1
+
+  ppa:
+    if: ${{ github.event_name == 'push' }}
+    needs: ppa-prepare
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -114,7 +164,12 @@ jobs:
             fi
           done
           chmod +x nibble_linux_*
-          ls -lh
+
+      - name: Download orig tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ppa-orig-tarball
+          path: ../
 
       - name: Ensure debian/source files exist
         run: |
@@ -140,8 +195,7 @@ jobs:
 
       - name: Update debian/changelog
         run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
+          VERSION="${{ needs.ppa-prepare.outputs.version }}"
           DEBEMAIL="mail@saberd.com"
           DEBFULLNAME="saberd"
           export DEBEMAIL DEBFULLNAME
@@ -150,25 +204,12 @@ jobs:
               --force-distribution \
               "Release ${VERSION}"
 
-      - name: Create orig tarball with prebuilt binaries
-        run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
-          cd ..
-          tar --exclude=nibble/.git \
-              --exclude=nibble/.github \
-              --exclude=nibble/debian \
-              --transform="s,^nibble,nibble-${VERSION}," \
-              -czf nibble_${VERSION}.orig.tar.gz nibble
-          cd nibble
-
       - name: Build source package
         run: debuild -S -d -k"$GPG_KEY_ID"
 
       - name: Upload to PPA
         run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
+          VERSION="${{ needs.ppa-prepare.outputs.version }}"
           dput ppa:backendsystems/ppa ../nibble_${VERSION}-1~${{ matrix.series }}_source.changes
 
   copr:
