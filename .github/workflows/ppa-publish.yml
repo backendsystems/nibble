@@ -195,8 +195,7 @@ jobs:
         run: |
           cd source
           REVISION="${{ inputs.revision }}"
-          SERIES="${{ matrix.series }}"
-          if [[ "$REVISION" == "1" && "$SERIES" == "noble" ]]; then
+          if [[ "$REVISION" == "1" ]]; then
             debuild -S -d -sa -k"$GPG_KEY_ID"
           else
             debuild -S -d -sd -k"$GPG_KEY_ID"
