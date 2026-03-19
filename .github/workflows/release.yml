@@ -68,16 +68,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
 
-      - name: Upload Linux binaries as artifacts
-        if: ${{ github.event_name == 'push' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-binaries
-          path: |
-            .artifacts/goreleaser/nibble_linux_amd64_*/nibble
-            .artifacts/goreleaser/nibble_linux_arm64_*/nibble
-          retention-days: 1
-
   brew:
     if: ${{ github.event_name == 'push' }}
     needs: release
@@ -87,135 +77,16 @@ jobs:
       - name: Mark Homebrew publish complete
         run: echo "Homebrew cask is published by GoReleaser in the release job."
 
-  ppa-prepare:
-    if: ${{ github.event_name == 'push' }}
-    needs: release
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Set version
-        id: version
-        run: |
-          VERSION="${{ github.ref_name }}"
-          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
-
-      - name: Download and prepare binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-binaries
-          path: prebuilt/
-
-      - name: Rename binaries
-        run: |
-          cd prebuilt
-          find . -name nibble -type f | while read binary; do
-            if [[ "$binary" == *"amd64"* ]]; then
-              mv "$binary" nibble_linux_amd64
-            elif [[ "$binary" == *"arm64"* ]]; then
-              mv "$binary" nibble_linux_arm64
-            fi
-          done
-          chmod +x nibble_linux_*
-
-      - name: Create orig tarball with prebuilt binaries
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          cd ..
-          tar --exclude=nibble/.git \
-              --exclude=nibble/.github \
-              --exclude=nibble/debian \
-              --transform="s,^nibble,nibble-${VERSION}," \
-              -czf nibble_${VERSION}.orig.tar.gz nibble
-
-      - name: Upload orig tarball
-        uses: actions/upload-artifact@v4
-        with:
-          name: ppa-orig-tarball
-          path: ../nibble_${{ steps.version.outputs.version }}.orig.tar.gz
-          retention-days: 1
-
   ppa:
     if: ${{ github.event_name == 'push' }}
-    needs: ppa-prepare
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        series: [noble, jammy, questing]
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Download and prepare binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-binaries
-          path: prebuilt/
-
-      - name: Rename binaries
-        run: |
-          cd prebuilt
-          find . -name nibble -type f | while read binary; do
-            if [[ "$binary" == *"amd64"* ]]; then
-              mv "$binary" nibble_linux_amd64
-            elif [[ "$binary" == *"arm64"* ]]; then
-              mv "$binary" nibble_linux_arm64
-            fi
-          done
-          chmod +x nibble_linux_*
-
-      - name: Download orig tarball
-        uses: actions/download-artifact@v4
-        with:
-          name: ppa-orig-tarball
-          path: ../
-
-      - name: Ensure debian/source files exist
-        run: |
-          mkdir -p debian/source
-          if [ ! -f debian/source/format ]; then
-            echo "3.0 (quilt)" > debian/source/format
-          fi
-          if [ ! -f debian/source/options ]; then
-            cat > debian/source/options << 'EOF'
-          extend-diff-ignore = "^\.git/"
-          extend-diff-ignore = "^\.github/"
-          EOF
-          fi
-
-      - name: Install packaging tools
-        run: sudo apt-get update && sudo apt-get install -y devscripts debhelper build-essential dput gnupg
-
-      - name: Import GPG key
-        run: |
-          echo "${{ secrets.PPA_GPG_PRIVATE_KEY }}" | gpg --batch --import
-          GPG_KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec/{print $5; exit}')
-          echo "GPG_KEY_ID=$GPG_KEY_ID" >> "$GITHUB_ENV"
-
-      - name: Update debian/changelog
-        run: |
-          VERSION="${{ needs.ppa-prepare.outputs.version }}"
-          DEBEMAIL="mail@saberd.com"
-          DEBFULLNAME="saberd"
-          export DEBEMAIL DEBFULLNAME
-          dch --newversion "${VERSION}-1~${{ matrix.series }}" \
-              --distribution "${{ matrix.series }}" \
-              --force-distribution \
-              "Release ${VERSION}"
-
-      - name: Build source package
-        run: |
-          if [[ "${{ matrix.series }}" == "noble" ]]; then
-            debuild -S -d -sa -k"$GPG_KEY_ID"
-          else
-            debuild -S -d -sd -k"$GPG_KEY_ID"
-          fi
-
-      - name: Upload to PPA
-        run: |
-          VERSION="${{ needs.ppa-prepare.outputs.version }}"
-          dput ppa:backendsystems/ppa ../nibble_${VERSION}-1~${{ matrix.series }}_source.changes
+    needs: release
+    uses: ./.github/workflows/ppa-publish.yml
+    with:
+      version: ${{ github.ref_name }}
+      revision: '1'
+      upload: true
+    secrets:
+      PPA_GPG_PRIVATE_KEY: ${{ secrets.PPA_GPG_PRIVATE_KEY }}
 
   copr:
     if: ${{ github.event_name == 'push' }}

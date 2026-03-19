@@ -1,6 +1,25 @@
 name: PPA Publish
 
 on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version to release (e.g. v0.1.0)
+        required: true
+        type: string
+      revision:
+        description: Debian revision (default 1)
+        required: false
+        default: '1'
+        type: string
+      upload:
+        description: Upload to PPA
+        required: false
+        default: true
+        type: boolean
+    secrets:
+      PPA_GPG_PRIVATE_KEY:
+        required: true
   workflow_dispatch:
     inputs:
       version:
@@ -28,7 +47,7 @@ jobs:
       - name: Determine git ref
         id: ref
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${{ inputs.version }}"
           if [[ "$VERSION" == v* ]]; then
             echo "ref=$VERSION" >> "$GITHUB_OUTPUT"
           else
@@ -38,17 +57,17 @@ jobs:
       - name: Set version
         id: version
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${{ inputs.version }}"
           echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v5
-        if: ${{ github.event.inputs.revision == '1' }}
+        if: ${{ inputs.revision == '1' }}
         with:
           ref: ${{ steps.ref.outputs.ref }}
           path: source
 
       - name: Get current debian files
-        if: ${{ github.event.inputs.revision == '1' }}
+        if: ${{ inputs.revision == '1' }}
         uses: actions/checkout@v5
         with:
           sparse-checkout: debian
@@ -56,11 +75,11 @@ jobs:
           path: debian-files
 
       - name: Copy current debian packaging
-        if: ${{ github.event.inputs.revision == '1' }}
+        if: ${{ inputs.revision == '1' }}
         run: cp -r debian-files/debian source/
 
       - name: Download release binaries
-        if: ${{ github.event.inputs.revision == '1' }}
+        if: ${{ inputs.revision == '1' }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           mkdir -p source/prebuilt
@@ -76,7 +95,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Create orig tarball with prebuilt binaries
-        if: ${{ github.event.inputs.revision == '1' }}
+        if: ${{ inputs.revision == '1' }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           tar --exclude=source/.git \
@@ -86,7 +105,7 @@ jobs:
               -czf nibble_${VERSION}.orig.tar.gz source
 
       - name: Upload orig tarball
-        if: ${{ github.event.inputs.revision == '1' }}
+        if: ${{ inputs.revision == '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: orig-tarball
@@ -94,14 +113,14 @@ jobs:
           retention-days: 1
 
       - name: Fetch orig tarball from Launchpad
-        if: ${{ github.event.inputs.revision != '1' }}
+        if: ${{ inputs.revision != '1' }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           curl -fsSL "https://ppa.launchpadcontent.net/backendsystems/ppa/ubuntu/pool/main/n/nibble/nibble_${VERSION}.orig.tar.gz" \
             -o "nibble_${VERSION}.orig.tar.gz"
 
       - name: Upload orig tarball
-        if: ${{ github.event.inputs.revision != '1' }}
+        if: ${{ inputs.revision != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: orig-tarball
@@ -163,7 +182,7 @@ jobs:
         run: |
           cd source
           VERSION="${{ needs.prepare.outputs.version }}"
-          REVISION="${{ github.event.inputs.revision }}"
+          REVISION="${{ inputs.revision }}"
           DEBEMAIL="mail@saberd.com"
           DEBFULLNAME="saberd"
           export DEBEMAIL DEBFULLNAME
@@ -175,7 +194,7 @@ jobs:
       - name: Build source package
         run: |
           cd source
-          REVISION="${{ github.event.inputs.revision }}"
+          REVISION="${{ inputs.revision }}"
           SERIES="${{ matrix.series }}"
           if [[ "$REVISION" == "1" && "$SERIES" == "noble" ]]; then
             debuild -S -d -sa -k"$GPG_KEY_ID"
@@ -184,18 +203,18 @@ jobs:
           fi
 
       - name: Upload to PPA
-        if: ${{ github.event.inputs.upload == 'true' }}
+        if: ${{ inputs.upload == true }}
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
-          REVISION="${{ github.event.inputs.revision }}"
+          REVISION="${{ inputs.revision }}"
           dput ppa:backendsystems/ppa nibble_${VERSION}-${REVISION}~${{ matrix.series }}_source.changes
 
       - name: Copy artifacts to current directory
-        if: ${{ github.event.inputs.upload != 'true' }}
+        if: ${{ inputs.upload != true }}
         run: cp *.{dsc,tar.gz,changes,buildinfo} . 2>/dev/null || true
 
       - name: Upload artifacts
-        if: ${{ github.event.inputs.upload != 'true' }}
+        if: ${{ inputs.upload != true }}
         uses: actions/upload-artifact@v4
         with:
           name: ppa-source-${{ matrix.series }}
