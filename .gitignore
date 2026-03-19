@@ -8,6 +8,7 @@ nibble.exe
 *.txt
 *.csv
 post.md
+PLAN.md
 
 .gocache/
 vendor/
