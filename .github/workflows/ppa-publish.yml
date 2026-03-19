@@ -154,7 +154,6 @@ jobs:
 
       - name: Build source package
         run: |
-          mv nibble_*.orig.tar.gz source/../
           cd source
           debuild -S -d -k"$GPG_KEY_ID"
 
