@@ -92,7 +92,7 @@ npx @backendsystems/nibble
 
 ## Usage
 Run the CLI with `nibble`, select a network interface.  
-Interface icons: `🔌` = Ethernet, `📶` = Wi-Fi, `📦` = Container, `🔒` = VPN.
+Interface icons: `🔌`Ethernet, `📶`Wi-Fi, `📦`Container, `🔒`VPN.
 
 Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea)
 
