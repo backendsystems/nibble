@@ -32,9 +32,14 @@ jobs:
           VERSION="${{ github.event.inputs.version }}"
           VERSION="${VERSION#v}"
           mkdir -p prebuilt
-          gh release download "v${VERSION}" -p "nibble_linux_amd64" -D prebuilt/
-          gh release download "v${VERSION}" -p "nibble_linux_arm64" -D prebuilt/
+          gh release download "v${VERSION}" -p "nibble_linux_amd64.tar.gz"
+          gh release download "v${VERSION}" -p "nibble_linux_arm64.tar.gz"
+          tar -xzf nibble_linux_amd64.tar.gz nibble
+          mv nibble prebuilt/nibble_linux_amd64
+          tar -xzf nibble_linux_arm64.tar.gz nibble
+          mv nibble prebuilt/nibble_linux_arm64
           chmod +x prebuilt/nibble_linux_*
+          rm -f nibble_linux_*.tar.gz
         env:
           GH_TOKEN: ${{ github.token }}
 
