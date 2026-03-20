@@ -17,6 +17,9 @@ builds:
       - arm64
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
     files:
       - README.md
 release:
