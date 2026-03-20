@@ -30,10 +30,10 @@ func Render(m Model, maxWidth int) string {
 		sweepPercent = float64(m.ScannedCount) / float64(m.TotalHosts)
 	}
 	progressModel := m.Progress
-	progressModel.Width = 50
+	progressModel.SetWidth(50)
 	b.WriteString(progressModel.ViewAs(sweepPercent) + "\n")
 
-	if len(m.FoundHosts) > 0 && m.Results.Height > 0 {
+	if len(m.FoundHosts) > 0 && m.Results.Height() > 0 {
 		b.WriteString(common.HighlightStyle.Render(fmt.Sprintf("%d active:", len(m.FoundHosts))) + "\n")
 		b.WriteString(m.Results.View() + "\n")
 	} else if !m.ScanComplete {

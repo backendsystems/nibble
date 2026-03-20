@@ -6,7 +6,7 @@ import (
 
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 const selectionHelpText = "←/→/↑/↓ a/d/w/s h/j/k/l • p: ports • r: history • t: target • ?: help • q: quit"
@@ -129,7 +129,7 @@ func ResolveScanSelection(interfaces []net.Interface, cursor int, addrsByIface m
 	return selection, nil
 }
 
-func (m Model) Update(msg tea.KeyMsg) UpdateResult {
+func (m Model) Update(msg tea.KeyPressMsg) UpdateResult {
 	result := UpdateResult{Model: m}
 
 	switch HandleKey(m.ShowHelp, msg.String()) {

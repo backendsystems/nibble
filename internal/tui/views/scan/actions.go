@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/bubbles/v2/stopwatch"
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/scanner/demo"
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
-	"github.com/charmbracelet/bubbles/stopwatch"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type ProgressMsg struct {
@@ -76,7 +76,7 @@ func (m Model) Start(iface net.Interface, addrs []net.Addr, totalHosts int, targ
 	m.NeighborSeen = 0
 	m.NeighborTotal = 0
 	m.ProgressChan = make(chan shared.ProgressUpdate, 256)
-	m.Stopwatch = stopwatch.NewWithInterval(10 * time.Millisecond)
+	m.Stopwatch = stopwatch.New(stopwatch.WithInterval(10 * time.Millisecond))
 	m.PortsScanned = getScannedPorts(m.NetworkScan)
 	m = m.RefreshResults(false)
 

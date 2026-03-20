@@ -1,6 +1,6 @@
 package scanview
 
-import tea "github.com/charmbracelet/bubbletea"
+import tea "charm.land/bubbletea/v2"
 
 type Action int
 
@@ -23,7 +23,7 @@ func HandleKey(scanning bool, scanComplete bool, key string) Action {
 	return ActionQuit
 }
 
-func handleKeyMsg(m Model, key tea.KeyMsg) Result {
+func handleKeyMsg(m Model, key tea.KeyPressMsg) Result {
 	result := Result{Model: m}
 	result.Handled = true
 

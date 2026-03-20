@@ -1,10 +1,10 @@
 package historyview
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/history"
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 func (m Model) Init() tea.Cmd {
@@ -16,8 +16,8 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 
 	// Route detail view messages
 	if m.Mode == ViewDetail {
-		if mouseMsg, ok := msg.(tea.MouseMsg); ok {
-			detailResult := m.Details.HandleMouse(mouseMsg)
+		if _, ok := msg.(tea.MouseMsg); ok {
+			detailResult := m.Details.HandleMouse(msg)
 			result.Model.Details = detailResult.Model
 			syncScanNode(result.Model.Tree, detailResult.Model.HistoryPath, detailResult.Model.History)
 			result.Cmd = detailResult.Cmd
@@ -33,7 +33,7 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 	}
 
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		result = handleKeyMsg(m, msg)
 	case treeLoadedMsg:
 		result.Model.Tree = msg.tree
@@ -56,10 +56,10 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 	}
 
 	if result.Model.WindowW > 0 {
-		oldListHeight := result.Model.Viewport.Height
+		oldListHeight := result.Model.Viewport.Height()
 		result.Model = result.Model.SetListViewportSize(result.Model.WindowW, result.Model.WindowH)
-		if oldListHeight != result.Model.Viewport.Height {
-			result.Model.Viewport.YOffset = 0
+		if oldListHeight != result.Model.Viewport.Height() {
+			result.Model.Viewport.SetYOffset(0)
 		}
 		result.Model.Details.WindowW = result.Model.WindowW
 		result.Model.Details.WindowH = result.Model.WindowH

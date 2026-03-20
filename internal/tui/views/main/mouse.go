@@ -1,8 +1,8 @@
 package mainview
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 const (
@@ -30,48 +30,56 @@ func CardIndexAt(x, y, yOffset, cardsPerRow, totalCards int) int {
 	return index
 }
 
-func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
+func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 	result := UpdateResult{Model: m}
+
+	mouse, ok := mouseXY(msg)
+	if !ok {
+		return result
+	}
 
 	// Help overlay should capture mouse input so underlying cards are not interactive.
 	// Match keyboard behavior: any click closes help.
 	if m.ShowHelp {
-		if msg.Button == tea.MouseButtonLeft && msg.Action == tea.MouseActionRelease {
+		if _, ok := msg.(tea.MouseReleaseMsg); ok && mouse.Button == tea.MouseLeft {
 			result.Model.ShowHelp = false
 		}
 		return result
 	}
 
 	helpLineY := m.HelpLineY
-	helpLayout := common.BuildHelpLineLayout(mainHelpItems, helpPrefixText, m.Viewport.Width)
+	helpLayout := common.BuildHelpLineLayout(mainHelpItems, helpPrefixText, m.Viewport.Width())
 	helpLineEndY := helpLineY + helpLayout.LineCount - 1
 
 	// Handle hover for helpline items (update hover state for all mouse events)
-	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
-		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
+	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
+		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
 	} else {
 		result.Model.HoveredHelpItem = -1
 	}
 
-	switch msg.Button {
-	case tea.MouseButtonWheelUp:
-		result.Model.Viewport.YOffset = max(0, result.Model.Viewport.YOffset-cardHeight)
-		return result
-	case tea.MouseButtonWheelDown:
-		totalCards := len(m.Interfaces) + 2
-		totalRows := (totalCards + m.CardsPerRow - 1) / m.CardsPerRow
-		maxOffset := max(0, totalRows*cardHeight-m.Viewport.Height)
-		result.Model.Viewport.YOffset = min(result.Model.Viewport.YOffset+cardHeight, maxOffset)
-		return result
+	switch msg.(type) {
+	case tea.MouseWheelMsg:
+		if mouse.Button == tea.MouseWheelUp {
+			result.Model.Viewport.SetYOffset(max(0, result.Model.Viewport.YOffset()-cardHeight))
+			return result
+		}
+		if mouse.Button == tea.MouseWheelDown {
+			totalCards := len(m.Interfaces) + 2
+			totalRows := (totalCards + m.CardsPerRow - 1) / m.CardsPerRow
+			maxOffset := max(0, totalRows*cardHeight-m.Viewport.Height())
+			result.Model.Viewport.SetYOffset(min(result.Model.Viewport.YOffset()+cardHeight, maxOffset))
+			return result
+		}
 	}
 
-	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
+	if _, ok := msg.(tea.MouseReleaseMsg); !ok || mouse.Button != tea.MouseLeft {
 		return result
 	}
 
 	// Check if clicking on helpline item
-	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
-		itemIndex := common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
+	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
+		itemIndex := common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
 		if itemIndex >= 0 {
 			switch Action(helpLayout.Items[itemIndex].Action) {
 			case ActionOpenPorts:
@@ -90,15 +98,23 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	}
 
 	totalCards := len(m.Interfaces) + 2
-	index := CardIndexAt(msg.X, msg.Y, m.Viewport.YOffset, m.CardsPerRow, totalCards)
+	index := CardIndexAt(mouse.X, mouse.Y, m.Viewport.YOffset(), m.CardsPerRow, totalCards)
 	if index < 0 {
 		return result
 	}
 	if index == m.Cursor {
 		// Second click on already-selected card: activate it
-		activateResult := result.Model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		activateResult := result.Model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
 		return activateResult
 	}
 	result.Model.Cursor = index
 	return result
+}
+
+// mouseXY extracts Mouse data from any mouse message type.
+func mouseXY(msg tea.Msg) (tea.Mouse, bool) {
+	if mm, ok := msg.(tea.MouseMsg); ok {
+		return mm.Mouse(), true
+	}
+	return tea.Mouse{}, false
 }

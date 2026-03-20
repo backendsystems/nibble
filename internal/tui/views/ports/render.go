@@ -29,7 +29,7 @@ func Render(m *Model, maxWidth int) string {
 		input := m.PortInput.Input
 		available := maxWidth - len("custom:  ")
 		if available > 0 {
-			input.Width = available
+			input.SetWidth(available)
 		}
 		customLine = "custom:  " + input.View()
 	} else {

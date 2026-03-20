@@ -4,7 +4,7 @@ import (
 	"github.com/backendsystems/nibble/internal/ports"
 	targetports "github.com/backendsystems/nibble/internal/tui/views/target/ports"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // finalizeScan validates IP/CIDR/ports and emits a StartScan result

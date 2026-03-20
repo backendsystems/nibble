@@ -3,7 +3,7 @@ package targetview
 import (
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 type Result struct {
@@ -36,11 +36,11 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	}
 
 	// Forward non-key messages to focused textinput
-	if _, ok := msg.(tea.KeyMsg); !ok {
+	if _, ok := msg.(tea.KeyPressMsg); !ok {
 		return m.updateFocusedInput(msg)
 	}
 
-	keyMsg := msg.(tea.KeyMsg)
+	keyMsg := msg.(tea.KeyPressMsg)
 
 	if m.ShowHelp {
 		m.ShowHelp = false
@@ -107,15 +107,15 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	// Delegate to focused textinput with character filtering
 	switch m.FocusedField {
 	case fieldIP:
-		if keyMsg.Type == tea.KeyBackspace {
+		if keyMsg.Code == tea.KeyBackspace {
 			// Block backspace if cursor is at or before the first dot
 			val := m.IPTextInput.Value()
 			firstDotPos := strings.Index(val, ".")
 			if firstDotPos >= 0 && len(val) <= firstDotPos+1 {
 				return result, nil
 			}
-		} else if keyMsg.Type == tea.KeyRunes {
-			ch := keyMsg.Runes[0]
+		} else if keyMsg.Text != "" {
+			ch := []rune(keyMsg.Text)[0]
 			if !((ch >= '0' && ch <= '9') || ch == '.') {
 				return result, nil
 			}
@@ -126,8 +126,8 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 		result.Cmd = cmd
 		return result, cmd
 	case fieldCIDR:
-		if keyMsg.Type == tea.KeyRunes {
-			ch := keyMsg.Runes[0]
+		if keyMsg.Text != "" {
+			ch := []rune(keyMsg.Text)[0]
 			if !(ch >= '0' && ch <= '9') {
 				return result, nil
 			}

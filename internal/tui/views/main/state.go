@@ -3,7 +3,7 @@ package mainview
 import (
 	"net"
 
-	"github.com/charmbracelet/bubbles/viewport"
+	"charm.land/bubbles/v2/viewport"
 )
 
 type Model struct {

@@ -1,8 +1,8 @@
 package historydetailview
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 // hostAtViewportLine returns the host index that occupies the given line within
@@ -33,42 +33,50 @@ func hostAtViewportLine(m Model, viewportLine int) int {
 
 // HandleMouse processes mouse events in the detail host list:
 // scroll wheel scrolls the viewport; left-click selects or activates a host.
-func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
+func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 	result := UpdateResult{Model: m}
+
+	mouse, ok := mouseXY(msg)
+	if !ok {
+		return result
+	}
 
 	helpLineY := m.HelpLineY
 	helpLayout := common.BuildHelpLineLayout(detailHelpItems, detailHelpPrefix, m.WindowW)
 	helpLineEndY := helpLineY + helpLayout.LineCount - 1
 
 	// Update hover state for all mouse events
-	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
-		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
+	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
+		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
 	} else {
 		result.Model.HoveredHelpItem = -1
 	}
 
-	switch msg.Button {
-	case tea.MouseButtonWheelUp:
-		result.Model.Viewport.YOffset = max(0, result.Model.Viewport.YOffset-3)
-		return result
-	case tea.MouseButtonWheelDown:
-		// Calculate total lines: metadata + all hosts and their ports
-		totalLines := 0
-		// Metadata lines
-		if m.History.ScanResults.PortsFound > 0 {
-			totalLines++
+	switch msg.(type) {
+	case tea.MouseWheelMsg:
+		if mouse.Button == tea.MouseWheelUp {
+			result.Model.Viewport.SetYOffset(max(0, result.Model.Viewport.YOffset()-3))
+			return result
 		}
-		totalLines++ // Created/Updated line
-		// Host lines
-		for _, host := range m.History.ScanResults.Hosts {
-			totalLines += 1 + len(host.Ports)
+		if mouse.Button == tea.MouseWheelDown {
+			// Calculate total lines: metadata + all hosts and their ports
+			totalLines := 0
+			// Metadata lines
+			if m.History.ScanResults.PortsFound > 0 {
+				totalLines++
+			}
+			totalLines++ // Created/Updated line
+			// Host lines
+			for _, host := range m.History.ScanResults.Hosts {
+				totalLines += 1 + len(host.Ports)
+			}
+			maxOffset := max(0, totalLines-m.Viewport.Height())
+			result.Model.Viewport.SetYOffset(min(result.Model.Viewport.YOffset()+3, maxOffset))
+			return result
 		}
-		maxOffset := max(0, totalLines-m.Viewport.Height)
-		result.Model.Viewport.YOffset = min(result.Model.Viewport.YOffset+3, maxOffset)
-		return result
 	}
 
-	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
+	if _, ok := msg.(tea.MouseReleaseMsg); !ok || mouse.Button != tea.MouseLeft {
 		return result
 	}
 	if m.ShowHelp {
@@ -80,8 +88,8 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	}
 
 	// Check if clicking on helpline item
-	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
-		itemIndex := common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
+	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
+		itemIndex := common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
 		if itemIndex >= 0 {
 			switch Action(helpLayout.Items[itemIndex].Action) {
 			case ActionScanAllPorts:
@@ -100,16 +108,16 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 		}
 	}
 
-	titleLines := m.HelpLineY - m.Viewport.Height
+	titleLines := m.HelpLineY - m.Viewport.Height()
 	if titleLines < 1 {
 		titleLines = 1
 	}
-	contentY := msg.Y - titleLines
+	contentY := mouse.Y - titleLines
 	if contentY < 0 {
 		return result
 	}
 
-	viewportLine := m.Viewport.YOffset + contentY
+	viewportLine := m.Viewport.YOffset() + contentY
 	index := hostAtViewportLine(m, viewportLine)
 	if index < 0 {
 		return result
@@ -127,4 +135,12 @@ func (m Model) HandleMouse(msg tea.MouseMsg) UpdateResult {
 	result.Model.Cursor = index
 	result.Model = result.Model.ScrollToSelected()
 	return result
+}
+
+// mouseXY extracts Mouse data from any mouse message type.
+func mouseXY(msg tea.Msg) (tea.Mouse, bool) {
+	if mm, ok := msg.(tea.MouseMsg); ok {
+		return mm.Mouse(), true
+	}
+	return tea.Mouse{}, false
 }

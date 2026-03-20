@@ -3,8 +3,8 @@ package delete
 import (
 	"fmt"
 
+	"charm.land/lipgloss/v2"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type dialogButton int

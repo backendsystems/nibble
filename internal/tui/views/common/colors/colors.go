@@ -1,6 +1,6 @@
 package colors
 
-import "github.com/charmbracelet/lipgloss"
+import "charm.land/lipgloss/v2"
 
 var (
 	Black         = lipgloss.Color("0")

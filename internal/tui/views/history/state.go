@@ -1,11 +1,11 @@
 package historyview
 
 import (
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type NodeType = historytree.NodeType

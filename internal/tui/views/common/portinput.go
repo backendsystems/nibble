@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
 )
 
 // CustomPortInput manages custom port text entry state.
@@ -52,7 +52,7 @@ func (c CustomPortInput) UpdateNonKey(msg tea.Msg) (CustomPortInput, tea.Cmd) {
 }
 
 // HandleKey dispatches key actions (move, delete, insert) or falls through to textinput.
-func (c CustomPortInput) HandleKey(action PortInputAction, keyMsg tea.KeyMsg) (CustomPortInput, tea.Cmd) {
+func (c CustomPortInput) HandleKey(action PortInputAction, keyMsg tea.KeyPressMsg) (CustomPortInput, tea.Cmd) {
 	switch {
 	case action.MoveLeft:
 		if pos := c.Input.Position(); pos > 0 {
@@ -84,7 +84,7 @@ func (c CustomPortInput) HandleKey(action PortInputAction, keyMsg tea.KeyMsg) (C
 		c.Input.SetCursor(0)
 		return c.syncFromInput(), nil
 	case action.InsertRunes:
-		filtered := filterPrintable(keyMsg.Runes)
+		filtered := filterPrintable([]rune(keyMsg.Text))
 		if len(filtered) > 0 {
 			val, cur := c.Input.Value(), c.Input.Position()
 			val, cur = InsertRunes(val, cur, filtered)

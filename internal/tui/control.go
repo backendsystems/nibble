@@ -1,12 +1,12 @@
 package tui
 
 import (
+	tea "charm.land/bubbletea/v2"
 	historyview "github.com/backendsystems/nibble/internal/tui/views/history"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	scanview "github.com/backendsystems/nibble/internal/tui/views/scan"
 	targetview "github.com/backendsystems/nibble/internal/tui/views/target"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type activeView int
@@ -20,14 +20,15 @@ const (
 )
 
 type model struct {
-	active  activeView
-	windowW int
-	windowH int
-	main    mainview.Model
-	ports   portsview.Model
-	scan    scanview.Model
-	target  targetview.Model
-	history historyview.Model
+	active    activeView
+	altScreen bool
+	windowW   int
+	windowH   int
+	main      mainview.Model
+	ports     portsview.Model
+	scan      scanview.Model
+	target    targetview.Model
+	history   historyview.Model
 }
 
 func (m *model) Init() tea.Cmd {
@@ -37,11 +38,12 @@ func (m *model) Init() tea.Cmd {
 	if m.ports.CustomCursor < 0 || m.ports.CustomCursor > len(m.ports.CustomPorts) {
 		m.ports.CustomCursor = len(m.ports.CustomPorts)
 	}
-	return enterAltScreenCmd()
+	m.altScreen = true
+	return nil
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "ctrl+c" {
+	if keyMsg, ok := msg.(tea.KeyPressMsg); ok && keyMsg.String() == "ctrl+c" {
 		return m, tea.Quit
 	}
 
@@ -75,18 +77,23 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m *model) View() string {
+func (m *model) View() tea.View {
 	maxWidth := scanViewWidth(m.windowW)
+	var content string
 	switch m.active {
 	case viewScan:
-		return scanview.Render(m.scan, maxWidth)
+		content = scanview.Render(m.scan, maxWidth)
 	case viewPorts:
-		return portsview.Render(&m.ports, maxWidth)
+		content = portsview.Render(&m.ports, maxWidth)
 	case viewTarget:
-		return targetview.Render(&m.target, maxWidth)
+		content = targetview.Render(&m.target, maxWidth)
 	case viewHistory:
-		return historyview.Render(&m.history, maxWidth)
+		content = historyview.Render(&m.history, maxWidth)
 	default:
-		return mainview.Render(&m.main, maxWidth)
+		content = mainview.Render(&m.main, maxWidth)
 	}
+	v := tea.NewView(content)
+	v.AltScreen = m.altScreen
+	v.MouseMode = tea.MouseModeAllMotion
+	return v
 }

@@ -3,8 +3,8 @@ package common
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/lipgloss/v2"
 )
 
 const CustomPortsDescription = "e.g. 22,80,443,8000-9000 (valid: 1-65535)"
@@ -12,8 +12,11 @@ const CustomPortsDescription = "e.g. 22,80,443,8000-9000 (valid: 1-65535)"
 func NewCustomPortsInput() textinput.Model {
 	input := textinput.New()
 	input.Prompt = "> "
-	input.PromptStyle = lipgloss.NewStyle().Foreground(Color.Selection)
-	input.Cursor.Style = lipgloss.NewStyle().Foreground(Color.Selection)
+	styles := textinput.DefaultDarkStyles()
+	styles.Focused.Prompt = lipgloss.NewStyle().Foreground(Color.Selection)
+	styles.Blurred.Prompt = lipgloss.NewStyle().Foreground(Color.Selection)
+	styles.Cursor.Color = Color.Selection
+	input.SetStyles(styles)
 	return input
 }
 

@@ -1,26 +1,31 @@
 package targetview
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 // fieldHeights returns the number of lines each field occupies.
 // IP: title + input + desc = 3, CIDR: same = 3, PortMode: title + 3 options = 4.
 var fieldHeights = [fieldCount]int{3, 3, 4}
 
-func (m *Model) HandleMouse(msg tea.MouseMsg, maxWidth int) (Result, tea.Cmd) {
+func (m *Model) HandleMouse(msg tea.Msg, maxWidth int) (Result, tea.Cmd) {
+	mouse, ok := mouseXY(msg)
+	if !ok {
+		return Result{}, nil
+	}
+
 	helpLineY := m.HelpLineY
 	helpLayout := common.BuildHelpLineLayout(targetHelpItems, targetHelpPrefix, maxWidth)
 	helpLineEndY := helpLineY + helpLayout.LineCount - 1
 
-	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
-		m.HoveredHelpItem = common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
+	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
+		m.HoveredHelpItem = common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
 	} else {
 		m.HoveredHelpItem = -1
 	}
 
-	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
+	if _, ok := msg.(tea.MouseReleaseMsg); !ok || mouse.Button != tea.MouseLeft {
 		return Result{}, nil
 	}
 	if m.ShowHelp {
@@ -29,13 +34,13 @@ func (m *Model) HandleMouse(msg tea.MouseMsg, maxWidth int) (Result, tea.Cmd) {
 	}
 
 	// Helpline clicks
-	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
-		itemIndex := common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
+	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
+		itemIndex := common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
 		if itemIndex >= 0 {
 			switch helpLayout.Items[itemIndex].Action {
 			case targetActionSubmit:
 				if m.InCustomPortInput {
-					return m.updateCustomPortInput(tea.KeyMsg{Type: tea.KeyEnter})
+					return m.updateCustomPortInput(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
 				}
 				result := Result{}
 				return m.submitForm(result)
@@ -62,14 +67,14 @@ func (m *Model) HandleMouse(msg tea.MouseMsg, maxWidth int) (Result, tea.Cmd) {
 	for field := 0; field < fieldCount; field++ {
 		startY := m.FieldY[field]
 		endY := startY + fieldHeights[field] - 1
-		if msg.Y < startY || msg.Y > endY {
+		if mouse.Y < startY || mouse.Y > endY {
 			continue
 		}
 		// Clicked inside this field
 		if field == fieldPortMode {
 			// Which port option row was clicked?
 			// Row 0 = title line, rows 1-3 = options
-			relY := msg.Y - startY
+			relY := mouse.Y - startY
 			if relY >= 1 && relY <= len(portModeOptions) {
 				optIndex := relY - 1
 				if optIndex == m.PortModeIndex {
@@ -88,4 +93,12 @@ func (m *Model) HandleMouse(msg tea.MouseMsg, maxWidth int) (Result, tea.Cmd) {
 	}
 
 	return Result{}, nil
+}
+
+// mouseXY extracts Mouse data from any mouse message type.
+func mouseXY(msg tea.Msg) (tea.Mouse, bool) {
+	if mm, ok := msg.(tea.MouseMsg); ok {
+		return mm.Mouse(), true
+	}
+	return tea.Mouse{}, false
 }

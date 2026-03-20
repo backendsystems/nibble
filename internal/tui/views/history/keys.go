@@ -1,14 +1,14 @@
 package historyview
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/history"
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
 	detailsview "github.com/backendsystems/nibble/internal/tui/views/history/details"
 	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
-func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
+func handleKeyMsg(m Model, key tea.KeyPressMsg) UpdateResult {
 	result := UpdateResult{Model: m}
 
 	inDeleteDialog := m.DeleteDialog != nil
@@ -49,10 +49,10 @@ func toggleFolder(result UpdateResult, node *historytree.Node) UpdateResult {
 	if lastChildIdx >= len(result.Model.FlatList) {
 		lastChildIdx = len(result.Model.FlatList) - 1
 	}
-	if h := result.Model.Viewport.Height; h > 0 {
+	if h := result.Model.Viewport.Height(); h > 0 {
 		wantOffset := min(lastChildIdx-h+1, result.Model.Cursor)
-		if wantOffset > result.Model.Viewport.YOffset {
-			result.Model.Viewport.YOffset = wantOffset
+		if wantOffset > result.Model.Viewport.YOffset() {
+			result.Model.Viewport.SetYOffset(wantOffset)
 		}
 	}
 	// Kick off background host/port count loads for newly visible scans

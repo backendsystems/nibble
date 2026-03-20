@@ -1,9 +1,9 @@
 package scanview
 
 import (
+	"charm.land/bubbles/v2/stopwatch"
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
-	"github.com/charmbracelet/bubbles/stopwatch"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Result struct {
@@ -19,7 +19,7 @@ func (m Model) Update(msg tea.Msg) Result {
 	switch typed := msg.(type) {
 	case stopwatch.TickMsg, stopwatch.StartStopMsg:
 		return handleStopwatchMsg(m, typed)
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return handleKeyMsg(m, typed)
 	case ProgressMsg:
 		return handleProgressMsg(m, typed)
