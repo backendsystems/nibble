@@ -10,20 +10,13 @@ import (
 var fieldHeights = [fieldCount]int{3, 3, 4}
 
 func (m *Model) HandleMouse(msg tea.Msg, maxWidth int) (Result, tea.Cmd) {
-	mouse, ok := mouseXY(msg)
+	mouse, ok := common.MouseXY(msg)
 	if !ok {
 		return Result{}, nil
 	}
 
-	helpLineY := m.HelpLineY
-	helpLayout := common.BuildHelpLineLayout(targetHelpItems, targetHelpPrefix, maxWidth)
-	helpLineEndY := helpLineY + helpLayout.LineCount - 1
-
-	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
-		m.HoveredHelpItem = common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
-	} else {
-		m.HoveredHelpItem = -1
-	}
+	hlr := common.HandleHelpLineMouse(mouse, msg, targetHelpItems, targetHelpPrefix, m.HelpLineY, maxWidth)
+	m.HoveredHelpItem = hlr.NewHoveredItem
 
 	if _, ok := msg.(tea.MouseReleaseMsg); !ok || mouse.Button != tea.MouseLeft {
 		return Result{}, nil
@@ -33,27 +26,23 @@ func (m *Model) HandleMouse(msg tea.Msg, maxWidth int) (Result, tea.Cmd) {
 		return Result{}, nil
 	}
 
-	// Helpline clicks
-	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
-		itemIndex := common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
-		if itemIndex >= 0 {
-			switch helpLayout.Items[itemIndex].Action {
-			case targetActionSubmit:
-				if m.InCustomPortInput {
-					return m.updateCustomPortInput(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
-				}
-				result := Result{}
-				return m.submitForm(result)
-			case targetActionHelp:
-				m.ShowHelp = true
-			case targetActionQuit:
-				if m.InCustomPortInput {
-					m.InCustomPortInput = false
-					cmd := m.focusField(fieldPortMode)
-					return Result{Cmd: cmd}, cmd
-				}
-				return Result{Quit: true}, nil
+	if hlr.Consumed {
+		switch hlr.ClickedAction {
+		case targetActionSubmit:
+			if m.InCustomPortInput {
+				return m.updateCustomPortInput(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
 			}
+			result := Result{}
+			return m.submitForm(result)
+		case targetActionHelp:
+			m.ShowHelp = true
+		case targetActionQuit:
+			if m.InCustomPortInput {
+				m.InCustomPortInput = false
+				cmd := m.focusField(fieldPortMode)
+				return Result{Cmd: cmd}, cmd
+			}
+			return Result{Quit: true}, nil
 		}
 		return Result{}, nil
 	}
@@ -93,12 +82,4 @@ func (m *Model) HandleMouse(msg tea.Msg, maxWidth int) (Result, tea.Cmd) {
 	}
 
 	return Result{}, nil
-}
-
-// mouseXY extracts Mouse data from any mouse message type.
-func mouseXY(msg tea.Msg) (tea.Mouse, bool) {
-	if mm, ok := msg.(tea.MouseMsg); ok {
-		return mm.Mouse(), true
-	}
-	return tea.Mouse{}, false
 }

@@ -36,21 +36,13 @@ func hostAtViewportLine(m Model, viewportLine int) int {
 func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 	result := UpdateResult{Model: m}
 
-	mouse, ok := mouseXY(msg)
+	mouse, ok := common.MouseXY(msg)
 	if !ok {
 		return result
 	}
 
-	helpLineY := m.HelpLineY
-	helpLayout := common.BuildHelpLineLayout(detailHelpItems, detailHelpPrefix, m.WindowW)
-	helpLineEndY := helpLineY + helpLayout.LineCount - 1
-
-	// Update hover state for all mouse events
-	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
-		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
-	} else {
-		result.Model.HoveredHelpItem = -1
-	}
+	hlr := common.HandleHelpLineMouse(mouse, msg, detailHelpItems, detailHelpPrefix, m.HelpLineY, m.WindowW)
+	result.Model.HoveredHelpItem = hlr.NewHoveredItem
 
 	switch msg.(type) {
 	case tea.MouseWheelMsg:
@@ -87,25 +79,21 @@ func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 		return result
 	}
 
-	// Check if clicking on helpline item
-	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
-		itemIndex := common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
-		if itemIndex >= 0 {
-			switch Action(helpLayout.Items[itemIndex].Action) {
-			case ActionScanAllPorts:
-				if len(m.History.ScanResults.Hosts) > 0 {
-					result.ScanAllPorts = true
-					result.SelectedHostIP = m.History.ScanResults.Hosts[m.Cursor].IP
-					result.ScanHistoryPath = m.HistoryPath
-					result.Model.ScanningHostIdx = m.Cursor
-				}
-			case ActionQuit:
-				result.Quit = true
-			case ActionHelp:
-				result.Model.ShowHelp = true
+	if hlr.Consumed {
+		switch Action(hlr.ClickedAction) {
+		case ActionScanAllPorts:
+			if len(m.History.ScanResults.Hosts) > 0 {
+				result.ScanAllPorts = true
+				result.SelectedHostIP = m.History.ScanResults.Hosts[m.Cursor].IP
+				result.ScanHistoryPath = m.HistoryPath
+				result.Model.ScanningHostIdx = m.Cursor
 			}
-			return result
+		case ActionQuit:
+			result.Quit = true
+		case ActionHelp:
+			result.Model.ShowHelp = true
 		}
+		return result
 	}
 
 	titleLines := m.HelpLineY - m.Viewport.Height()
@@ -135,12 +123,4 @@ func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 	result.Model.Cursor = index
 	result.Model = result.Model.ScrollToSelected()
 	return result
-}
-
-// mouseXY extracts Mouse data from any mouse message type.
-func mouseXY(msg tea.Msg) (tea.Mouse, bool) {
-	if mm, ok := msg.(tea.MouseMsg); ok {
-		return mm.Mouse(), true
-	}
-	return tea.Mouse{}, false
 }

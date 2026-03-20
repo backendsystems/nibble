@@ -33,7 +33,7 @@ func CardIndexAt(x, y, yOffset, cardsPerRow, totalCards int) int {
 func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 	result := UpdateResult{Model: m}
 
-	mouse, ok := mouseXY(msg)
+	mouse, ok := common.MouseXY(msg)
 	if !ok {
 		return result
 	}
@@ -47,16 +47,8 @@ func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 		return result
 	}
 
-	helpLineY := m.HelpLineY
-	helpLayout := common.BuildHelpLineLayout(mainHelpItems, helpPrefixText, m.Viewport.Width())
-	helpLineEndY := helpLineY + helpLayout.LineCount - 1
-
-	// Handle hover for helpline items (update hover state for all mouse events)
-	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
-		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
-	} else {
-		result.Model.HoveredHelpItem = -1
-	}
+	hlr := common.HandleHelpLineMouse(mouse, msg, mainHelpItems, helpPrefixText, m.HelpLineY, m.Viewport.Width())
+	result.Model.HoveredHelpItem = hlr.NewHoveredItem
 
 	switch msg.(type) {
 	case tea.MouseWheelMsg:
@@ -77,24 +69,20 @@ func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 		return result
 	}
 
-	// Check if clicking on helpline item
-	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
-		itemIndex := common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
-		if itemIndex >= 0 {
-			switch Action(helpLayout.Items[itemIndex].Action) {
-			case ActionOpenPorts:
-				result.OpenPorts = true
-			case ActionOpenHistory:
-				result.OpenHistory = true
-			case ActionOpenTarget:
-				result.OpenTarget = true
-			case ActionOpenHelp:
-				result.Model.ShowHelp = true
-			case ActionQuit:
-				result.Quit = true
-			}
-			return result
+	if hlr.Consumed {
+		switch Action(hlr.ClickedAction) {
+		case ActionOpenPorts:
+			result.OpenPorts = true
+		case ActionOpenHistory:
+			result.OpenHistory = true
+		case ActionOpenTarget:
+			result.OpenTarget = true
+		case ActionOpenHelp:
+			result.Model.ShowHelp = true
+		case ActionQuit:
+			result.Quit = true
 		}
+		return result
 	}
 
 	totalCards := len(m.Interfaces) + 2
@@ -109,12 +97,4 @@ func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 	}
 	result.Model.Cursor = index
 	return result
-}
-
-// mouseXY extracts Mouse data from any mouse message type.
-func mouseXY(msg tea.Msg) (tea.Mouse, bool) {
-	if mm, ok := msg.(tea.MouseMsg); ok {
-		return mm.Mouse(), true
-	}
-	return tea.Mouse{}, false
 }

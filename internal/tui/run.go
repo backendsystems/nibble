@@ -30,7 +30,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 	targetPack := targetCfg.Mode
 
 	initialWindowW, initialWindowH, initialCardsPerRow := initialLayoutMetrics()
-	portsModel, _ := portsview.Prepare(portsview.Model{
+	portsModel, _ := portsview.Init(portsview.Model{
 		PortPack:        cfg.Mode,
 		CustomPorts:     cfg.Custom,
 		NetworkScan:     networkScanner,

@@ -11,21 +11,13 @@ import (
 func (m Model) HandleMouse(msg tea.Msg, maxWidth int) UpdateResult {
 	result := UpdateResult{Model: m}
 
-	mouse, ok := mouseXY(msg)
+	mouse, ok := common.MouseXY(msg)
 	if !ok {
 		return result
 	}
 
-	helpLineY := m.HelpLineY
-	helpLayout := common.BuildHelpLineLayout(historyHelpItems, historyHelpPrefix, maxWidth)
-	helpLineEndY := helpLineY + helpLayout.LineCount - 1
-
-	// Update hover state for all mouse events
-	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
-		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
-	} else {
-		result.Model.HoveredHelpItem = -1
-	}
+	hlr := common.HandleHelpLineMouse(mouse, msg, historyHelpItems, historyHelpPrefix, m.HelpLineY, maxWidth)
+	result.Model.HoveredHelpItem = hlr.NewHoveredItem
 
 	switch msg.(type) {
 	case tea.MouseWheelMsg:
@@ -69,20 +61,16 @@ func (m Model) HandleMouse(msg tea.Msg, maxWidth int) UpdateResult {
 		return result
 	}
 
-	// Check if clicking on helpline item
-	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
-		itemIndex := common.GetHelpItemAt(helpLayout, mouse.X, mouse.Y-helpLineY)
-		if itemIndex >= 0 {
-			switch Action(helpLayout.Items[itemIndex].Action) {
-			case ActionDelete:
-				result = handleListKey(result, ActionDelete)
-			case ActionHelp:
-				result.Model.ShowHelp = true
-			case ActionQuit:
-				result.Quit = true
-			}
-			return result
+	if hlr.Consumed {
+		switch Action(hlr.ClickedAction) {
+		case ActionDelete:
+			result = handleListKey(result, ActionDelete)
+		case ActionHelp:
+			result.Model.ShowHelp = true
+		case ActionQuit:
+			result.Quit = true
 		}
+		return result
 	}
 
 	titleRows := m.HelpLineY - m.Viewport.Height() - 1
@@ -111,12 +99,4 @@ func (m Model) HandleMouse(msg tea.Msg, maxWidth int) UpdateResult {
 	result.Model = updateViewportContent(result.Model)
 	saveViewState(result.Model.FlatList, result.Model.Cursor)
 	return result
-}
-
-// mouseXY extracts Mouse data from any mouse message type.
-func mouseXY(msg tea.Msg) (tea.Mouse, bool) {
-	if mm, ok := msg.(tea.MouseMsg); ok {
-		return mm.Mouse(), true
-	}
-	return tea.Mouse{}, false
 }

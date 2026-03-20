@@ -75,7 +75,7 @@ func ToggleMode(portPack string) string {
 	return "default"
 }
 
-func Prepare(m Model) (Model, tea.Cmd) {
+func Init(m Model) (Model, tea.Cmd) {
 	// Seed PortInput from the model's persistent fields on first call.
 	if !m.PortInput.Ready {
 		m.PortInput.Value = m.CustomPorts
@@ -171,7 +171,7 @@ func (m Model) Update(msg tea.Msg) Result {
 	if action.ToggleMode {
 		result.Model.PortPack = ToggleMode(result.Model.PortPack)
 		var cmd tea.Cmd
-		result.Model, cmd = Prepare(result.Model)
+		result.Model, cmd = Init(result.Model)
 		result.Cmd = cmd
 		return result
 	}
@@ -188,7 +188,7 @@ func (m Model) Update(msg tea.Msg) Result {
 
 	if !result.Model.PortInput.Ready {
 		var cmd tea.Cmd
-		result.Model, cmd = Prepare(result.Model)
+		result.Model, cmd = Init(result.Model)
 		result.Cmd = cmd
 	}
 
