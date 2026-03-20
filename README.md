@@ -71,7 +71,7 @@ sudo dnf install nibble
 ```bash
 yay -S nibble-bin
 ```
-<img src="https://cdn.simpleicons.org/homebrew/FBB040" width="16" style="vertical-align:middle"> brew:
+<img src="https://cdn.simpleicons.org/homebrew/FBB040" width="16" style="vertical-align:middle"> brew (macOS):
 ```bash
 brew install backendsystems/tap/nibble
 ```
