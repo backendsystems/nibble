@@ -5,8 +5,8 @@ import (
 	"net"
 	"os"
 
+	"charm.land/lipgloss/v2"
 	scannerconfig "github.com/backendsystems/nibble/internal/scanner/config"
-	"github.com/backendsystems/nibble/internal/tui/views/common"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
@@ -51,7 +51,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 		ports: portsModel,
 		scan: scanview.Model{
 			NetworkScan: networkScanner,
-			Progress:    progress.New(progress.WithColors(common.Color.Selection)),
+			Progress:    progress.New(progress.WithColors(lipgloss.Yellow), progress.WithFillCharacters(progress.DefaultFullCharFullBlock, ' ')),
 		},
 		target: targetview.Model{
 			NetworkScan:     networkScanner,
