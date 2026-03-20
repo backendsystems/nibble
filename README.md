@@ -57,6 +57,10 @@ Hold `Shift` and drag to select text.
 Pre-built binaries for Linux, macOS and Windows (amd64/arm64) are available on the [Releases](https://github.com/backendsystems/nibble/releases) page.
 
 #### Package managers:
+<img src="https://cdn.simpleicons.org/go/00ADD8" width="16" style="vertical-align:middle"> go (https://go.dev/dl/):
+```bash
+go install github.com/backendsystems/nibble@latest
+```
 <img src="https://cdn.simpleicons.org/ubuntu/E95420" width="16" style="vertical-align:middle"> apt (Ubuntu, Mint, Pop!_OS, Zorin, Elementary, KDE Neon):
 ```bash
 sudo add-apt-repository ppa:backendsystems/ppa
@@ -78,10 +82,6 @@ brew install backendsystems/tap/nibble
 🪟 winget (Windows):
 ```bash
 winget install backendsystems.nibble
-```
-<img src="https://cdn.simpleicons.org/go/00ADD8" width="16" style="vertical-align:middle"> go:
-```bash
-go install github.com/backendsystems/nibble@latest
 ```
 <img src="https://cdn.simpleicons.org/python/3776AB" width="16" style="vertical-align:middle"> pip:
 ```bash
