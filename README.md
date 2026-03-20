@@ -2,9 +2,11 @@
 [![PPA](https://img.shields.io/badge/Ubuntu-PPA-E95420?logo=ubuntu&logoColor=white)](https://launchpad.net/~backendsystems/+archive/ubuntu/ppa)
 [![COPR](https://img.shields.io/badge/Fedora-COPR-51A2DA?logo=fedora&logoColor=white)](https://copr.fedorainfracloud.org/coprs/g/backendsystems/nibble)
 [![AUR](https://img.shields.io/aur/version/nibble-bin)](https://aur.archlinux.org/packages/nibble-bin)
+[![brew](https://img.shields.io/badge/brew-tap-FBB040?logo=homebrew&logoColor=white)](https://github.com/backendsystems/homebrew-tap)
+[![winget](https://img.shields.io/badge/winget-package-0078D4?logo=windows&logoColor=white)](https://winget.run/pkg/backendsystems/nibble)
 [![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](https://www.npmjs.com/package/@backendsystems/nibble)
 [![PyPI](https://img.shields.io/pypi/v/nibble-cli)](https://pypi.org/project/nibble-cli/)
-[![Go Reference](https://pkg.go.dev/badge/github.com/backendsystems/nibble.svg)](https://pkg.go.dev/github.com/backendsystems/nibble)
+[![Go Report Card](https://goreportcard.com/badge/github.com/backendsystems/nibble)](https://goreportcard.com/report/github.com/backendsystems/nibble)
 
 <div align="center">
   <img src="assets/nibble.svg" alt="Nibble" width="200">
@@ -72,6 +74,10 @@ yay -S nibble-bin
 <img src="https://cdn.simpleicons.org/homebrew/FBB040" width="16" style="vertical-align:middle"> brew:
 ```bash
 brew install backendsystems/tap/nibble
+```
+🪟 winget (Windows):
+```bash
+winget install backendsystems.nibble
 ```
 <img src="https://cdn.simpleicons.org/go/00ADD8" width="16" style="vertical-align:middle"> go:
 ```bash

@@ -88,6 +88,14 @@ jobs:
     secrets:
       PPA_GPG_PRIVATE_KEY: ${{ secrets.PPA_GPG_PRIVATE_KEY }}
 
+  winget:
+    if: ${{ github.event_name == 'push' }}
+    needs: release
+    uses: ./.github/workflows/winget-publish.yml
+    with:
+      version: ${{ github.ref_name }}
+    secrets: inherit
+
   copr:
     if: ${{ github.event_name == 'push' }}
     needs: release

@@ -1,0 +1,46 @@
+name: Winget Publish
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version to release (e.g. v0.1.0)
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (e.g. v0.1.0)
+        required: true
+        type: string
+
+jobs:
+  winget:
+    runs-on: windows-latest
+    steps:
+      - name: Set version
+        id: version
+        shell: bash
+        run: |
+          VERSION="${{ inputs.version }}"
+          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == v* ]]; then
+            echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update and submit manifest
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $tag = "${{ steps.version.outputs.tag }}"
+          $repo = "${{ github.repository }}"
+          $base = "https://github.com/$repo/releases/download/$tag"
+
+          iwr https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          .\wingetcreate.exe update backendsystems.nibble `
+            --version $version `
+            --urls "$base/nibble_windows_amd64.zip" "$base/nibble_windows_arm64.zip" `
+            --submit `
+            --token ${{ secrets.WINGET_TOKEN }}
