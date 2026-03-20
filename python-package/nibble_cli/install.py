@@ -3,6 +3,7 @@ import platform
 import shutil
 import tarfile
 import tempfile
+import zipfile
 from importlib import metadata
 from pathlib import Path
 
@@ -63,20 +64,31 @@ def release_base(version):
 def extract_binary(archive_path, dest_binary):
     wanted = {binary_name(), PROJECT, f"{PROJECT}.exe"}
 
-    with tarfile.open(archive_path, "r:*") as tf:
-        member = next(
-            (m for m in tf.getmembers() if m.isfile() and Path(m.name).name in wanted),
-            None,
-        )
-        if member is None:
-            raise RuntimeError("binary not found inside release archive")
+    if str(archive_path).endswith(".zip"):
+        with zipfile.ZipFile(archive_path) as zf:
+            entry = next(
+                (e for e in zf.namelist() if Path(e).name in wanted),
+                None,
+            )
+            if entry is None:
+                raise RuntimeError("binary not found inside release archive")
+            with zf.open(entry) as src, open(dest_binary, "wb") as dst:
+                shutil.copyfileobj(src, dst)
+    else:
+        with tarfile.open(archive_path, "r:*") as tf:
+            member = next(
+                (m for m in tf.getmembers() if m.isfile() and Path(m.name).name in wanted),
+                None,
+            )
+            if member is None:
+                raise RuntimeError("binary not found inside release archive")
 
-        src = tf.extractfile(member)
-        if src is None:
-            raise RuntimeError("failed to extract binary from release archive")
+            src = tf.extractfile(member)
+            if src is None:
+                raise RuntimeError("failed to extract binary from release archive")
 
-        with src, open(dest_binary, "wb") as dst:
-            shutil.copyfileobj(src, dst)
+            with src, open(dest_binary, "wb") as dst:
+                shutil.copyfileobj(src, dst)
 
 
 def ensure_installed():
@@ -90,7 +102,8 @@ def ensure_installed():
     if binary_path.exists():
         return binary_path
 
-    asset = f"{PROJECT}_{os_name}_{arch}.tar.gz"
+    ext = ".zip" if os.name == "nt" else ".tar.gz"
+    asset = f"{PROJECT}_{os_name}_{arch}{ext}"
     release_url = release_base(version)
     archive_url = f"{release_url}/{asset}"
 

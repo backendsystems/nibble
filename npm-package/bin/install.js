@@ -26,8 +26,10 @@ if (!osPlatform || !osArch) {
 
 const tag = `v${version}`;
 const base = `https://github.com/${OWNER}/${PROJECT}/releases/download/${tag}`;
-const archiveName = `${PROJECT}_${osPlatform}_${osArch}.tar.gz`;
-const binName = process.platform === 'win32' ? `${PROJECT}.exe` : PROJECT;
+const isWindows = process.platform === 'win32';
+const archiveExt = isWindows ? '.zip' : '.tar.gz';
+const archiveName = `${PROJECT}_${osPlatform}_${osArch}${archiveExt}`;
+const binName = isWindows ? `${PROJECT}.exe` : PROJECT;
 const destPath = path.join(VENDOR_DIR, binName);
 
 function download(url, dest) {
@@ -107,7 +109,12 @@ async function main() {
       throw new Error(`Checksum mismatch for ${archiveName}: expected ${expectedHash}, got ${actualHash}`);
     }
 
-    await tar.extract({ file: tmpFile, cwd: VENDOR_DIR, filter: p => p === binName });
+    if (isWindows) {
+      const { execSync } = require('child_process');
+      execSync(`tar -xf "${tmpFile}" -C "${VENDOR_DIR}" ${binName}`);
+    } else {
+      await tar.extract({ file: tmpFile, cwd: VENDOR_DIR, filter: p => p === binName });
+    }
     console.log(`Installed ${PROJECT} to ${destPath}`);
   } finally {
     try { fs.unlinkSync(tmpFile); } catch {}
