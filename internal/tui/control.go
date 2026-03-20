@@ -50,8 +50,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if resize, ok := msg.(tea.WindowSizeMsg); ok {
 		m.windowW = resize.Width
 		m.windowH = resize.Height
-		m.main.CardsPerRow = mainview.CardsPerRow(resize.Width)
 		m.main.WindowH = resize.Height
+		m.main.CardsPerRow = mainview.CardsPerRow(scanViewWidth(resize.Width))
 		m.main = m.main.UpdateViewport(scanViewWidth(resize.Width))
 		m.scan = m.scan.SetViewportSize(scanViewWidth(m.windowW), m.windowH)
 		m.history.WindowW = resize.Width

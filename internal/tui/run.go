@@ -93,7 +93,7 @@ func initialLayoutMetrics() (windowW int, windowH int, cardsPerRow int) {
 		return 0, 0, cardsPerRow
 	}
 
-	return width, height, mainview.CardsPerRow(width)
+	return width, height, mainview.CardsPerRow(scanViewWidth(width))
 }
 
 func resolvePortsConfig(cfg ports.Config) ([]int, error) {
