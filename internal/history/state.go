@@ -10,8 +10,8 @@ import (
 
 // ViewState represents the last selected item in the history view
 type ViewState struct {
-	SelectedPath  string         `json:"selected_path"`   // Path to currently selected item
-	DetailCursors map[string]int `json:"detail_cursors"`  // Remembered host cursor per scan file path
+	SelectedPath  string         `json:"selected_path"`  // Path to currently selected item
+	DetailCursors map[string]int `json:"detail_cursors"` // Remembered host cursor per scan file path
 }
 
 var lastSavedPath = ""

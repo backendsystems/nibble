@@ -14,7 +14,7 @@ func renderMainHelpOverlay(view string, maxWidth int) string {
 		Title:     "Custom Target",
 		ViewWidth: maxWidth,
 		Content: []string{
-			"This mode is usefull to scan all ports on a single host, or to scan a custom list of ports on a subnet",
+			"This mode is useful to scan all ports on a single host, or to scan a custom list of ports on a subnet",
 			"",
 			"• tab/↑↓: move through options",
 			"• ←/→: select interface ip",

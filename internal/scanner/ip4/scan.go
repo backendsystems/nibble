@@ -3,8 +3,8 @@ package ip4
 import (
 	"net"
 
-	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/ports"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
 // Scanner performs real network scanning (TCP connect, ARP, banner grab)

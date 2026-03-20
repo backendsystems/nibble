@@ -3,8 +3,8 @@ package targetview
 import (
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -115,4 +115,3 @@ func (m *Model) focusField(field int) tea.Cmd {
 	}
 	return cmd
 }
-

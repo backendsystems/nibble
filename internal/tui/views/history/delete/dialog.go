@@ -95,7 +95,6 @@ func (d Dialog) Render(view string, viewWidth, viewHeight int) string {
 	)
 }
 
-
 // HistoryDeleteDialog is a delete confirmation dialog specific to the history view
 type HistoryDeleteDialog struct {
 	Target      any    // *historyview.TreeNode

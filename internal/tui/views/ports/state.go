@@ -6,11 +6,11 @@ import (
 )
 
 type Model struct {
-	ShowHelp     bool
-	PortPack     string
-	CustomPorts  string
-	CustomCursor int
-	PortInput    common.CustomPortInput
+	ShowHelp        bool
+	PortPack        string
+	CustomPorts     string
+	CustomCursor    int
+	PortInput       common.CustomPortInput
 	ErrorMsg        string
 	NetworkScan     shared.Scanner
 	HoveredHelpItem int // -1 means no hover, otherwise index of helpline item

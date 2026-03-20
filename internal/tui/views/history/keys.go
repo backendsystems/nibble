@@ -137,14 +137,14 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 					savedCursor = result.Model.DetailCursors[node.Path]
 				}
 				details := detailsview.Model{
-					History:      *node.ScanData,
-					HistoryPath:  node.Path,
-					NodePath:     node.Path,
-					NodeName:     node.Name,
-					NodeItemType: "scan",
-					WindowW:      result.Model.WindowW,
-					WindowH:      result.Model.WindowH,
-					Cursor:       savedCursor,
+					History:         *node.ScanData,
+					HistoryPath:     node.Path,
+					NodePath:        node.Path,
+					NodeName:        node.Name,
+					NodeItemType:    "scan",
+					WindowW:         result.Model.WindowW,
+					WindowH:         result.Model.WindowH,
+					Cursor:          savedCursor,
 					HoveredHelpItem: -1,
 				}
 				details = details.SetViewportSize(result.Model.WindowW, result.Model.WindowH)

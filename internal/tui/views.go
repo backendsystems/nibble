@@ -162,8 +162,8 @@ func (m *model) handleViewMain(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	if result.OpenHistory {
 		m.history = historyview.Model{
-			WindowW: m.windowW,
-			WindowH: m.windowH,
+			WindowW:         m.windowW,
+			WindowH:         m.windowH,
 			HoveredHelpItem: -1,
 		}
 		m.active = viewHistory

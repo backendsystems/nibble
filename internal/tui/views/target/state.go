@@ -31,7 +31,7 @@ const (
 
 type Model struct {
 	ShowHelp          bool
-	FocusedField      int            // 0=IP, 1=CIDR, 2=PortMode
+	FocusedField      int // 0=IP, 1=CIDR, 2=PortMode
 	IPTextInput       textinput.Model
 	CIDRTextInput     textinput.Model
 	IPInput           string
