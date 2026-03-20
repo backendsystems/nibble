@@ -59,7 +59,7 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 		oldListHeight := result.Model.Viewport.Height()
 		result.Model = result.Model.SetListViewportSize(result.Model.WindowW, result.Model.WindowH)
 		if oldListHeight != result.Model.Viewport.Height() {
-			result.Model.Viewport.SetYOffset(0)
+			result.Model.ListOffset = 0
 		}
 		result.Model.Details.WindowW = result.Model.WindowW
 		result.Model.Details.WindowH = result.Model.WindowH

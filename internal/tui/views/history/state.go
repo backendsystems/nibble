@@ -35,6 +35,7 @@ type Model struct {
 	DeleteDialog    *delete.HistoryDeleteDialog // nil when not shown
 	ErrorMsg        string
 	Viewport        viewport.Model
+	ListOffset      int
 	WindowW         int
 	WindowH         int
 	Details         detailsview.Model

@@ -28,7 +28,7 @@ func renderList(m *Model, maxWidth int) string {
 		m.FlatList,
 		m.Tree,
 		m.Cursor,
-		m.Viewport.YOffset(),
+		m.ListOffset,
 		m.Viewport.Height(),
 	))
 	b.WriteString("\n")

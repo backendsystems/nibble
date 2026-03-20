@@ -51,8 +51,8 @@ func toggleFolder(result UpdateResult, node *historytree.Node) UpdateResult {
 	}
 	if h := result.Model.Viewport.Height(); h > 0 {
 		wantOffset := min(lastChildIdx-h+1, result.Model.Cursor)
-		if wantOffset > result.Model.Viewport.YOffset() {
-			result.Model.Viewport.SetYOffset(wantOffset)
+		if wantOffset > result.Model.ListOffset {
+			result.Model.ListOffset = wantOffset
 		}
 	}
 	// Kick off background host/port count loads for newly visible scans

@@ -40,26 +40,24 @@ func (m Model) SetListViewportSize(windowWidth, windowHeight int) Model {
 func updateViewportContent(m Model) Model {
 	m = m.SetListViewportSize(m.WindowW, m.WindowH)
 
-	// Keep cursor visible by scrolling viewport
-	cursorLine := m.Cursor
-	if cursorLine < m.Viewport.YOffset() {
-		// Cursor is above viewport, scroll up to show it
-		m.Viewport.SetYOffset(cursorLine)
-	} else if cursorLine >= m.Viewport.YOffset()+m.Viewport.Height() {
-		// Cursor is below viewport, scroll down to keep it visible
-		m.Viewport.SetYOffset(cursorLine - m.Viewport.Height() + 1)
-	}
-
-	if m.Viewport.YOffset() < 0 {
-		m.Viewport.SetYOffset(0)
-	}
-
 	maxOffset := len(m.FlatList) - m.Viewport.Height()
 	if maxOffset < 0 {
 		maxOffset = 0
 	}
-	if m.Viewport.YOffset() > maxOffset {
-		m.Viewport.SetYOffset(maxOffset)
+
+	// Keep cursor visible by scrolling viewport
+	cursorLine := m.Cursor
+	if cursorLine < m.ListOffset {
+		m.ListOffset = cursorLine
+	} else if cursorLine >= m.ListOffset+m.Viewport.Height() {
+		m.ListOffset = cursorLine - m.Viewport.Height() + 1
+	}
+
+	if m.ListOffset < 0 {
+		m.ListOffset = 0
+	}
+	if m.ListOffset > maxOffset {
+		m.ListOffset = maxOffset
 	}
 
 	return m

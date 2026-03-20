@@ -82,7 +82,7 @@ func (m Model) HandleMouse(msg tea.Msg, maxWidth int) UpdateResult {
 		return result
 	}
 
-	index := m.Viewport.YOffset() + contentY
+	index := m.ListOffset + contentY
 	if index < 0 || index >= len(m.FlatList) {
 		return result
 	}
