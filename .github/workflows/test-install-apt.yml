@@ -1,0 +1,32 @@
+name: Test Install via apt (PPA)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to test (for example v1.2.3)
+        required: true
+        type: string
+
+jobs:
+  apt-install:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runs_on: ubuntu-24.04
+          - arch: arm64
+            runs_on: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runs_on }}
+    steps:
+      - name: Install nibble with apt
+        run: |
+          TAG='${{ inputs.tag }}'
+          VERSION="${TAG#v}"
+          sudo add-apt-repository -y ppa:backendsystems/ppa
+          sudo apt-get update
+          sudo apt-get install -y nibble="${VERSION}-1~$(lsb_release -cs)"
+
+      - name: Smoke test nibble startup
+        uses: backendsystems/nibble/.github/actions/smoke-test@main

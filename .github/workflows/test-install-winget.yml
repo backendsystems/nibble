@@ -1,0 +1,31 @@
+name: Test Install via winget
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to test (for example v1.2.3)
+        required: true
+        type: string
+
+jobs:
+  winget-install:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runs_on: windows-2022
+          - arch: arm64
+            runs_on: windows-11-arm
+    runs-on: ${{ matrix.runs_on }}
+    steps:
+      - name: Install nibble with winget
+        shell: pwsh
+        run: |
+          $tag = "${{ inputs.tag }}"
+          $version = $tag -replace '^v', ''
+          winget install backendsystems.nibble --version $version --accept-source-agreements --accept-package-agreements
+
+      - name: Smoke test nibble startup
+        uses: backendsystems/nibble/.github/actions/smoke-test@main
