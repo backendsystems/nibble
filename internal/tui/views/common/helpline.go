@@ -3,7 +3,8 @@ package common
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 // HelpItem represents a clickable help item with its rendered position.
@@ -111,4 +112,38 @@ func GetHelpItemAt(layout *HelpLineLayout, x, relY int) int {
 		}
 	}
 	return -1
+}
+
+// HelpMouseResult describes what happened when a mouse event hit the help line.
+type HelpMouseResult struct {
+	NewHoveredItem int  // updated hover index (-1 = none)
+	ClickedAction  int  // action value of clicked item, or -1 if no click
+	Consumed       bool // true if the click was in the help-line area
+}
+
+// HandleHelpLineMouse processes a mouse event against the help line area.
+// It updates hover state on any mouse event and detects left-clicks on items.
+func HandleHelpLineMouse(mouse tea.Mouse, msg tea.Msg, items []HelpItem, prefix string, helpLineY, maxWidth int) HelpMouseResult {
+	layout := BuildHelpLineLayout(items, prefix, maxWidth)
+	helpLineEndY := helpLineY + layout.LineCount - 1
+
+	result := HelpMouseResult{NewHoveredItem: -1, ClickedAction: -1}
+
+	// Hover detection on all mouse events
+	if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
+		result.NewHoveredItem = GetHelpItemAt(layout, mouse.X, mouse.Y-helpLineY)
+	}
+
+	// Click detection: only on left MouseReleaseMsg
+	if _, ok := msg.(tea.MouseReleaseMsg); ok && mouse.Button == tea.MouseLeft {
+		if helpLineY > 0 && mouse.Y >= helpLineY && mouse.Y <= helpLineEndY {
+			idx := GetHelpItemAt(layout, mouse.X, mouse.Y-helpLineY)
+			if idx >= 0 {
+				result.ClickedAction = layout.Items[idx].Action
+				result.Consumed = true
+			}
+		}
+	}
+
+	return result
 }

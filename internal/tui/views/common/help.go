@@ -3,7 +3,7 @@ package common
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 // HelpConfig defines the content and appearance of a help overlay
@@ -39,7 +39,7 @@ func RenderHelpOverlay(view string, config HelpConfig) string {
 		}
 	}
 
-	titleRow := renderHelpTitle(config.Title, width-2) // -2 for padding
+	titleRow := renderHelpTitle(config.Title, width-4) // -4 for border (2) + padding (2)
 	content := append([]string{titleRow}, config.Content...)
 	helpContent := strings.Join(content, "\n")
 
@@ -58,6 +58,10 @@ func RenderHelpOverlay(view string, config HelpConfig) string {
 func renderHelpTitle(title string, width int) string {
 	styledTitle := HelpTitleStyle.Render(title)
 	icon := HelpIconStyle.Render("❓")
-	spacer := strings.Repeat(" ", width-lipgloss.Width(styledTitle)-lipgloss.Width(icon))
+	gap := width - lipgloss.Width(styledTitle) - lipgloss.Width(icon)
+	if gap < 1 {
+		gap = 1
+	}
+	spacer := strings.Repeat(" ", gap)
 	return styledTitle + spacer + icon
 }

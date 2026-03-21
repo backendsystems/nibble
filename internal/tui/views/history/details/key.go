@@ -1,10 +1,10 @@
 package historydetailview
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/history"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	deletepkg "github.com/backendsystems/nibble/internal/tui/views/history/delete"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 func HandleKey(key string) Action {
@@ -26,7 +26,7 @@ func HandleKey(key string) Action {
 	}
 }
 
-func handleKeyMsg(m Model, key tea.KeyMsg) UpdateResult {
+func handleKeyMsg(m Model, key tea.KeyPressMsg) UpdateResult {
 	result := UpdateResult{Model: m}
 
 	// Handle delete dialog in detail view

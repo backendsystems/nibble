@@ -3,8 +3,8 @@ package tree
 import (
 	"context"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/history"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 // CancelLoads cancels any in-flight background count loads for a node and its children.

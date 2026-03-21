@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
 )
 
 var (
@@ -70,8 +70,8 @@ var (
 
 // FormTheme returns a custom huh theme using only ANSI 16 colors so it
 // follows the user's terminal theme.
-func FormTheme() *huh.Theme {
-	theme := huh.ThemeBase()
+func FormTheme() *huh.Styles {
+	theme := huh.ThemeBase(true)
 
 	// Focused state
 	theme.Focused.Base = theme.Focused.Base.BorderForeground(Color.Help)

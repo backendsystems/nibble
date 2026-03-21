@@ -3,10 +3,10 @@ package scanview
 import (
 	"net"
 
+	"charm.land/bubbles/v2/progress"
+	"charm.land/bubbles/v2/stopwatch"
+	"charm.land/bubbles/v2/viewport"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
-	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/bubbles/stopwatch"
-	"github.com/charmbracelet/bubbles/viewport"
 )
 
 type Model struct {

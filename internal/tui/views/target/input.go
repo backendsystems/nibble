@@ -6,7 +6,7 @@ import (
 	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // updateCustomPortInput handles all messages when InCustomPortInput == true
@@ -14,13 +14,13 @@ func (m *Model) updateCustomPortInput(msg tea.Msg) (Result, tea.Cmd) {
 	result := Result{}
 
 	// Non-key: blink tick forwarded to textinput
-	if _, ok := msg.(tea.KeyMsg); !ok {
+	if _, ok := msg.(tea.KeyPressMsg); !ok {
 		var cmd tea.Cmd
 		m.PortInput, cmd = m.PortInput.UpdateNonKey(msg)
 		return result, cmd
 	}
 
-	keyMsg := msg.(tea.KeyMsg)
+	keyMsg := msg.(tea.KeyPressMsg)
 
 	if m.ShowHelp {
 		// Accept any key to close help overlay
@@ -57,7 +57,7 @@ func (m *Model) updateCustomPortInput(msg tea.Msg) (Result, tea.Cmd) {
 	}
 
 	// All other keys: delegate to PortInput
-	portAction := common.PortInputActionFromKey(keyMsg.String(), keyMsg.Type == tea.KeyRunes)
+	portAction := common.PortInputActionFromKey(keyMsg.String(), keyMsg.Text != "")
 	var cmd tea.Cmd
 	m.PortInput, cmd = m.PortInput.HandleKey(portAction, keyMsg)
 	return result, cmd

@@ -1,10 +1,10 @@
 package historydetailview
 
 import (
+	"charm.land/bubbles/v2/stopwatch"
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/history"
 	detailsscan "github.com/backendsystems/nibble/internal/tui/views/history/details/scan"
-	"github.com/charmbracelet/bubbles/stopwatch"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Action int
@@ -38,7 +38,7 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 	result := UpdateResult{Model: m}
 
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return handleKeyMsg(m, msg)
 	case stopwatch.TickMsg, stopwatch.StartStopMsg:
 		var tickCmd tea.Cmd

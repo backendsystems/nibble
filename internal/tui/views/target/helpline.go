@@ -2,7 +2,7 @@ package targetview
 
 import "github.com/backendsystems/nibble/internal/tui/views/common"
 
-const targetHelpPrefix = ""
+const targetHelpPrefix = "↑/↓/←/→"
 
 const (
 	targetActionSubmit = iota

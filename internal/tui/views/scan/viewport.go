@@ -3,8 +3,8 @@ package scanview
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/viewport"
+	"charm.land/lipgloss/v2"
 )
 
 const (
@@ -34,11 +34,11 @@ func (m Model) SetViewportSize(maxWidth, windowHeight int) Model {
 		height = minResultsHeight
 	}
 
-	if m.Results.Width == 0 || m.Results.Height == 0 {
-		m.Results = viewport.New(width, height)
+	if m.Results.Width() == 0 || m.Results.Height() == 0 {
+		m.Results = viewport.New(viewport.WithWidth(width), viewport.WithHeight(height))
 	} else {
-		m.Results.Width = width
-		m.Results.Height = height
+		m.Results.SetWidth(width)
+		m.Results.SetHeight(height)
 	}
 
 	if m.Results.PastBottom() {

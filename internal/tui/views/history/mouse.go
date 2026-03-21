@@ -1,49 +1,49 @@
 package historyview
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 	"github.com/backendsystems/nibble/internal/tui/views/history/delete"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 // HandleMouse processes mouse events for the history list view.
 // Scroll wheel scrolls the list; clicking a row selects or toggles it.
-func (m Model) HandleMouse(msg tea.MouseMsg, maxWidth int) UpdateResult {
+func (m Model) HandleMouse(msg tea.Msg, maxWidth int) UpdateResult {
 	result := UpdateResult{Model: m}
 
-	helpLineY := m.HelpLineY
-	helpLayout := common.BuildHelpLineLayout(historyHelpItems, historyHelpPrefix, maxWidth)
-	helpLineEndY := helpLineY + helpLayout.LineCount - 1
-
-	// Update hover state for all mouse events
-	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
-		result.Model.HoveredHelpItem = common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
-	} else {
-		result.Model.HoveredHelpItem = -1
-	}
-
-	switch msg.Button {
-	case tea.MouseButtonWheelUp:
-		if result.Model.Cursor > 0 {
-			result.Model.Cursor--
-			result.Model = updateViewportContent(result.Model)
-			saveViewState(result.Model.FlatList, result.Model.Cursor)
-		}
-		return result
-	case tea.MouseButtonWheelDown:
-		if result.Model.Cursor < len(result.Model.FlatList)-1 {
-			result.Model.Cursor++
-			result.Model = updateViewportContent(result.Model)
-			saveViewState(result.Model.FlatList, result.Model.Cursor)
-		}
+	mouse, ok := common.MouseXY(msg)
+	if !ok {
 		return result
 	}
 
-	if msg.Button != tea.MouseButtonLeft || msg.Action != tea.MouseActionRelease {
+	hlr := common.HandleHelpLineMouse(mouse, msg, historyHelpItems, historyHelpPrefix, m.HelpLineY, maxWidth)
+	result.Model.HoveredHelpItem = hlr.NewHoveredItem
+
+	switch msg.(type) {
+	case tea.MouseWheelMsg:
+		if mouse.Button == tea.MouseWheelUp {
+			if result.Model.Cursor > 0 {
+				result.Model.Cursor--
+				result.Model = updateViewportContent(result.Model)
+				saveViewState(result.Model.FlatList, result.Model.Cursor)
+			}
+			return result
+		}
+		if mouse.Button == tea.MouseWheelDown {
+			if result.Model.Cursor < len(result.Model.FlatList)-1 {
+				result.Model.Cursor++
+				result.Model = updateViewportContent(result.Model)
+				saveViewState(result.Model.FlatList, result.Model.Cursor)
+			}
+			return result
+		}
+	}
+
+	if _, ok := msg.(tea.MouseReleaseMsg); !ok || mouse.Button != tea.MouseLeft {
 		return result
 	}
 	if m.DeleteDialog != nil {
-		handled, action := result.Model.DeleteDialog.HandleMouseClick(msg.X, msg.Y, m.WindowW, m.WindowH)
+		handled, action := result.Model.DeleteDialog.HandleMouseClick(mouse.X, mouse.Y, m.WindowW, m.WindowH)
 		if !handled {
 			return result
 		}
@@ -61,32 +61,28 @@ func (m Model) HandleMouse(msg tea.MouseMsg, maxWidth int) UpdateResult {
 		return result
 	}
 
-	// Check if clicking on helpline item
-	if helpLineY > 0 && msg.Y >= helpLineY && msg.Y <= helpLineEndY {
-		itemIndex := common.GetHelpItemAt(helpLayout, msg.X, msg.Y-helpLineY)
-		if itemIndex >= 0 {
-			switch Action(helpLayout.Items[itemIndex].Action) {
-			case ActionDelete:
-				result = handleListKey(result, ActionDelete)
-			case ActionHelp:
-				result.Model.ShowHelp = true
-			case ActionQuit:
-				result.Quit = true
-			}
-			return result
+	if hlr.Consumed {
+		switch Action(hlr.ClickedAction) {
+		case ActionDelete:
+			result = handleListKey(result, ActionDelete)
+		case ActionHelp:
+			result.Model.ShowHelp = true
+		case ActionQuit:
+			result.Quit = true
 		}
+		return result
 	}
 
-	titleRows := m.HelpLineY - m.Viewport.Height - 1
+	titleRows := m.HelpLineY - m.Viewport.Height() - 1
 	if titleRows < 2 {
 		titleRows = 2
 	}
-	contentY := msg.Y - titleRows
+	contentY := mouse.Y - titleRows
 	if contentY < 0 {
 		return result
 	}
 
-	index := m.Viewport.YOffset + contentY
+	index := m.ListOffset + contentY
 	if index < 0 || index >= len(m.FlatList) {
 		return result
 	}

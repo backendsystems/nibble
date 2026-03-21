@@ -1,9 +1,9 @@
 package historyview
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/history"
 	historytree "github.com/backendsystems/nibble/internal/tui/views/history/tree"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Action int

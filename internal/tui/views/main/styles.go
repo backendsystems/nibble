@@ -5,10 +5,9 @@ import (
 )
 
 const (
-	cardWidth    = 20
-	cardPaddingX = 1
-
-	cardTotalWidth = cardWidth + 2*cardPaddingX
+	cardWidth      = 20
+	cardPaddingX   = 1
+	cardTotalWidth = cardWidth // lipgloss v2 Width includes padding+border
 )
 
 func CardsPerRow(windowWidth int) int {

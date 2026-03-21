@@ -28,8 +28,8 @@ func renderList(m *Model, maxWidth int) string {
 		m.FlatList,
 		m.Tree,
 		m.Cursor,
-		m.Viewport.YOffset,
-		m.Viewport.Height,
+		m.ListOffset,
+		m.Viewport.Height(),
 	))
 	b.WriteString("\n")
 	m.HelpLineY = strings.Count(b.String(), "\n")

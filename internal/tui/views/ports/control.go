@@ -8,7 +8,7 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 type Action struct {
@@ -75,7 +75,7 @@ func ToggleMode(portPack string) string {
 	return "default"
 }
 
-func Prepare(m Model) (Model, tea.Cmd) {
+func Init(m Model) (Model, tea.Cmd) {
 	// Seed PortInput from the model's persistent fields on first call.
 	if !m.PortInput.Ready {
 		m.PortInput.Value = m.CustomPorts
@@ -139,7 +139,7 @@ func (m Model) Update(msg tea.Msg) Result {
 	result := Result{Model: m}
 
 	// Let the textinput cursor blink/update on non-key messages.
-	if _, ok := msg.(tea.KeyMsg); !ok {
+	if _, ok := msg.(tea.KeyPressMsg); !ok {
 		if result.Model.PortPack == "custom" && result.Model.PortInput.Ready {
 			var cmd tea.Cmd
 			result.Model.PortInput, cmd = result.Model.PortInput.UpdateNonKey(msg)
@@ -150,7 +150,7 @@ func (m Model) Update(msg tea.Msg) Result {
 		return result
 	}
 
-	keyMsg := msg.(tea.KeyMsg)
+	keyMsg := msg.(tea.KeyPressMsg)
 	action := HandleKey(result.Model.ShowHelp, keyMsg.String())
 	if action.Quit {
 		result.Quit = true
@@ -171,7 +171,7 @@ func (m Model) Update(msg tea.Msg) Result {
 	if action.ToggleMode {
 		result.Model.PortPack = ToggleMode(result.Model.PortPack)
 		var cmd tea.Cmd
-		result.Model, cmd = Prepare(result.Model)
+		result.Model, cmd = Init(result.Model)
 		result.Cmd = cmd
 		return result
 	}
@@ -188,12 +188,12 @@ func (m Model) Update(msg tea.Msg) Result {
 
 	if !result.Model.PortInput.Ready {
 		var cmd tea.Cmd
-		result.Model, cmd = Prepare(result.Model)
+		result.Model, cmd = Init(result.Model)
 		result.Cmd = cmd
 	}
 
 	// Delegate all editing operations to PortInput.
-	portAction := common.PortInputActionFromKey(keyMsg.String(), keyMsg.Type == tea.KeyRunes)
+	portAction := common.PortInputActionFromKey(keyMsg.String(), keyMsg.Text != "")
 	var cmd tea.Cmd
 	result.Model.PortInput, cmd = result.Model.PortInput.HandleKey(portAction, keyMsg)
 	result.Model.CustomPorts = result.Model.PortInput.Value

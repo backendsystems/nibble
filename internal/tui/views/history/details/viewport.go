@@ -1,16 +1,16 @@
 package historydetailview
 
 import (
-	"github.com/charmbracelet/bubbles/viewport"
+	"charm.land/bubbles/v2/viewport"
 )
 
 // SetViewportSize initializes or updates the viewport with proper dimensions
 // accounting for title, metadata, and help text that appear outside the viewport
 func (m Model) SetViewportSize(windowWidth, windowHeight int) Model {
-	m.Viewport = viewport.New(windowWidth, 0)
+	m.Viewport = viewport.New(viewport.WithWidth(windowWidth))
 
 	if windowWidth > 0 {
-		m.Viewport.Width = windowWidth
+		m.Viewport.SetWidth(windowWidth)
 	}
 
 	if windowHeight > 0 {
@@ -24,7 +24,7 @@ func (m Model) SetViewportSize(windowWidth, windowHeight int) Model {
 			// Minimum 3 lines for viewport content
 			viewportHeight = 3
 		}
-		m.Viewport.Height = viewportHeight
+		m.Viewport.SetHeight(viewportHeight)
 	}
 
 	return m
@@ -36,7 +36,7 @@ func (m Model) UpdateViewportContent(content string, windowWidth, windowHeight, 
 	m.Viewport.SetContent(content)
 
 	if windowWidth > 0 {
-		m.Viewport.Width = windowWidth
+		m.Viewport.SetWidth(windowWidth)
 	}
 
 	if windowHeight > 0 {
@@ -44,7 +44,7 @@ func (m Model) UpdateViewportContent(content string, windowWidth, windowHeight, 
 		if viewportHeight < 3 {
 			viewportHeight = 3
 		}
-		m.Viewport.Height = viewportHeight
+		m.Viewport.SetHeight(viewportHeight)
 	}
 
 	return m

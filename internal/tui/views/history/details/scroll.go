@@ -14,16 +14,16 @@ func (m Model) ScrollToSelected() Model {
 		scanStart := hostLineOffsetFor(m, m.ScanningHostIdx)
 		scanHost := hosts[m.ScanningHostIdx]
 		scanEnd := scanStart + len(scanHost.Ports)
-		bottom := m.Viewport.YOffset + m.Viewport.Height - 1
+		bottom := m.Viewport.YOffset() + m.Viewport.Height() - 1
 		if scanEnd > bottom {
-			offset := scanEnd - m.Viewport.Height + 1
+			offset := scanEnd - m.Viewport.Height() + 1
 			if offset > scanStart {
 				offset = scanStart
 			}
-			m.Viewport.YOffset = offset
+			m.Viewport.SetYOffset(offset)
 		}
-		if m.Viewport.YOffset < 0 {
-			m.Viewport.YOffset = 0
+		if m.Viewport.YOffset() < 0 {
+			m.Viewport.SetYOffset(0)
 		}
 		return m
 	}
@@ -36,31 +36,31 @@ func (m Model) ScrollToSelected() Model {
 	selectedHost := hosts[m.Cursor]
 	hostEnd := hostStart + len(selectedHost.Ports)
 
-	top := m.Viewport.YOffset
-	bottom := m.Viewport.YOffset + m.Viewport.Height - 1
+	top := m.Viewport.YOffset()
+	bottom := m.Viewport.YOffset() + m.Viewport.Height() - 1
 
 	if hostStart < top {
 		// Host IP is above viewport: scroll up to show it.
 		// For the first host, scroll to 0 so the metadata lines above are visible too.
 		if m.Cursor == 0 {
-			m.Viewport.YOffset = 0
+			m.Viewport.SetYOffset(0)
 		} else {
-			m.Viewport.YOffset = hostStart
+			m.Viewport.SetYOffset(hostStart)
 		}
 	} else if hostStart > bottom {
 		// Host IP is below viewport: scroll down just enough to show host + ports.
-		offset := hostEnd - m.Viewport.Height + 1
+		offset := hostEnd - m.Viewport.Height() + 1
 		if offset > hostStart {
 			offset = hostStart
 		}
 		if offset < 0 {
 			offset = 0
 		}
-		m.Viewport.YOffset = offset
+		m.Viewport.SetYOffset(offset)
 	} else if hostEnd > bottom {
 		// Host IP is visible but ports extend below: scroll down to show ports,
 		// but never push the host IP itself off the top.
-		offset := hostEnd - m.Viewport.Height + 1
+		offset := hostEnd - m.Viewport.Height() + 1
 		if offset > hostStart {
 			offset = hostStart
 		}
@@ -68,11 +68,11 @@ func (m Model) ScrollToSelected() Model {
 			// Already showing as much as possible without losing the host line.
 			return m
 		}
-		m.Viewport.YOffset = offset
+		m.Viewport.SetYOffset(offset)
 	}
 
-	if m.Viewport.YOffset < 0 {
-		m.Viewport.YOffset = 0
+	if m.Viewport.YOffset() < 0 {
+		m.Viewport.SetYOffset(0)
 	}
 
 	return m

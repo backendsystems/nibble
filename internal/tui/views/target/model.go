@@ -1,11 +1,11 @@
 package targetview
 
 import (
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // CycleInterfaceIP cycles to the next or previous interface IP
@@ -76,9 +76,13 @@ func newFieldInput(charLimit int) textinput.Model {
 	ti := textinput.New()
 	ti.CharLimit = charLimit
 	ti.Prompt = "> "
-	ti.PromptStyle = lipgloss.NewStyle().Foreground(common.Color.Selection)
-	ti.Cursor.Style = lipgloss.NewStyle().Foreground(common.Color.Selection)
-	ti.TextStyle = lipgloss.NewStyle().Foreground(common.Color.Info)
+	styles := textinput.DefaultDarkStyles()
+	styles.Focused.Prompt = lipgloss.NewStyle().Foreground(common.Color.Selection)
+	styles.Blurred.Prompt = lipgloss.NewStyle().Foreground(common.Color.Selection)
+	styles.Focused.Text = lipgloss.NewStyle().Foreground(common.Color.Info)
+	styles.Blurred.Text = lipgloss.NewStyle().Foreground(common.Color.Info)
+	styles.Cursor.Color = common.Color.Selection
+	ti.SetStyles(styles)
 	return ti
 }
 

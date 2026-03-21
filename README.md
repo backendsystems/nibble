@@ -1,11 +1,11 @@
 [![GitHub Stars](https://img.shields.io/github/stars/backendsystems/nibble?style=social)](https://github.com/backendsystems/nibble)
-[![PPA](https://img.shields.io/badge/Ubuntu-PPA-E95420?logo=ubuntu&logoColor=white)](https://launchpad.net/~backendsystems/+archive/ubuntu/ppa)
-[![COPR](https://img.shields.io/badge/Fedora-COPR-51A2DA?logo=fedora&logoColor=white)](https://copr.fedorainfracloud.org/coprs/g/backendsystems/nibble)
-[![AUR](https://img.shields.io/aur/version/nibble-bin)](https://aur.archlinux.org/packages/nibble-bin)
-[![brew](https://img.shields.io/badge/brew-tap-FBB040?logo=homebrew&logoColor=white)](https://github.com/backendsystems/homebrew-tap)
-[![winget](https://img.shields.io/badge/winget-package-0078D4?logo=windows&logoColor=white)](https://winget.run/pkg/backendsystems/nibble)
-[![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](https://www.npmjs.com/package/@backendsystems/nibble)
-[![PyPI](https://img.shields.io/pypi/v/nibble-cli)](https://pypi.org/project/nibble-cli/)
+[![PPA](https://img.shields.io/badge/Ubuntu-PPA-E95420?logo=ubuntu&logoColor=white)](#install-apt)
+[![COPR](https://img.shields.io/badge/Fedora-COPR-51A2DA?logo=fedora&logoColor=white)](#install-dnf)
+[![AUR](https://img.shields.io/aur/version/nibble-bin)](#install-aur)
+[![brew](https://img.shields.io/badge/brew-tap-FBB040?logo=homebrew&logoColor=white)](#install-brew)
+[![winget](https://img.shields.io/badge/winget-package-0078D4?logo=windows&logoColor=white)](#install-winget)
+[![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](#install-npm)
+[![PyPI](https://img.shields.io/pypi/v/nibble-cli)](#install-pip)
 [![Go Report Card](https://goreportcard.com/badge/github.com/backendsystems/nibble)](https://goreportcard.com/report/github.com/backendsystems/nibble)
 
 <div align="center">
@@ -57,36 +57,44 @@ Hold `Shift` and drag to select text.
 Pre-built binaries for Linux, macOS and Windows (amd64/arm64) are available on the [Releases](https://github.com/backendsystems/nibble/releases) page.
 
 #### Package managers:
+<a id="install-go"></a>
 <img src="https://cdn.simpleicons.org/go/00ADD8" width="16" style="vertical-align:middle"> go (https://go.dev/):
 ```bash
 go install github.com/backendsystems/nibble@latest
 ```
+<a id="install-apt"></a>
 <img src="https://cdn.simpleicons.org/ubuntu/E95420" width="16" style="vertical-align:middle"> apt (Ubuntu, Mint, Pop!_OS, Zorin, Elementary, KDE Neon):
 ```bash
 sudo add-apt-repository ppa:backendsystems/ppa
 sudo apt install nibble
 ```
+<a id="install-dnf"></a>
 <img src="https://cdn.simpleicons.org/fedora/51A2DA" width="16" style="vertical-align:middle"> dnf (Fedora, RHEL, CentOS Stream):
 ```bash
 sudo dnf copr enable @backendsystems/nibble
 sudo dnf install nibble
 ```
+<a id="install-aur"></a>
 <img src="https://cdn.simpleicons.org/archlinux/1793D1" width="16" style="vertical-align:middle"> aur (Arch Linux):
 ```bash
 yay -S nibble-bin
 ```
+<a id="install-brew"></a>
 <img src="https://cdn.simpleicons.org/homebrew/FBB040" width="16" style="vertical-align:middle"> brew (macOS):
 ```bash
 brew install backendsystems/tap/nibble
 ```
+<a id="install-winget"></a>
 🪟 winget (Windows):
 ```bash
 winget install backendsystems.nibble
 ```
+<a id="install-pip"></a>
 <img src="https://cdn.simpleicons.org/python/3776AB" width="16" style="vertical-align:middle"> pip:
 ```bash
 pipx install nibble-cli
 ```
+<a id="install-npm"></a>
 <img src="https://cdn.simpleicons.org/npm/CB3837" width="16" style="vertical-align:middle"> npm:
 ```bash
 npm install -g @backendsystems/nibble

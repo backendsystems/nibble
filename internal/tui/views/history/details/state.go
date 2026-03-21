@@ -1,11 +1,11 @@
 package historydetailview
 
 import (
+	"charm.land/bubbles/v2/stopwatch"
+	"charm.land/bubbles/v2/viewport"
 	"github.com/backendsystems/nibble/internal/history"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	deletepkg "github.com/backendsystems/nibble/internal/tui/views/history/delete"
-	"github.com/charmbracelet/bubbles/stopwatch"
-	"github.com/charmbracelet/bubbles/viewport"
 )
 
 type Model struct {

@@ -1,9 +1,9 @@
 package scan
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/history"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type ProgressMsg struct {

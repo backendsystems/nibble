@@ -1,27 +1,29 @@
 package common
 
 import (
-	"github.com/backendsystems/nibble/internal/tui/views/common/colors"
-	"github.com/charmbracelet/lipgloss"
+	"image/color"
+
+	"charm.land/lipgloss/v2"
 )
 
-// Color holds the global color palette used throughout the application
+// Color holds the global color palette used throughout the application.
+// Uses lipgloss v2 ANSI 4-bit constants so colors adapt to any terminal theme.
 var Color = struct {
-	Black     lipgloss.Color
-	Selection lipgloss.Color
-	Help      lipgloss.Color
-	Info      lipgloss.Color
-	Error     lipgloss.Color
-	Scanned   lipgloss.Color
-	Scanning  lipgloss.Color
-	Folder    lipgloss.Color
+	Black     color.Color
+	Selection color.Color
+	Help      color.Color
+	Info      color.Color
+	Error     color.Color
+	Scanned   color.Color
+	Scanning  color.Color
+	Folder    color.Color
 }{
-	Black:     colors.Black,
-	Selection: colors.Yellow,
-	Help:      colors.BrightBlack,
-	Info:      colors.White,
-	Error:     colors.Red,
-	Scanned:   colors.Green,
-	Scanning:  colors.Cyan,
-	Folder:    colors.Blue,
+	Black:     lipgloss.Black,
+	Selection: lipgloss.Yellow,
+	Help:      lipgloss.BrightBlack,
+	Info:      lipgloss.White,
+	Error:     lipgloss.Red,
+	Scanned:   lipgloss.Green,
+	Scanning:  lipgloss.Cyan,
+	Folder:    lipgloss.Blue,
 }

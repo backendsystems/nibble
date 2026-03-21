@@ -5,9 +5,9 @@ import (
 	"net"
 	"strings"
 
+	"charm.land/lipgloss/v2"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	"github.com/charmbracelet/lipgloss"
 )
 
 var (
@@ -35,7 +35,7 @@ func Render(m *Model, maxWidth int) string {
 		input := m.PortInput.Input
 		available := maxWidth - len("custom:  ")
 		if available > 0 {
-			input.Width = available
+			input.SetWidth(available)
 		}
 		b.WriteString(common.HighlightStyle.Render("custom:  ") + input.View() + "\n")
 

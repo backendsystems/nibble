@@ -1,9 +1,9 @@
 package targetview
 
 import (
+	"charm.land/bubbles/v2/textinput"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	"github.com/charmbracelet/bubbles/textinput"
 )
 
 // InterfaceInfo holds a network interface name and its IPv4 address.

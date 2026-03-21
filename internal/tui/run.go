@@ -5,18 +5,18 @@ import (
 	"net"
 	"os"
 
+	"charm.land/lipgloss/v2"
 	scannerconfig "github.com/backendsystems/nibble/internal/scanner/config"
-	"github.com/backendsystems/nibble/internal/tui/views/common"
 	mainview "github.com/backendsystems/nibble/internal/tui/views/main"
 
 	portsview "github.com/backendsystems/nibble/internal/tui/views/ports"
 	scanview "github.com/backendsystems/nibble/internal/tui/views/scan"
 	targetview "github.com/backendsystems/nibble/internal/tui/views/target"
 
+	"charm.land/bubbles/v2/progress"
+	tea "charm.land/bubbletea/v2"
 	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
-	"github.com/charmbracelet/bubbles/progress"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/term"
 )
 
@@ -30,7 +30,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 	targetPack := targetCfg.Mode
 
 	initialWindowW, initialWindowH, initialCardsPerRow := initialLayoutMetrics()
-	portsModel, _ := portsview.Prepare(portsview.Model{
+	portsModel, _ := portsview.Init(portsview.Model{
 		PortPack:        cfg.Mode,
 		CustomPorts:     cfg.Custom,
 		NetworkScan:     networkScanner,
@@ -51,7 +51,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 		ports: portsModel,
 		scan: scanview.Model{
 			NetworkScan: networkScanner,
-			Progress:    progress.New(progress.WithSolidFill(string(common.Color.Selection))),
+			Progress:    progress.New(progress.WithColors(lipgloss.Yellow), progress.WithFillCharacters(progress.DefaultFullCharFullBlock, ' ')),
 		},
 		target: targetview.Model{
 			NetworkScan:     networkScanner,
@@ -63,7 +63,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 	}
 	initialModel.scan = initialModel.scan.SetViewportSize(scanViewWidth(initialModel.windowW), initialModel.windowH)
 
-	prog := tea.NewProgram(&initialModel, tea.WithMouseAllMotion())
+	prog := tea.NewProgram(&initialModel)
 	finalModel, err := prog.Run()
 	if err != nil {
 		return err
@@ -93,7 +93,7 @@ func initialLayoutMetrics() (windowW int, windowH int, cardsPerRow int) {
 		return 0, 0, cardsPerRow
 	}
 
-	return width, height, mainview.CardsPerRow(width)
+	return width, height, mainview.CardsPerRow(scanViewWidth(width))
 }
 
 func resolvePortsConfig(cfg ports.Config) ([]int, error) {

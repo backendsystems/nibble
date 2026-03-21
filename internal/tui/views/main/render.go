@@ -5,8 +5,8 @@ import (
 	"net"
 	"strings"
 
+	"charm.land/lipgloss/v2"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
-	"github.com/charmbracelet/lipgloss"
 )
 
 func Render(m *Model, maxWidth int) string {
@@ -79,15 +79,15 @@ func (m Model) UpdateViewport(maxWidth int) Model {
 	if vpHeight < 1 {
 		vpHeight = 1
 	}
-	m.Viewport.Width = maxWidth
-	m.Viewport.Height = vpHeight
+	m.Viewport.SetWidth(maxWidth)
+	m.Viewport.SetHeight(vpHeight)
 	return m
 }
 
 // ScrollToSelected adjusts the viewport offset so the selected card row is
 // visible. Call this only when the cursor has moved, not on every update.
 func (m Model) ScrollToSelected() Model {
-	vpHeight := m.Viewport.Height
+	vpHeight := m.Viewport.Height()
 	if vpHeight < 1 {
 		vpHeight = 1
 	}
@@ -102,7 +102,7 @@ func (m Model) ScrollToSelected() Model {
 	rowTop := selectedRow * cardHeight
 	rowBottom := rowTop + cardHeight - 1
 
-	offset := m.Viewport.YOffset
+	offset := m.Viewport.YOffset()
 	if rowTop < offset {
 		offset = rowTop
 	} else if rowBottom >= offset+vpHeight {
@@ -114,7 +114,7 @@ func (m Model) ScrollToSelected() Model {
 	if offset < 0 {
 		offset = 0
 	}
-	m.Viewport.YOffset = offset
+	m.Viewport.SetYOffset(offset)
 	return m
 }
 
