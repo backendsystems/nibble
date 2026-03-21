@@ -2,7 +2,7 @@
 [![PPA](https://img.shields.io/badge/Ubuntu-PPA-E95420?logo=ubuntu&logoColor=white)](#install-apt)
 [![COPR](https://img.shields.io/badge/Fedora-COPR-51A2DA?logo=fedora&logoColor=white)](#install-dnf)
 [![AUR](https://img.shields.io/aur/version/nibble-bin)](#install-aur)
-[![brew](https://img.shields.io/badge/brew-tap-FBB040?logo=homebrew&logoColor=white)](#install-brew)
+[![brew](https://img.shields.io/badge/brew-tap-FBB040)](#install-brew)
 [![winget](https://img.shields.io/badge/winget-package-0078D4?logo=windows&logoColor=white)](#install-winget)
 [![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](#install-npm)
 [![PyPI](https://img.shields.io/pypi/v/nibble-cli)](#install-pip)
