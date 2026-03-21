@@ -2,13 +2,19 @@ name: Test Install via npm -g
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Publish npm Package"]
-    types: [completed]
+    inputs:
+      tag:
+        description: Release tag to test (for example v1.2.3)
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 jobs:
   npm-global-install:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       fail-fast: false
       matrix:
@@ -40,7 +46,9 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Install nibble with npm -g
-        run: npm install -g @backendsystems/nibble
+        run: |
+          TAG='${{ inputs.tag }}'
+          npm install -g "@backendsystems/nibble@${TAG#v}"
 
       - name: Show installed npm package version
         run: npm list -g @backendsystems/nibble --depth=0

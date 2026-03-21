@@ -62,3 +62,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm publish
+
+  test-install:
+    needs: publish-npm
+    uses: ./.github/workflows/test-install-npm-global.yml
+    with:
+      tag: ${{ github.event.inputs.tag }}

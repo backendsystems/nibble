@@ -45,3 +45,9 @@ jobs:
         with:
           packages-dir: python-package/dist/
           skip-existing: true
+
+  test-install:
+    needs: publish-pypi
+    uses: ./.github/workflows/test-install-pipx.yml
+    with:
+      tag: ${{ github.event.inputs.tag }}

@@ -2,13 +2,19 @@ name: Test Install via pipx
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Publish PyPI Package"]
-    types: [completed]
+    inputs:
+      tag:
+        description: Release tag to test (for example v1.2.3)
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 jobs:
   pipx-install:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       fail-fast: false
       matrix:
@@ -43,7 +49,9 @@ jobs:
         run: python -m pip install --upgrade pipx
 
       - name: Install nibble with pipx
-        run: pipx install nibble-cli
+        run: |
+          TAG='${{ inputs.tag }}'
+          pipx install "nibble-cli==${TAG#v}"
 
       - name: Smoke test nibble startup
         uses: backendsystems/nibble/.github/actions/smoke-test@main
