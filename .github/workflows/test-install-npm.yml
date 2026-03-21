@@ -1,4 +1,4 @@
-name: Test Install via npm -g
+name: Test Install via npm
 
 on:
   workflow_dispatch:
@@ -14,7 +14,20 @@ on:
         type: string
 
 jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - name: Strip v prefix
+        id: v
+        shell: bash
+        run: |
+          TAG='${{ inputs.tag }}'
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
   npm-global-install:
+    needs: resolve-version
     strategy:
       fail-fast: false
       matrix:
@@ -46,9 +59,7 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Install nibble with npm -g
-        run: |
-          TAG='${{ inputs.tag }}'
-          npm install -g "@backendsystems/nibble@${TAG#v}"
+        run: npm install -g @backendsystems/nibble@${{ needs.resolve-version.outputs.version }}
 
       - name: Show installed npm package version
         run: npm list -g @backendsystems/nibble --depth=0

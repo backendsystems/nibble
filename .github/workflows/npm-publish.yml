@@ -65,6 +65,6 @@ jobs:
 
   test-install:
     needs: publish-npm
-    uses: ./.github/workflows/test-install-npm-global.yml
+    uses: ./.github/workflows/test-install-npm.yml
     with:
       tag: ${{ github.event.inputs.tag }}

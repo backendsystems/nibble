@@ -14,7 +14,20 @@ on:
         type: string
 
 jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - name: Strip v prefix
+        id: v
+        shell: bash
+        run: |
+          TAG='${{ inputs.tag }}'
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
   pipx-install:
+    needs: resolve-version
     strategy:
       fail-fast: false
       matrix:
@@ -49,9 +62,7 @@ jobs:
         run: python -m pip install --upgrade pipx
 
       - name: Install nibble with pipx
-        run: |
-          TAG='${{ inputs.tag }}'
-          pipx install "nibble-cli==${TAG#v}"
+        run: pipx install nibble-cli==${{ needs.resolve-version.outputs.version }}
 
       - name: Smoke test nibble startup
         uses: backendsystems/nibble/.github/actions/smoke-test@main
