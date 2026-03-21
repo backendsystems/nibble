@@ -1,7 +1,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/backendsystems/nibble?style=social)](https://github.com/backendsystems/nibble)
 [![PPA](https://img.shields.io/badge/Ubuntu-PPA-E95420?logo=ubuntu&logoColor=white)](#install-apt)
 [![COPR](https://img.shields.io/badge/Fedora-COPR-51A2DA?logo=fedora&logoColor=white)](#install-dnf)
-[![AUR](https://img.shields.io/aur/version/nibble-bin)](#install-aur)
+[![AUR](https://img.shields.io/aur/version/nibble-bin?logo=archlinux&logoColor=white)](#install-aur)
 [![brew](https://img.shields.io/badge/brew-tap-FBB040?logo=homebrew&logoColor=white)](#install-brew)
 [![winget](https://img.shields.io/badge/winget-package-0078D4?logo=windows&logoColor=white)](#install-winget)
 [![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](#install-npm)
