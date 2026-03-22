@@ -114,4 +114,4 @@ Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea)
 
 This project is MIT licensed. See the [LICENSE](LICENSE) file for details.
 
-Note: The "nibble" name and branding assets are excluded from this license, see the sepperate [LICENSE](assets/LICENSE) for branding terms.
+Note: The "nibble" name and branding assets are excluded from this license, see the separate [LICENSE](assets/LICENSE) for branding terms.
