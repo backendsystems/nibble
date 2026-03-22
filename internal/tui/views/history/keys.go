@@ -86,7 +86,9 @@ func executeDelete(result UpdateResult) UpdateResult {
 	nextPath := ""
 	if node, ok := result.Model.DeleteDialog.Target.(*TreeNode); ok {
 		nextPath = nextSelectionPathAfterDelete(result.Model.FlatList, node.Path)
-		performDeleteSync(node)
+		if failedPath := performDeleteSync(node); failedPath != "" {
+			result.Model.ErrorMsg = "failed to delete: " + failedPath
+		}
 	}
 	tree, _ := historytree.Build()
 	if nextPath != "" {
@@ -139,9 +141,6 @@ func handleListKey(result UpdateResult, action Action) UpdateResult {
 				details := detailsview.Model{
 					History:         *node.ScanData,
 					HistoryPath:     node.Path,
-					NodePath:        node.Path,
-					NodeName:        node.Name,
-					NodeItemType:    "scan",
 					WindowW:         result.Model.WindowW,
 					WindowH:         result.Model.WindowH,
 					Cursor:          savedCursor,

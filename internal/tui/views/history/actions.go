@@ -61,23 +61,29 @@ func HandleKey(key string, inDeleteDialog bool) Action {
 
 // performDeleteSync recursively deletes a node and all its children,
 // and cleans up any saved detail cursors for the removed scan files.
-func performDeleteSync(node *TreeNode) {
+// Returns the path of the first file that failed to delete, or empty on success.
+func performDeleteSync(node *TreeNode) string {
 	if node == nil {
-		return
+		return ""
 	}
 
 	var scanPaths []string
+	failedPath := ""
 
 	switch node.Type {
 	case NodeScan:
 		if node.Path != "" {
-			history.Delete(node.Path)
+			if err := history.Delete(node.Path); err != nil && failedPath == "" {
+				failedPath = node.Path
+			}
 			scanPaths = append(scanPaths, node.Path)
 		}
 	case NodeNetwork:
 		for _, child := range node.Children {
 			if child != nil && child.Path != "" {
-				history.Delete(child.Path)
+				if err := history.Delete(child.Path); err != nil && failedPath == "" {
+					failedPath = child.Path
+				}
 				scanPaths = append(scanPaths, child.Path)
 			}
 		}
@@ -85,7 +91,9 @@ func performDeleteSync(node *TreeNode) {
 		for _, netNode := range node.Children {
 			for _, scanNode := range netNode.Children {
 				if scanNode != nil && scanNode.Path != "" {
-					history.Delete(scanNode.Path)
+					if err := history.Delete(scanNode.Path); err != nil && failedPath == "" {
+						failedPath = scanNode.Path
+					}
 					scanPaths = append(scanPaths, scanNode.Path)
 				}
 			}
@@ -93,6 +101,7 @@ func performDeleteSync(node *TreeNode) {
 	}
 
 	history.DeleteDetailCursors(scanPaths)
+	return failedPath
 }
 
 // saveViewState saves the selected item path to persistent storage

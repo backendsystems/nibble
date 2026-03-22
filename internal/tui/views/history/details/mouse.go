@@ -75,7 +75,7 @@ func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 		result.Model.ShowHelp = false
 		return result
 	}
-	if m.DeleteDialog != nil || m.Scanning {
+	if m.Scanning {
 		return result
 	}
 

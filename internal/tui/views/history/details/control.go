@@ -16,7 +16,6 @@ const (
 	ActionMoveDown
 	ActionScanAllPorts
 	ActionHelp
-	ActionDelete
 )
 
 type UpdateResult struct {
@@ -25,7 +24,6 @@ type UpdateResult struct {
 	ScanAllPorts    bool
 	SelectedHostIP  string
 	ScanHistoryPath string
-	Deleted         bool
 	Cmd             tea.Cmd
 }
 

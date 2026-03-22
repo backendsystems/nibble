@@ -161,9 +161,6 @@ func Render(m *Model, windowWidth, windowHeight int) string {
 	}
 
 	view := b.String()
-	if m.DeleteDialog != nil {
-		return m.DeleteDialog.Render(view, windowWidth, windowHeight)
-	}
 	if m.ShowHelp {
 		return renderHelpOverlay(view, windowWidth)
 	}

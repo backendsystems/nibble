@@ -73,27 +73,7 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 }
 
 func applyDetailResult(result *UpdateResult, detailResult detailsview.UpdateResult) {
-	if detailResult.Deleted {
-		history.DeleteDetailCursors([]string{detailResult.Model.HistoryPath})
-		delete(result.Model.DetailCursors, detailResult.Model.HistoryPath)
-		nextPath := nextSelectionPathAfterDelete(result.Model.FlatList, detailResult.Model.HistoryPath)
-		tree, _ := historytree.Build()
-		if nextPath != "" {
-			historytree.ExpandAncestorsForPath(tree, nextPath)
-		}
-		result.Model.Tree = tree
-		result.Model.FlatList = historytree.Flatten(tree)
-		if nextPath != "" {
-			result.Model.Cursor = historytree.FindCursorByPath(result.Model.FlatList, nextPath)
-		}
-		if result.Model.Cursor >= len(result.Model.FlatList) && len(result.Model.FlatList) > 0 {
-			result.Model.Cursor = len(result.Model.FlatList) - 1
-		}
-		result.Model.Mode = ViewList
-		result.Model.Details = detailsview.Model{HoveredHelpItem: -1}
-		saveViewState(result.Model.FlatList, result.Model.Cursor)
-		result.Cmd = tea.Batch(result.Cmd, historytree.LoadCountsForExpandedNodes(result.Model.Tree))
-	} else if detailResult.Quit {
+	if detailResult.Quit {
 		if result.Model.DetailCursors == nil {
 			result.Model.DetailCursors = make(map[string]int)
 		}

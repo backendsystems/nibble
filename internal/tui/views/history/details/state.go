@@ -5,7 +5,6 @@ import (
 	"charm.land/bubbles/v2/viewport"
 	"github.com/backendsystems/nibble/internal/history"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
-	deletepkg "github.com/backendsystems/nibble/internal/tui/views/history/delete"
 )
 
 type Model struct {
@@ -15,12 +14,8 @@ type Model struct {
 	ShowHelp        bool
 	ErrorMsg        string
 	Viewport        viewport.Model
-	DeleteDialog    *deletepkg.HistoryDeleteDialog
 	WindowW         int
 	WindowH         int
-	NodePath        string
-	NodeName        string
-	NodeItemType    string
 	HoveredHelpItem int // -1 means no hover, otherwise index of helpline item
 	HelpLineY       int // Y row where the helpline starts, set during render
 
