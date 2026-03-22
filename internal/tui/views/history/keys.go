@@ -87,7 +87,7 @@ func executeDelete(result UpdateResult) UpdateResult {
 	if node, ok := result.Model.DeleteDialog.Target.(*TreeNode); ok {
 		nextPath = nextSelectionPathAfterDelete(result.Model.FlatList, node.Path)
 		if failedPath := performDeleteSync(node); failedPath != "" {
-			result.Model.ErrorMsg = "failed to delete: " + failedPath
+			result.Model.ErrorMsg = "failed to delete:\n" + failedPath
 		}
 	}
 	tree, _ := historytree.Build()

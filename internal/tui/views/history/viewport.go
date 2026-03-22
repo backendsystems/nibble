@@ -22,8 +22,12 @@ func (m Model) SetListViewportSize(windowWidth, windowHeight int) Model {
 		// - Spacing after title (1)
 		// - Help text at bottom (1)
 		// - Buffer (1)
-		// Total reserved: 4 lines
+		// - Error message if present (2)
+		// Total reserved: 4 lines (6 with error)
 		reservedHeight := 4
+		if m.ErrorMsg != "" {
+			reservedHeight += 2
+		}
 		viewportHeight := windowHeight - reservedHeight
 		if viewportHeight < 3 {
 			// Minimum 3 lines for viewport content

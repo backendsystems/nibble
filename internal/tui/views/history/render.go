@@ -24,20 +24,26 @@ func renderList(m *Model, maxWidth int) string {
 	b.WriteString(titleStyle.Render("Scan History") + "\n\n")
 
 	// Render only the visible rows instead of a fully pre-rendered viewport buffer.
-	b.WriteString(historytree.RenderVisibleList(
+	listContent := historytree.RenderVisibleList(
 		m.FlatList,
 		m.Tree,
 		m.Cursor,
 		m.ListOffset,
 		m.Viewport.Height(),
-	))
-	b.WriteString("\n")
+	)
+	b.WriteString(listContent)
+
+	// Pad with empty lines so the helpline stays pinned to the bottom
+	renderedLines := strings.Count(listContent, "\n")
+	for i := renderedLines; i < m.Viewport.Height(); i++ {
+		b.WriteString("\n")
+	}
 	m.HelpLineY = strings.Count(b.String(), "\n")
 	layout := common.BuildHelpLineLayout(historyHelpItems, historyHelpPrefix, maxWidth)
 	b.WriteString(common.RenderHelpLine(layout, historyHelpPrefix, maxWidth, m.HoveredHelpItem))
 
 	if m.ErrorMsg != "" {
-		b.WriteString("\n\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))
+		b.WriteString("\n" + common.ErrorStyle.Render("Error: "+m.ErrorMsg))
 	}
 
 	view := b.String()
