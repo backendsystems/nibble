@@ -32,4 +32,6 @@ type Model struct {
 	Progress          progress.Model
 	Results           viewport.Model
 	Stopwatch         stopwatch.Model
+	HelpLineY         int // Y row where the helpline starts, set during render
+	HoveredHelpItem   int // -1 means no hover, otherwise index of helpline item
 }

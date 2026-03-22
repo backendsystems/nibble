@@ -13,6 +13,14 @@ import (
 )
 
 func (m *model) handleViewScan(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if common.IsMouseMsg(msg) {
+		result := m.scan.HandleMouse(msg, scanViewWidth(m.windowW))
+		m.scan = result.Model
+		if result.Quit {
+			return m, tea.Quit
+		}
+		return m, result.Cmd
+	}
 	result := m.scan.Update(msg)
 	if !result.Handled {
 		return m, nil

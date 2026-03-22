@@ -82,7 +82,7 @@ func (m *model) View() tea.View {
 	var content string
 	switch m.active {
 	case viewScan:
-		content = scanview.Render(m.scan, maxWidth)
+		content = scanview.Render(&m.scan, maxWidth)
 	case viewPorts:
 		content = portsview.Render(&m.ports, maxWidth)
 	case viewTarget:

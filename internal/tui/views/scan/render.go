@@ -8,7 +8,7 @@ import (
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
 
-func Render(m Model, maxWidth int) string {
+func Render(m *Model, maxWidth int) string {
 	var b strings.Builder
 	b.WriteString(common.TitleStyle.Render(fmt.Sprintf("Scanning: %s", m.SelectedIface.Name)))
 	b.WriteString(common.InfoTextStyle.Render(fmt.Sprintf(" - %s", m.Stopwatch.View())))
@@ -40,11 +40,9 @@ func Render(m Model, maxWidth int) string {
 		b.WriteString(common.MutedStyle.Render("Searching...") + "\n")
 	}
 	if m.Scanning {
-		scanLayout := common.BuildHelpLineLayout([]common.HelpItem{
-			{Text: "j/k or ↑/↓: scroll"},
-			{Text: "q: back"},
-		}, "", maxWidth)
-		b.WriteString("\n" + common.RenderHelpLine(scanLayout, "", maxWidth, -1))
+		m.HelpLineY = strings.Count(b.String(), "\n") + 1
+		scanLayout := common.BuildHelpLineLayout(scanHelpItems, scanHelpPrefix, maxWidth)
+		b.WriteString("\n" + common.RenderHelpLine(scanLayout, scanHelpPrefix, maxWidth, m.HoveredHelpItem))
 	}
 
 	// Clear the rest of the screen when frame height shrinks so stale lines don't linger.

@@ -50,8 +50,9 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 		},
 		ports: portsModel,
 		scan: scanview.Model{
-			NetworkScan: networkScanner,
-			Progress:    progress.New(progress.WithColors(lipgloss.Yellow), progress.WithFillCharacters(progress.DefaultFullCharFullBlock, ' ')),
+			NetworkScan:     networkScanner,
+			Progress:        progress.New(progress.WithColors(lipgloss.Yellow), progress.WithFillCharacters(progress.DefaultFullCharFullBlock, ' ')),
+			HoveredHelpItem: -1,
 		},
 		target: targetview.Model{
 			NetworkScan:     networkScanner,

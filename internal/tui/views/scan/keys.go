@@ -39,6 +39,14 @@ func handleKeyMsg(m Model, key tea.KeyPressMsg) Result {
 		return result
 	}
 
+	// Map w/s and h/l to arrow keys so the viewport scrolls with vim-style alternatives
+	switch key.String() {
+	case "w", "k":
+		key = tea.KeyPressMsg(tea.Key{Code: tea.KeyUp})
+	case "s", "j":
+		key = tea.KeyPressMsg(tea.Key{Code: tea.KeyDown})
+	}
+
 	var cmd tea.Cmd
 	result.Model.Results, cmd = m.Results.Update(key)
 	if cmd != nil {
