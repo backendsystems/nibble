@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: nibble
-Upstream-Contact: Norwegian Backend Systems <contact@backendsystems.com>
+Upstream-Contact: Norwegian Backend Systems <contact@backendsystems.no>
 Source: https://github.com/backendsystems/nibble
 
 Files: *
