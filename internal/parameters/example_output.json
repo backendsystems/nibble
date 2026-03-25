@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "scanner": "nibble",
+    "version": "0.7.1",
+    "targets": [
+      "192.168.0.0/24"
+    ],
+    "ports": "22,80,44, 8000-8100",
+    "port_count": 3,
+    "started_at": "2026-03-25T10:01:10Z",
+    "duration_ms": 1550
+  },
+  "hosts": [
+    {
+      "ip": "192.168.0.1",
+      "hardware": "Ubiquiti",
+      "ports": [
+        { "port": 22, "banner": "OpenSSH 9.2", "source": "banner" },
+        { "port": 443, "banner": "HTTPS", "source": "lookup" }
+      ]
+    },
+    {
+      "ip": "192.168.0.42",
+      "hardware": "Raspberry Pi",
+      "ports": [
+        { "port": 22, "banner": "SSH-2.0-OpenSSH_8.9p1", "source": "banner" },
+        { "port": 80, "banner": "nginx/1.24.0", "source": "banner" }
+      ]
+    }
+  ]
+}

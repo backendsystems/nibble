@@ -1,0 +1,9 @@
+# Example targets file for nibble -i
+# One target per line: IP addresses or CIDR notation
+
+192.168.1.1
+192.168.1.0/24
+10.0.0.0/16
+
+# Single host
+172.16.0.100

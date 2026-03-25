@@ -8,6 +8,7 @@ import (
 type PortInfo struct {
 	Port   int    `json:"port"`
 	Banner string `json:"banner,omitempty"`
+	Source string `json:"source,omitempty"`
 }
 
 // HostResult holds all scan info for a single host
@@ -24,6 +25,7 @@ func EnrichPorts(h *HostResult) {
 		if h.Ports[i].Banner == "" {
 			if info := services.Lookup(h.Ports[i].Port); info != nil {
 				h.Ports[i].Banner = info.Name + " - " + info.Description
+				h.Ports[i].Source = "lookup"
 			}
 		}
 	}

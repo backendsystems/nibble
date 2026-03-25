@@ -53,10 +53,14 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 				if _, ok := selectedSet[p.Port]; !ok {
 					continue
 				}
-				resolved.Ports = append(resolved.Ports, shared.PortInfo{
+				pi := shared.PortInfo{
 					Port:   p.Port,
 					Banner: p.Banner,
-				})
+				}
+				if p.Banner != "" {
+					pi.Source = "banner"
+				}
+				resolved.Ports = append(resolved.Ports, pi)
 			}
 		}
 		subnetHosts = append(subnetHosts, resolved)

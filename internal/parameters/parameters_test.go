@@ -37,10 +37,10 @@ func TestValidateAndNormalizeCIDR(t *testing.T) {
 }
 
 func TestReadTargetsFile(t *testing.T) {
-	// Test with the bundled example.txt
-	targets, err := readTargetsFile("example.txt")
+	// Test with the bundled example_input.txt
+	targets, err := readTargetsFile("example_input.txt")
 	if err != nil {
-		t.Fatalf("readTargetsFile(example.txt) error: %v", err)
+		t.Fatalf("readTargetsFile(example_input.txt) error: %v", err)
 	}
 
 	want := []string{

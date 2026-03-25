@@ -6,6 +6,7 @@ nibble.exe
 .artifacts/
 *.mp4
 *.txt
+!internal/parameters/example_input.txt
 *.csv
 post.md
 PLAN.md

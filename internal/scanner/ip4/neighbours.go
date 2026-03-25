@@ -63,7 +63,11 @@ func scanHostMac(ifaceName, ip, knownMAC string, ports []int) *shared.HostResult
 	}
 
 	for _, result := range results {
-		host.Ports = append(host.Ports, shared.PortInfo{Port: result.port, Banner: result.banner})
+		pi := shared.PortInfo{Port: result.port, Banner: result.banner}
+		if result.banner != "" {
+			pi.Source = "banner"
+		}
+		host.Ports = append(host.Ports, pi)
 	}
 
 	shared.EnrichPorts(&host)
