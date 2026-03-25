@@ -41,7 +41,7 @@ func Parse(version string) Params {
 	flag.BoolVar(&demoMode, "demo", false, "use demo interfaces")
 	flag.BoolVar(&showVersion, "v", false, "")
 	flag.BoolVar(&showVersion, "version", false, "print version and exit")
-	flag.StringVar(&input, "i", "", "scan target IP/CIDR or file with targets (e.g. 192.168.0.0/24 or targets.txt)")
+	flag.StringVar(&input, "i", "", "scan targets: IP/CIDR comma-separated or file (e.g. 192.168.0.0/24,10.0.0.0/24 or targets.txt)")
 	flag.StringVar(&portsRaw, "p", "", "custom ports to scan, used with -i (e.g. 22,80,8000-8100 or - for all)")
 	flag.StringVar(&output, "o", "", "write JSON output to file (default: stdout)")
 	flag.Parse()
@@ -56,9 +56,21 @@ func Parse(version string) Params {
 	}
 
 	if input != "" {
-		targets, err := resolveTargets(input)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "invalid -i value: %v\n", err)
+		var targets []string
+		for _, part := range strings.Split(input, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			resolved, err := resolveTargets(part)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "invalid -i value: %v\n", err)
+				os.Exit(1)
+			}
+			targets = append(targets, resolved...)
+		}
+		if len(targets) == 0 {
+			fmt.Fprintln(os.Stderr, "-i requires at least one target")
 			os.Exit(1)
 		}
 
