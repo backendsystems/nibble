@@ -13,14 +13,18 @@ import (
 )
 
 type result struct {
-	CIDR         string              `json:"cidr"`
-	PortsScanned []int               `json:"ports_scanned"`
-	Duration     float64             `json:"duration_seconds"`
-	Hosts        []shared.HostResult `json:"hosts"`
+	Targets      []targetResult `json:"targets"`
+	PortsScanned []int          `json:"ports_scanned"`
+	Duration     float64        `json:"duration_seconds"`
 }
 
-// Run performs a headless scan of the given CIDR and writes JSON to stdout.
-func Run(cidr string, customPorts []int, demoMode bool) error {
+type targetResult struct {
+	CIDR  string              `json:"cidr"`
+	Hosts []shared.HostResult `json:"hosts"`
+}
+
+// Run performs a headless scan of the given targets and writes JSON to stdout.
+func Run(targets []string, customPorts []int, demoMode bool) error {
 	s := scanner.New(demoMode)
 	if customPorts != nil {
 		config.SetPorts(s, customPorts)
@@ -31,9 +35,35 @@ func Run(cidr string, customPorts []int, demoMode bool) error {
 		scanPorts = ports.DefaultPorts()
 	}
 
-	progressChan := make(chan shared.ProgressUpdate, 256)
-
 	start := time.Now()
+
+	var results []targetResult
+	for _, cidr := range targets {
+		hosts := scanTarget(s, cidr)
+		results = append(results, targetResult{
+			CIDR:  cidr,
+			Hosts: hosts,
+		})
+	}
+
+	duration := time.Since(start).Seconds()
+
+	out := result{
+		Targets:      results,
+		PortsScanned: scanPorts,
+		Duration:     duration,
+	}
+
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(out); err != nil {
+		return fmt.Errorf("encoding JSON: %w", err)
+	}
+	return nil
+}
+
+func scanTarget(s shared.Scanner, cidr string) []shared.HostResult {
+	progressChan := make(chan shared.ProgressUpdate, 256)
 
 	go s.ScanNetwork("", cidr, progressChan)
 
@@ -58,22 +88,8 @@ func Run(cidr string, customPorts []int, demoMode bool) error {
 		hosts = append(hosts, *host)
 	}
 
-	duration := time.Since(start).Seconds()
-
-	out := result{
-		CIDR:         cidr,
-		PortsScanned: scanPorts,
-		Duration:     duration,
-		Hosts:        hosts,
+	if hosts == nil {
+		hosts = []shared.HostResult{}
 	}
-	if out.Hosts == nil {
-		out.Hosts = []shared.HostResult{}
-	}
-
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(out); err != nil {
-		return fmt.Errorf("encoding JSON: %w", err)
-	}
-	return nil
+	return hosts
 }

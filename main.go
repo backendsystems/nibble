@@ -20,7 +20,7 @@ func main() {
 		fmt.Println(version)
 
 	case parameters.ModeHeadless:
-		if err := scan.Run(p.CIDR, p.Ports, p.DemoMode); err != nil {
+		if err := scan.Run(p.Targets, p.Ports, p.DemoMode); err != nil {
 			fmt.Fprintf(os.Stderr, "scan error: %v\n", err)
 			os.Exit(1)
 		}

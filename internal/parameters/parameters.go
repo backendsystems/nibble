@@ -1,6 +1,7 @@
 package parameters
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"net"
@@ -13,16 +14,16 @@ import (
 type Mode int
 
 const (
-	ModeTUI     Mode = iota
-	ModeVersion Mode = iota
-	ModeHeadless    Mode = iota
+	ModeTUI      Mode = iota
+	ModeVersion  Mode = iota
+	ModeHeadless Mode = iota
 )
 
 type Params struct {
 	Mode     Mode
 	Version  string
 	DemoMode bool
-	CIDR     string
+	Targets  []string
 	Ports    []int
 }
 
@@ -30,14 +31,14 @@ func Parse(version string) Params {
 	var (
 		demoMode    bool
 		showVersion bool
-		cidr        string
+		input       string
 		portsRaw    string
 	)
 
 	flag.BoolVar(&demoMode, "demo", false, "use demo interfaces")
 	flag.BoolVar(&showVersion, "v", false, "")
 	flag.BoolVar(&showVersion, "version", false, "print version and exit")
-	flag.StringVar(&cidr, "i", "", "scan target IP/CIDR and output JSON (e.g. 192.168.0.0/24)")
+	flag.StringVar(&input, "i", "", "scan target IP/CIDR or file with targets (e.g. 192.168.0.0/24 or targets.txt)")
 	flag.StringVar(&portsRaw, "p", "", "custom ports to scan, used with -i (e.g. 22,80,8000-8100 or - for all)")
 	flag.Parse()
 
@@ -45,8 +46,8 @@ func Parse(version string) Params {
 		return Params{Mode: ModeVersion, Version: version}
 	}
 
-	if cidr != "" {
-		normalized, err := validateAndNormalizeCIDR(cidr)
+	if input != "" {
+		targets, err := resolveTargets(input)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "invalid -i value: %v\n", err)
 			os.Exit(1)
@@ -55,7 +56,7 @@ func Parse(version string) Params {
 		p := Params{
 			Mode:     ModeHeadless,
 			DemoMode: demoMode,
-			CIDR:     normalized,
+			Targets:  targets,
 		}
 
 		if portsRaw != "" {
@@ -80,6 +81,56 @@ func Parse(version string) Params {
 	}
 
 	return Params{Mode: ModeTUI, DemoMode: demoMode}
+}
+
+// resolveTargets returns a list of validated CIDR strings.
+// If input is a file path, reads targets from it (one per line).
+// Otherwise treats input as a single IP/CIDR.
+func resolveTargets(input string) ([]string, error) {
+	// Check if it's a file
+	info, err := os.Stat(input)
+	if err == nil && !info.IsDir() {
+		return readTargetsFile(input)
+	}
+
+	// Treat as direct IP/CIDR
+	normalized, err := validateAndNormalizeCIDR(input)
+	if err != nil {
+		return nil, err
+	}
+	return []string{normalized}, nil
+}
+
+func readTargetsFile(path string) ([]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open file: %w", err)
+	}
+	defer f.Close()
+
+	var targets []string
+	scanner := bufio.NewScanner(f)
+	lineNum := 0
+	for scanner.Scan() {
+		lineNum++
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		normalized, err := validateAndNormalizeCIDR(line)
+		if err != nil {
+			return nil, fmt.Errorf("line %d: %w", lineNum, err)
+		}
+		targets = append(targets, normalized)
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("reading file: %w", err)
+	}
+
+	if len(targets) == 0 {
+		return nil, fmt.Errorf("no targets found in %s", path)
+	}
+	return targets, nil
 }
 
 // validateAndNormalizeCIDR validates the input is a valid IPv4 address or CIDR
