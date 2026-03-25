@@ -38,7 +38,7 @@ func Parse(version string) Params {
 	flag.BoolVar(&showVersion, "v", false, "")
 	flag.BoolVar(&showVersion, "version", false, "print version and exit")
 	flag.StringVar(&cidr, "i", "", "scan target IP/CIDR and output JSON (e.g. 192.168.0.0/24)")
-	flag.StringVar(&portsRaw, "p", "", "custom ports to scan, used with -i (e.g. 22,80,8000-8100)")
+	flag.StringVar(&portsRaw, "p", "", "custom ports to scan, used with -i (e.g. 22,80,8000-8100 or - for all)")
 	flag.Parse()
 
 	if showVersion {
@@ -59,12 +59,16 @@ func Parse(version string) Params {
 		}
 
 		if portsRaw != "" {
-			parsed, err := ports.ParseList(portsRaw)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "invalid -p value: %v\n", err)
-				os.Exit(1)
+			if strings.TrimSpace(portsRaw) == "-" {
+				p.Ports = ports.AllPorts()
+			} else {
+				parsed, err := ports.ParseList(portsRaw)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "invalid -p value: %v\n", err)
+					os.Exit(1)
+				}
+				p.Ports = parsed
 			}
-			p.Ports = parsed
 		}
 
 		return p

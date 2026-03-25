@@ -30,6 +30,15 @@ func DefaultPorts() []int {
 	return out
 }
 
+// AllPorts returns all ports 1-65535.
+func AllPorts() []int {
+	out := make([]int, 65535)
+	for i := range out {
+		out[i] = i + 1
+	}
+	return out
+}
+
 func ParseList(raw string) ([]int, error) {
 	if strings.TrimSpace(raw) == "" {
 		return nil, nil
