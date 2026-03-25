@@ -106,7 +106,7 @@ npx @backendsystems/nibble
 ```
 
 ## Usage
-Run the CLI with `nibble`, select a network interface.
+Run the CLI with `nibble`, select a network interface.  
 Interface icons: `🔌`Ethernet, `📶`Wi-Fi, `📦`Container, `🔒`VPN.
 
 ## Headless Mode
