@@ -1,7 +1,6 @@
 package scanview
 
 import (
-	"strconv"
 	"strings"
 	"time"
 
@@ -10,45 +9,6 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/ip4"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
-
-// parseHostString converts a formatted host string back to structured data
-func parseHostString(hostStr string) shared.HostResult {
-	lines := strings.Split(hostStr, "\n")
-	if len(lines) == 0 {
-		return shared.HostResult{}
-	}
-
-	// First line is "IP" or "IP - Hardware"
-	firstLine := lines[0]
-	ip, hardware, _ := strings.Cut(firstLine, " - ")
-	ip = strings.TrimSpace(ip)
-	hardware = strings.TrimSpace(hardware)
-
-	var ports []shared.PortInfo
-	for _, line := range lines[1:] {
-		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, "port ") {
-			continue
-		}
-		// Format is "port 80" or "port 80: banner text"
-		line = strings.TrimPrefix(line, "port ")
-		portStr, banner, _ := strings.Cut(line, ":")
-		portNum, err := strconv.Atoi(strings.TrimSpace(portStr))
-		if err != nil {
-			continue
-		}
-		ports = append(ports, shared.PortInfo{
-			Port:   portNum,
-			Banner: strings.TrimSpace(banner),
-		})
-	}
-
-	return shared.HostResult{
-		IP:       ip,
-		Hardware: hardware,
-		Ports:    ports,
-	}
-}
 
 // SaveHistory saves the scan results to history or updates existing history
 func (m Model) SaveHistory() error {
@@ -83,7 +43,7 @@ func (m Model) SaveHistory() error {
 	now := time.Now()
 
 	for _, hostStr := range hosts {
-		h := parseHostString(hostStr)
+		h := shared.ParseHost(hostStr)
 		var ports []history.PortInfo
 		for _, p := range h.Ports {
 			ports = append(ports, history.PortInfo{
@@ -187,7 +147,7 @@ func (m Model) updateHistoryRescan() error {
 	}
 
 	// Parse the first (and should be only) host
-	h := parseHostString(hosts[0])
+	h := shared.ParseHost(hosts[0])
 	var ports []history.PortInfo
 	for _, p := range h.Ports {
 		ports = append(ports, history.PortInfo{

@@ -2,23 +2,27 @@ package shared
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/backendsystems/nibble/internal/ports/services"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
 
+var ansiRe = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
 // PortInfo holds a port number and its service banner
 type PortInfo struct {
-	Port   int
-	Banner string
+	Port   int    `json:"port"`
+	Banner string `json:"banner,omitempty"`
 }
 
 // HostResult holds all scan info for a single host
 type HostResult struct {
-	IP       string
-	Hardware string
-	Ports    []PortInfo
+	IP       string     `json:"ip"`
+	Hardware string     `json:"hardware,omitempty"`
+	Ports    []PortInfo `json:"ports,omitempty"`
 }
 
 // FormatHost renders a HostResult into the display string
@@ -44,4 +48,41 @@ func FormatHost(h HostResult) string {
 		}
 	}
 	return strings.Join(lines, "\n")
+}
+
+// ParseHost converts a formatted host string (from FormatHost) back to structured data.
+func ParseHost(hostStr string) HostResult {
+	hostStr = ansiRe.ReplaceAllString(hostStr, "")
+	lines := strings.Split(hostStr, "\n")
+	if len(lines) == 0 {
+		return HostResult{}
+	}
+
+	ip, hardware, _ := strings.Cut(lines[0], " - ")
+	ip = strings.TrimSpace(ip)
+	hardware = strings.TrimSpace(hardware)
+
+	var ports []PortInfo
+	for _, line := range lines[1:] {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "port ") {
+			continue
+		}
+		line = strings.TrimPrefix(line, "port ")
+		portStr, banner, _ := strings.Cut(line, ":")
+		portNum, err := strconv.Atoi(strings.TrimSpace(portStr))
+		if err != nil {
+			continue
+		}
+		ports = append(ports, PortInfo{
+			Port:   portNum,
+			Banner: strings.TrimSpace(banner),
+		})
+	}
+
+	return HostResult{
+		IP:       ip,
+		Hardware: hardware,
+		Ports:    ports,
+	}
 }
