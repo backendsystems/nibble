@@ -27,8 +27,9 @@ Select a network interface, and Nibble scans your local subnet. Lists hosts, har
 - Can be set to a list of custom ports that are stored for future use
 - Target mode for targeted network scans
 - Reads service banners on open ports (for example, OpenSSH or nginx versions)
-- Looks up hardware vendors: 
+- Looks up hardware vendors:
   - Raspberry Pi, Ubiquiti, Apple and 40,000 other vendor ids
+- [Headless mode](#headless-mode) with JSON output for scripting and automation
 
 ## History
 See past scans, the found hosts and re-scan all hosts ports. hotkey: `r`  
@@ -109,7 +110,8 @@ Run the CLI with `nibble`, select a network interface.
 Interface icons: `🔌`Ethernet, `📶`Wi-Fi, `📦`Container, `🔒`VPN.
 
 ## Headless Mode
-Run scans without the TUI. Outputs JSON.
+Run scans without the TUI. Outputs JSON.  
+Headless scans are not saved in history.
 
 `-i` scan target(s), comma-separated or a file ([example](internal/parameters/example_input.txt))
 `-p` custom ports (e.g. `22,80,8000-8100` or `-` for all)
