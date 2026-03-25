@@ -123,7 +123,7 @@ nibble -i 192.168.0.0/24,10.0.0.0/24 -p - -o results.json
 nibble -i targets.txt -p 22,80,443,8000-8100
 ```
 
-Exit codes: `0` success, `1` error, `2` no hosts found.
+Exit codes: `0` success, `1` error, `2` invalid usage.
 
 Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea)
 

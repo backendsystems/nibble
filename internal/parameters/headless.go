@@ -74,7 +74,4 @@ func RunHeadless(p Params) {
 		os.Exit(1)
 	}
 
-	if len(hosts) == 0 {
-		os.Exit(2)
-	}
 }

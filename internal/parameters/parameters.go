@@ -48,7 +48,7 @@ func Parse(version string) Params {
 
 	if flag.NArg() > 0 {
 		fmt.Fprintf(os.Stderr, "unexpected argument: %s\n", flag.Arg(0))
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	if showVersion {
@@ -65,13 +65,13 @@ func Parse(version string) Params {
 			resolved, err := resolveTargets(part)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "invalid -i value: %v\n", err)
-				os.Exit(1)
+				os.Exit(2)
 			}
 			targets = append(targets, resolved...)
 		}
 		if len(targets) == 0 {
 			fmt.Fprintln(os.Stderr, "-i requires at least one target")
-			os.Exit(1)
+			os.Exit(2)
 		}
 
 		p := Params{
@@ -91,7 +91,7 @@ func Parse(version string) Params {
 				parsed, err := ports.ParseList(portsRaw)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "invalid -p value: %v\n", err)
-					os.Exit(1)
+					os.Exit(2)
 				}
 				p.Ports = parsed
 			}
@@ -102,12 +102,12 @@ func Parse(version string) Params {
 
 	if portsRaw != "" {
 		fmt.Fprintln(os.Stderr, "-p can only be used with -i")
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	if output != "" {
 		fmt.Fprintln(os.Stderr, "-o can only be used with -i")
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	return Params{Mode: ModeTUI, DemoMode: demoMode}
