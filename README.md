@@ -105,8 +105,23 @@ npx @backendsystems/nibble
 ```
 
 ## Usage
-Run the CLI with `nibble`, select a network interface.  
+Run the CLI with `nibble`, select a network interface.
 Interface icons: `🔌`Ethernet, `📶`Wi-Fi, `📦`Container, `🔒`VPN.
+
+## Headless Mode
+Run scans without the TUI. Outputs JSON.
+
+`-i` scan target(s), comma-separated or a file ([example](internal/parameters/example_input.txt))
+`-p` custom ports (e.g. `22,80,8000-8100` or `-` for all)
+`-o` write output to file instead of stdout ([example](internal/parameters/example_output.json))
+
+```bash
+nibble -i 192.168.0.0/24
+nibble -i 192.168.0.0/24,10.0.0.0/24 -p 22,80,443 -o results.json
+nibble -i targets.txt -p -
+```
+
+Exit codes: `0` success, `1` error, `2` no hosts found.
 
 Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea)
 
