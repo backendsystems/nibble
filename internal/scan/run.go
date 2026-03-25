@@ -23,7 +23,11 @@ type targetResult struct {
 	Hosts []shared.HostResult `json:"hosts"`
 }
 
+// ErrNoHosts is returned when a scan completes successfully but finds no hosts.
+var ErrNoHosts = fmt.Errorf("no hosts found")
+
 // Run performs a headless scan of the given targets and writes JSON to stdout.
+// Returns nil on success, ErrNoHosts if no hosts were found, or another error on failure.
 func Run(targets []string, customPorts []int, demoMode bool) error {
 	s := scanner.New(demoMode)
 	if customPorts != nil {
@@ -58,6 +62,14 @@ func Run(targets []string, customPorts []int, demoMode bool) error {
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(out); err != nil {
 		return fmt.Errorf("encoding JSON: %w", err)
+	}
+
+	totalHosts := 0
+	for _, t := range results {
+		totalHosts += len(t.Hosts)
+	}
+	if totalHosts == 0 {
+		return ErrNoHosts
 	}
 	return nil
 }

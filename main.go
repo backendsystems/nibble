@@ -21,6 +21,9 @@ func main() {
 
 	case parameters.ModeHeadless:
 		if err := scan.Run(p.Targets, p.Ports, p.DemoMode); err != nil {
+			if err == scan.ErrNoHosts {
+				os.Exit(2)
+			}
 			fmt.Fprintf(os.Stderr, "scan error: %v\n", err)
 			os.Exit(1)
 		}
