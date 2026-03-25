@@ -113,14 +113,14 @@ Interface icons: `🔌`Ethernet, `📶`Wi-Fi, `📦`Container, `🔒`VPN.
 Run scans without the TUI. Outputs JSON.  
 Headless scans are not saved in history.
 
-`-i` scan target(s), comma-separated or a file ([example](internal/parameters/example_input.txt))
+`-i` scan target(s), comma-separated or a file ([example_input](internal/parameters/example_input.txt))
 `-p` custom ports (e.g. `22,80,8000-8100` or `-` for all)
-`-o` write output to file instead of stdout ([example](internal/parameters/example_output.json))
+`-o` write output to file instead of stdout ([example_output](internal/parameters/example_output.json))
 
 ```bash
 nibble -i 192.168.0.0/24
-nibble -i 192.168.0.0/24,10.0.0.0/24 -p 22,80,443 -o results.json
-nibble -i targets.txt -p -
+nibble -i 192.168.0.0/24,10.0.0.0/24 -p - -o results.json
+nibble -i targets.txt -p 22,80,443,8000-8100
 ```
 
 Exit codes: `0` success, `1` error, `2` no hosts found.
