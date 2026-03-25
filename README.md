@@ -119,7 +119,7 @@ Headless scans are not saved in history.
 
 ```bash
 nibble -i 192.168.0.0/24
-nibble -i 192.168.0.0/24,10.0.0.0/24 -p - -o results.json
+nibble -i 192.168.1.223,10.0.0.12/32 -p - -o results.json
 nibble -i targets.txt -p 22,80,443,8000-8100
 ```
 
