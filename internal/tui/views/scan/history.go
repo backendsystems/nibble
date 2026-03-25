@@ -22,6 +22,7 @@ func toHistoryHost(h shared.HostResult, portsScanned []int) history.HostResult {
 	return history.HostResult{
 		IP:           h.IP,
 		Hardware:     h.Hardware,
+		MAC:          h.MAC,
 		Ports:        ports,
 		LastScanned:  time.Now(),
 		PortsScanned: portsScanned,

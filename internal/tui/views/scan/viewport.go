@@ -67,8 +67,12 @@ func renderHostList(hosts []shared.HostResult) string {
 	for i, host := range hosts {
 		// First line: IP or "IP - Hardware"
 		header := host.IP
-		if host.Hardware != "" {
-			header = fmt.Sprintf("%s - %s", host.IP, host.Hardware)
+		label := host.Hardware
+		if label == "" {
+			label = host.MAC
+		}
+		if label != "" {
+			header = fmt.Sprintf("%s - %s", host.IP, label)
 		}
 		b.WriteString(hostStyle.Render("• " + header))
 

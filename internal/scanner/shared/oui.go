@@ -2,19 +2,15 @@ package shared
 
 import (
 	"net"
-	"strings"
 
 	"github.com/endobit/oui"
 )
 
 // VendorFromMac returns the hardware manufacturer from a MAC address OUI prefix
-// Falls back to the uppercase MAC string if no vendor is found
+// Returns "" if no vendor is found
 func VendorFromMac(mac string) string {
 	if vendor := oui.Vendor(mac); vendor != "" {
 		return vendor
-	}
-	if mac != "" {
-		return strings.ToUpper(mac)
 	}
 	return ""
 }

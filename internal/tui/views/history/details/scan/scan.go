@@ -90,6 +90,7 @@ func toHistoryHost(h *shared.HostResult, fallbackIP string, portsScanned []int) 
 	return history.HostResult{
 		IP:           ip,
 		Hardware:     h.Hardware,
+		MAC:          h.MAC,
 		Ports:        ports,
 		LastScanned:  time.Now(),
 		PortsScanned: portsScanned,

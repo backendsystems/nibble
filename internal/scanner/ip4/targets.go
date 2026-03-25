@@ -155,6 +155,7 @@ func buildSkipMap(neighbors []NeighborEntry) map[string]struct{} {
 func neighborToHost(neighbor NeighborEntry) *shared.HostResult {
 	return &shared.HostResult{
 		IP:       neighbor.IP,
+		MAC:      neighbor.MAC,
 		Hardware: shared.VendorFromMac(neighbor.MAC),
 	}
 }

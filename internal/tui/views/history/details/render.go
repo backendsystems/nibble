@@ -79,8 +79,12 @@ func Render(m *Model, windowWidth, windowHeight int) string {
 
 			// Host line
 			hostLine := cursor + host.IP
-			if host.Hardware != "" {
-				hostLine += " - " + host.Hardware
+			label := host.Hardware
+			if label == "" {
+				label = host.MAC
+			}
+			if label != "" {
+				hostLine += " - " + label
 			}
 			if allPortsScanned {
 				hostLine += " " + common.ProgressGreenStyle.Render("✓")
