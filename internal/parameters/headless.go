@@ -19,7 +19,7 @@ type headlessOutput struct {
 type headlessMeta struct {
 	Ports      string    `json:"ports"`
 	PortCount  int       `json:"port_count"`
-	StartedAt  time.Time `json:"started_at"`
+	StartedAt  string    `json:"started_at"`
 	DurationMs int64     `json:"duration_ms"`
 }
 
@@ -43,7 +43,7 @@ func RunHeadless(p Params) {
 		Meta: headlessMeta{
 			Ports:      portsRaw,
 			PortCount:  portCount,
-			StartedAt:  start.UTC(),
+			StartedAt:  start.UTC().Format(time.RFC3339),
 			DurationMs: duration.Milliseconds(),
 		},
 		Targets: results,

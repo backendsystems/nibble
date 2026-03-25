@@ -46,6 +46,11 @@ func Parse(version string) Params {
 	flag.StringVar(&output, "o", "", "write JSON output to file (default: stdout)")
 	flag.Parse()
 
+	if flag.NArg() > 0 {
+		fmt.Fprintf(os.Stderr, "unexpected argument: %s\n", flag.Arg(0))
+		os.Exit(1)
+	}
+
 	if showVersion {
 		return Params{Mode: ModeVersion, Version: version}
 	}
