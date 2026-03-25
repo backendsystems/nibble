@@ -84,7 +84,7 @@ func toHistoryHost(h *shared.HostResult, fallbackIP string, portsScanned []int) 
 
 	var ports []history.PortInfo
 	for _, p := range h.Ports {
-		ports = append(ports, history.PortInfo{Port: p.Port, Banner: p.Banner})
+		ports = append(ports, history.PortInfo{Port: p.Port, Banner: p.Service})
 	}
 
 	return history.HostResult{

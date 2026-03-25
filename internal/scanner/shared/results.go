@@ -7,7 +7,7 @@ import (
 // PortInfo holds a port number and its service banner
 type PortInfo struct {
 	Port   int    `json:"port"`
-	Banner string `json:"banner,omitempty"`
+	Service string `json:"service,omitempty"`
 	Source string `json:"source,omitempty"`
 }
 
@@ -22,9 +22,9 @@ type HostResult struct {
 // This keeps the data layer consistent for both TUI and JSON output.
 func EnrichPorts(h *HostResult) {
 	for i := range h.Ports {
-		if h.Ports[i].Banner == "" {
+		if h.Ports[i].Service == "" {
 			if info := services.Lookup(h.Ports[i].Port); info != nil {
-				h.Ports[i].Banner = info.Name + " - " + info.Description
+				h.Ports[i].Service = info.Name + " - " + info.Description
 				h.Ports[i].Source = "lookup"
 			}
 		}

@@ -77,8 +77,8 @@ func renderHostList(hosts []shared.HostResult) string {
 		}
 		for j, p := range host.Ports {
 			var line string
-			if p.Banner != "" {
-				line = fmt.Sprintf("port %d: %s", p.Port, common.MutedStyle.Render(p.Banner))
+			if p.Service != "" {
+				line = fmt.Sprintf("port %d: %s", p.Port, common.MutedStyle.Render(p.Service))
 			} else {
 				line = fmt.Sprintf("port %d", p.Port)
 			}
