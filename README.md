@@ -113,8 +113,8 @@ Interface icons: `🔌`Ethernet, `📶`Wi-Fi, `📦`Container, `🔒`VPN.
 Run scans without the TUI. Outputs JSON.  
 Headless scans are not saved in history.
 
-`-i` scan target(s), comma-separated or a file ([example_input](internal/parameters/example_input.txt))
-`-p` custom ports (e.g. `22,80,8000-8100` or `-` for all)
+`-i` scan target(s), comma-separated or a file ([example_input](internal/parameters/example_input.txt))  
+`-p` custom ports (e.g. `22,80,8000-8100` or `-` for all)  
 `-o` write output to file instead of stdout ([example_output](internal/parameters/example_output.json))
 
 ```bash
