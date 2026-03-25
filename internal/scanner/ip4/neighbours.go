@@ -39,11 +39,11 @@ func scanHostMac(ifaceName, ip, knownMAC string, ports []int) *shared.HostResult
 	if len(ports) == 0 {
 		// Host-only mode: ARP to check liveness (requires CAP_NET_RAW).
 		// For neighbors knownMAC is already set so no ARP request is made.
-		hardware := resolveHardware(net.ParseIP(ip), knownMAC)
-		if knownMAC == "" && hardware == "" {
+		mac, vendor := resolveHardware(net.ParseIP(ip), knownMAC)
+		if knownMAC == "" && vendor == "" {
 			return nil
 		}
-		h := shared.HostResult{IP: ip, Hardware: hardware}
+		h := shared.HostResult{IP: ip, MAC: mac, Hardware: vendor}
 		return &h
 	}
 
@@ -56,9 +56,11 @@ func scanHostMac(ifaceName, ip, knownMAC string, ports []int) *shared.HostResult
 		return results[i].port < results[j].port
 	})
 
+	mac, vendor := resolveHardware(net.ParseIP(ip), knownMAC)
 	host := shared.HostResult{
 		IP:       ip,
-		Hardware: resolveHardware(net.ParseIP(ip), knownMAC),
+		MAC:      mac,
+		Hardware: vendor,
 		Ports:    make([]shared.PortInfo, 0, len(results)),
 	}
 
@@ -114,17 +116,17 @@ func dialAndRecord(ip string, port int, mu *sync.Mutex, results *[]portResult) {
 	mu.Unlock()
 }
 
-func resolveHardware(targetIP net.IP, knownMAC string) string {
+func resolveHardware(targetIP net.IP, knownMAC string) (mac, vendor string) {
 	if knownMAC != "" {
-		return shared.VendorFromMac(knownMAC)
+		return knownMAC, shared.VendorFromMac(knownMAC)
 	}
 	if targetIP == nil {
-		return ""
+		return "", ""
 	}
 
-	mac := lookupMacFromCache(targetIP.String())
+	mac = lookupMacFromCache(targetIP.String())
 	if mac == "" {
-		return ""
+		return "", ""
 	}
-	return shared.VendorFromMac(mac)
+	return mac, shared.VendorFromMac(mac)
 }

@@ -13,6 +13,7 @@
   "hosts": [
     {
       "ip": "192.168.1.1",
+      "mac": "dc:a6:32:12:34:56",
       "hardware": "Ubiquiti",
       "ports": [
         {
@@ -29,6 +30,7 @@
     },
     {
       "ip": "192.168.1.50",
+      "mac": "48:b0:2d:5e:a3:10",
       "hardware": "NVIDIA",
       "ports": [
         {

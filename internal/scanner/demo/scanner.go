@@ -47,6 +47,7 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 		}
 		resolved := shared.HostResult{
 			IP:       h.IP,
+			MAC:      h.Hardware,
 			Hardware: shared.VendorFromMac(h.Hardware),
 		}
 		if !hostOnly {

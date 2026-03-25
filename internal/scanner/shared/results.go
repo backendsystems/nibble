@@ -14,6 +14,7 @@ type PortInfo struct {
 // HostResult holds all scan info for a single host
 type HostResult struct {
 	IP       string     `json:"ip"`
+	MAC      string     `json:"mac,omitempty"`
 	Hardware string     `json:"hardware,omitempty"`
 	Ports    []PortInfo `json:"ports,omitempty"`
 }
