@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/backendsystems/nibble/internal/parameters"
-	"github.com/backendsystems/nibble/internal/scan"
 	"github.com/backendsystems/nibble/internal/scanner"
 	"github.com/backendsystems/nibble/internal/tui"
 )
@@ -20,13 +19,7 @@ func main() {
 		fmt.Println(version)
 
 	case parameters.ModeHeadless:
-		if err := scan.Run(p.Targets, p.Ports, p.PortsRaw, p.DemoMode, p.Output); err != nil {
-			if err == scan.ErrNoHosts {
-				os.Exit(2)
-			}
-			fmt.Fprintf(os.Stderr, "scan error: %v\n", err)
-			os.Exit(1)
-		}
+		parameters.RunHeadless(p)
 
 	case parameters.ModeTUI:
 		s := scanner.New(p.DemoMode)
