@@ -50,9 +50,9 @@ func Parse(version string) Params {
 		fmt.Fprintf(os.Stderr, "  -v, -version    print version and exit\n")
 		fmt.Fprintf(os.Stderr, "  -demo           use demo interfaces\n")
 		fmt.Fprintf(os.Stderr, "\nHeadless mode (no TUI):\n")
-		fmt.Fprintf(os.Stderr, "  -i <targets>    comma separated IP/CIDR or file (e.g. input.txt)\n")
-		fmt.Fprintf(os.Stderr, "  -p <ports>      custom ports (22,80,8000-8100 or - for all)\n")
-		fmt.Fprintf(os.Stderr, "  -o <file>       write JSON output to file (out.json)\n")
+		fmt.Fprintf(os.Stderr, "  -i <targets>    comma separated IP/CIDR or file: input.txt\n")
+		fmt.Fprintf(os.Stderr, "  -p <ports>      custom ports: 22,80,8000-8100 or - for all\n")
+		fmt.Fprintf(os.Stderr, "  -o <file>       write JSON output to file: out.json\n")
 	}
 
 	flag.Parse()
