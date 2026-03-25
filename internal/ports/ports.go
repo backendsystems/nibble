@@ -3,6 +3,7 @@ package ports
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -27,6 +28,24 @@ var defaultPorts = []int{
 func DefaultPorts() []int {
 	out := make([]int, len(defaultPorts))
 	copy(out, defaultPorts)
+	return out
+}
+
+// FormatDefault returns the default ports as a compact string (e.g. "22,80,443").
+func FormatDefault() string {
+	parts := make([]string, len(defaultPorts))
+	for i, p := range defaultPorts {
+		parts[i] = strconv.Itoa(p)
+	}
+	return strings.Join(parts, ",")
+}
+
+// AllPorts returns all ports 1-65535.
+func AllPorts() []int {
+	out := make([]int, 65535)
+	for i := range out {
+		out[i] = i + 1
+	}
 	return out
 }
 

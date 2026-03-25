@@ -52,13 +52,13 @@ func (m Model) Update(msg tea.Msg) UpdateResult {
 			NewPortsByHost:   result.Model.NewPortsByHost,
 			TotalHosts:       result.Model.TotalHosts,
 			ScannedCount:     result.Model.ScannedCount,
-			ScannedHostStr:   result.Model.ScannedHostStr,
+			ScannedHost:      result.Model.ScannedHost,
 		})
 		result.Model.History = progress.History
 		result.Model.NewPortsByHost = progress.NewPortsByHost
 		result.Model.TotalHosts = progress.TotalHosts
 		result.Model.ScannedCount = progress.ScannedCount
-		result.Model.ScannedHostStr = progress.ScannedHostStr
+		result.Model.ScannedHost = progress.ScannedHost
 		result.Cmd = detailsscan.Continue(result.Model.ProgressChan)
 		return result
 	case detailsscan.CompleteMsg:
@@ -83,18 +83,17 @@ func handleScanComplete(m Model) UpdateResult {
 	result := UpdateResult{Model: m}
 	result.Model.Scanning = false
 	result.Model.ProgressChan = nil
-	result.Model.ScannedHostStr = ""
 
 	// Kick off background save + reload so disk I/O doesn't block the UI
 	if m.HistoryPath != "" {
 		histPath := m.HistoryPath
-		hostStr := m.ScannedHostStr
+		host := m.ScannedHost
 		hostIdx := m.ScanningHostIdx
 		portsScanned := m.ScanPortsScanned
 		hosts := m.History.ScanResults.Hosts
 
 		result.Cmd = tea.Batch(m.Stopwatch.Stop(), func() tea.Msg {
-			if updated, err := detailsscan.PersistAndReload(histPath, hostStr, hostIdx, portsScanned, hosts); err == nil {
+			if updated, err := detailsscan.PersistAndReload(histPath, host, hostIdx, portsScanned, hosts); err == nil {
 				return SavedMsg{Updated: updated}
 			}
 			return SavedMsg{}
@@ -103,5 +102,6 @@ func handleScanComplete(m Model) UpdateResult {
 		result.Cmd = m.Stopwatch.Stop()
 	}
 
+	result.Model.ScannedHost = nil
 	return result
 }

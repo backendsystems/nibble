@@ -93,15 +93,15 @@ func (s *Scanner) subnetSweep(ifaceName string, subnet *net.IPNet, totalHosts in
 }
 
 func processNeighborJob(ifaceName string, neighbor NeighborEntry, ports []int, totalHosts, totalNeighbors int, seenCount *atomic.Int64, progressChan chan<- shared.ProgressUpdate) {
-	hostInfo := scanHostMac(ifaceName, neighbor.IP, neighbor.MAC, ports)
-	if hostInfo == "" {
-		hostInfo = formatHost(neighbor)
+	host := scanHostMac(ifaceName, neighbor.IP, neighbor.MAC, ports)
+	if host == nil {
+		host = neighborToHost(neighbor)
 	}
 
 	currentSeen := int(seenCount.Add(1))
 
 	progress := shared.NeighborProgress{
-		Host:       hostInfo,
+		Host:       host,
 		TotalHosts: totalHosts,
 		Seen:       currentSeen,
 		Total:      totalNeighbors,
@@ -109,7 +109,7 @@ func processNeighborJob(ifaceName string, neighbor NeighborEntry, ports []int, t
 
 	// Always send blocking if we have host info - must not drop discoveries
 	// Otherwise use non-blocking to avoid blocking workers when channel is full
-	if progress.Host != "" {
+	if progress.Host != nil {
 		progressChan <- progress
 	} else {
 		emitNeighborProgress(progressChan, progress)
@@ -117,24 +117,24 @@ func processNeighborJob(ifaceName string, neighbor NeighborEntry, ports []int, t
 }
 
 func processSweepJob(ifaceName, currentIP string, ports []int, skipIPs map[string]struct{}, totalHosts int, scanned *atomic.Int64, progressChan chan<- shared.ProgressUpdate) {
-	hostInfo := ""
+	var host *shared.HostResult
 	if len(ports) > 0 {
 		if _, alreadyFound := skipIPs[currentIP]; !alreadyFound {
-			hostInfo = scanHost(ifaceName, currentIP, ports)
+			host = scanHost(ifaceName, currentIP, ports)
 		}
 	}
 
 	currentScanned := int(scanned.Add(1))
 
 	progress := shared.SweepProgress{
-		Host:       hostInfo,
+		Host:       host,
 		TotalHosts: totalHosts,
 		Scanned:    currentScanned,
 	}
 
 	// Always send blocking if we found a host - must not drop discoveries
 	// Otherwise use non-blocking to avoid blocking workers when channel is full
-	if hostInfo != "" {
+	if host != nil {
 		progressChan <- progress
 	} else {
 		select {
@@ -152,11 +152,12 @@ func buildSkipMap(neighbors []NeighborEntry) map[string]struct{} {
 	return skipIPs
 }
 
-func formatHost(neighbor NeighborEntry) string {
-	return shared.FormatHost(shared.HostResult{
+func neighborToHost(neighbor NeighborEntry) *shared.HostResult {
+	return &shared.HostResult{
 		IP:       neighbor.IP,
+		MAC:      neighbor.MAC,
 		Hardware: shared.VendorFromMac(neighbor.MAC),
-	})
+	}
 }
 
 func emitNeighborProgress(progressChan chan<- shared.ProgressUpdate, progress shared.NeighborProgress) {

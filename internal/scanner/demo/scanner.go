@@ -19,9 +19,10 @@ const (
 )
 
 func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shared.ProgressUpdate) {
+	defer close(progressChan)
+
 	_, ipnet, err := net.ParseCIDR(subnet)
 	if err != nil {
-		close(progressChan)
 		return
 	}
 
@@ -46,6 +47,7 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 		}
 		resolved := shared.HostResult{
 			IP:       h.IP,
+			MAC:      h.Hardware,
 			Hardware: shared.VendorFromMac(h.Hardware),
 		}
 		if !hostOnly {
@@ -53,10 +55,14 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 				if _, ok := selectedSet[p.Port]; !ok {
 					continue
 				}
-				resolved.Ports = append(resolved.Ports, shared.PortInfo{
+				pi := shared.PortInfo{
 					Port:   p.Port,
-					Banner: p.Banner,
-				})
+					Service: p.Banner,
+				}
+				if p.Banner != "" {
+					pi.Source = "banner"
+				}
+				resolved.Ports = append(resolved.Ports, pi)
 			}
 		}
 		subnetHosts = append(subnetHosts, resolved)
@@ -76,11 +82,12 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 
 		neighbors = subnetHosts[:neighborCount]
 		remaining = subnetHosts[neighborCount:]
-		for i, h := range neighbors {
+		for i := range neighbors {
 			time.Sleep(neighborDelay)
 			time.Sleep(portDelay)
+			shared.EnrichPorts(&neighbors[i])
 			progressChan <- shared.NeighborProgress{
-				Host:       shared.FormatHost(h),
+				Host:       &neighbors[i],
 				TotalHosts: totalHosts,
 				Seen:       i + 1,
 				Total:      neighborCount,
@@ -111,10 +118,11 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 	for i := 1; i <= totalHosts; i++ {
 		time.Sleep(sweepDelay)
 
-		host := ""
+		var host *shared.HostResult
 		if hostInterval > 0 && hostIdx < len(remaining) && i == hostInterval*(hostIdx+1) {
 			time.Sleep(portDelay)
-			host = shared.FormatHost(remaining[hostIdx])
+			shared.EnrichPorts(&remaining[hostIdx])
+			host = &remaining[hostIdx]
 			hostIdx++
 		}
 
@@ -125,7 +133,6 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 		}
 	}
 
-	close(progressChan)
 }
 
 func demoPortDelay(selectedPorts int, hostOnly bool) time.Duration {

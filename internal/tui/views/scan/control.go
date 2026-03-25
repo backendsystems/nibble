@@ -55,7 +55,7 @@ func handleProgressMsg(m Model, msg ProgressMsg) Result {
 		}
 		result.Model.NeighborSeen = p.Seen
 		result.Model.NeighborTotal = p.Total
-		if p.Host != "" {
+		if p.Host != nil {
 			before := len(result.Model.FoundHosts)
 			result.Model.FoundHosts = appendIfNew(result.Model.FoundHosts, p.Host)
 			hostAdded = len(result.Model.FoundHosts) > before
@@ -65,7 +65,7 @@ func handleProgressMsg(m Model, msg ProgressMsg) Result {
 			result.Model.TotalHosts = p.TotalHosts
 		}
 		result.Model.ScannedCount = p.Scanned
-		if p.Host != "" {
+		if p.Host != nil {
 			before := len(result.Model.FoundHosts)
 			result.Model.FoundHosts = appendIfNew(result.Model.FoundHosts, p.Host)
 			hostAdded = len(result.Model.FoundHosts) > before

@@ -1,8 +1,6 @@
 package history
 
 import (
-	"strings"
-
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
@@ -23,15 +21,14 @@ func UpdateScanProgress(progress *ScanProgress, update shared.ProgressUpdate, hi
 		progress.ScannedCount = p.Scanned
 
 		// Track newly found ports for the selected host
-		if p.Host != "" && selectedHostIdx < len(history.ScanResults.Hosts) {
+		if p.Host != nil && selectedHostIdx < len(history.ScanResults.Hosts) {
 			selectedHost := history.ScanResults.Hosts[selectedHostIdx]
-			newPorts := parseHostData(p.Host)
 
 			// Compare against existing ports in history
-			for _, port := range newPorts {
+			for _, port := range p.Host.Ports {
 				isNew := true
 				for _, existingPort := range selectedHost.Ports {
-					if port == existingPort.Port {
+					if port.Port == existingPort.Port {
 						isNew = false
 						break
 					}
@@ -43,32 +40,9 @@ func UpdateScanProgress(progress *ScanProgress, update shared.ProgressUpdate, hi
 					if progress.NewPortsByHost[selectedHost.IP] == nil {
 						progress.NewPortsByHost[selectedHost.IP] = make(map[int]bool)
 					}
-					progress.NewPortsByHost[selectedHost.IP][port] = true
+					progress.NewPortsByHost[selectedHost.IP][port.Port] = true
 				}
 			}
 		}
 	}
-}
-
-// parseHostData extracts ports from host string format "IP:port IP:port ..."
-func parseHostData(hostStr string) []int {
-	var ports []int
-	parts := strings.Fields(hostStr)
-	for _, part := range parts {
-		if strings.Contains(part, ":") {
-			portStr := strings.Split(part, ":")[1]
-			var port int
-			for _, r := range portStr {
-				if r >= '0' && r <= '9' {
-					port = port*10 + int(r-'0')
-				} else {
-					break
-				}
-			}
-			if port > 0 {
-				ports = append(ports, port)
-			}
-		}
-	}
-	return ports
 }
