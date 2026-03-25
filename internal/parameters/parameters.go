@@ -33,17 +33,28 @@ func Parse(version string) Params {
 	var (
 		demoMode    bool
 		showVersion bool
-		input    string
-		portsRaw string
-		output   string
+		input       string
+		portsRaw    string
+		output      string
 	)
 
-	flag.BoolVar(&demoMode, "demo", false, "use demo interfaces")
+	flag.BoolVar(&demoMode, "demo", false, "")
 	flag.BoolVar(&showVersion, "v", false, "")
-	flag.BoolVar(&showVersion, "version", false, "print version and exit")
-	flag.StringVar(&input, "i", "", "scan targets: IP/CIDR comma-separated or file (e.g. 192.168.0.0/24,10.0.0.0/24 or targets.txt)")
-	flag.StringVar(&portsRaw, "p", "", "custom ports to scan, used with -i (e.g. 22,80,8000-8100 or - for all)")
-	flag.StringVar(&output, "o", "", "write JSON output to file (default: stdout)")
+	flag.BoolVar(&showVersion, "version", false, "")
+	flag.StringVar(&input, "i", "", "")
+	flag.StringVar(&portsRaw, "p", "", "")
+	flag.StringVar(&output, "o", "", "")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: nibble [flags]\n")
+		fmt.Fprintf(os.Stderr, "  -v, -version    print version and exit\n")
+		fmt.Fprintf(os.Stderr, "  -demo           use demo interfaces\n")
+		fmt.Fprintf(os.Stderr, "\nHeadless mode (no TUI):\n")
+		fmt.Fprintf(os.Stderr, "  -i <targets>    comma separated IP/CIDR or file (e.g. input.txt)\n")
+		fmt.Fprintf(os.Stderr, "  -p <ports>      custom ports (22,80,8000-8100 or - for all)\n")
+		fmt.Fprintf(os.Stderr, "  -o <file>       write JSON output to file (out.json)\n")
+	}
+
 	flag.Parse()
 
 	if flag.NArg() > 0 {
