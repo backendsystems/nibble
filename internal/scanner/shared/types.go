@@ -6,17 +6,17 @@ type ProgressUpdate interface{}
 
 // NeighborProgress represents progress during the neighbor discovery phase
 type NeighborProgress struct {
-	Host       string // Optional host line found during neighbor discovery
-	TotalHosts int    // Overall total hosts in the subnet sweep
-	Seen       int    // Neighbors processed so far
-	Total      int    // Total neighbors to process
+	Host       *HostResult // Discovered host, nil when no host found
+	TotalHosts int         // Overall total hosts in the subnet sweep
+	Seen       int         // Neighbors processed so far
+	Total      int         // Total neighbors to process
 }
 
 // SweepProgress represents progress during the subnet sweep phase
 type SweepProgress struct {
-	Host       string // Optional host line found during sweep
-	TotalHosts int    // Overall total hosts in the subnet sweep
-	Scanned    int    // Hosts scanned so far in sweep
+	Host       *HostResult // Discovered host, nil when no host found
+	TotalHosts int         // Overall total hosts in the subnet sweep
+	Scanned    int         // Hosts scanned so far in sweep
 }
 
 // Scanner abstracts network scanning so real and demo modes share the same code path

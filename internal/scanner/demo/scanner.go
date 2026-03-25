@@ -76,11 +76,12 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 
 		neighbors = subnetHosts[:neighborCount]
 		remaining = subnetHosts[neighborCount:]
-		for i, h := range neighbors {
+		for i := range neighbors {
 			time.Sleep(neighborDelay)
 			time.Sleep(portDelay)
+			shared.EnrichPorts(&neighbors[i])
 			progressChan <- shared.NeighborProgress{
-				Host:       shared.FormatHost(h),
+				Host:       &neighbors[i],
 				TotalHosts: totalHosts,
 				Seen:       i + 1,
 				Total:      neighborCount,
@@ -111,10 +112,11 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 	for i := 1; i <= totalHosts; i++ {
 		time.Sleep(sweepDelay)
 
-		host := ""
+		var host *shared.HostResult
 		if hostInterval > 0 && hostIdx < len(remaining) && i == hostInterval*(hostIdx+1) {
 			time.Sleep(portDelay)
-			host = shared.FormatHost(remaining[hostIdx])
+			shared.EnrichPorts(&remaining[hostIdx])
+			host = &remaining[hostIdx]
 			hostIdx++
 		}
 

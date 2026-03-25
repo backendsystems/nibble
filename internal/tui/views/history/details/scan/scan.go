@@ -1,11 +1,10 @@
 package scan
 
 import (
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/backendsystems/nibble/internal/history"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
 type LiveUpdateInput struct {
@@ -13,7 +12,7 @@ type LiveUpdateInput struct {
 	ScanningHostIdx  int
 	ScanPortsScanned []int
 	NewPortsByHost   map[string]map[int]bool
-	HostStr          string
+	Host             *shared.HostResult
 }
 
 type LiveUpdateResult struct {
@@ -34,7 +33,7 @@ func ApplyLiveHostUpdate(in LiveUpdateInput) LiveUpdateResult {
 	}
 
 	current := result.History.ScanResults.Hosts[hostIdx]
-	updated := ParseHost(in.HostStr, current.IP, in.ScanPortsScanned)
+	updated := toHistoryHost(in.Host, current.IP, in.ScanPortsScanned)
 	if updated.Hardware == "" {
 		updated.Hardware = current.Hardware
 	}
@@ -68,50 +67,40 @@ func ApplyLiveHostUpdate(in LiveUpdateInput) LiveUpdateResult {
 	return result
 }
 
-// ParseHost converts a FormatHost string back to a HostResult.
-func ParseHost(hostStr string, fallbackIP string, portsScanned []int) history.HostResult {
-	lines := strings.Split(hostStr, "\n")
-	ip := fallbackIP
-	hardware := ""
-	if len(lines) > 0 {
-		first := lines[0]
-		if idx := strings.Index(first, " - "); idx != -1 {
-			ip = strings.TrimSpace(first[:idx])
-			hardware = strings.TrimSpace(first[idx+3:])
-		} else {
-			ip = strings.TrimSpace(first)
+// toHistoryHost converts a shared.HostResult to a history.HostResult.
+func toHistoryHost(h *shared.HostResult, fallbackIP string, portsScanned []int) history.HostResult {
+	if h == nil {
+		return history.HostResult{
+			IP:           fallbackIP,
+			LastScanned:  time.Now(),
+			PortsScanned: portsScanned,
 		}
 	}
 
+	ip := h.IP
+	if ip == "" {
+		ip = fallbackIP
+	}
+
 	var ports []history.PortInfo
-	for _, line := range lines[1:] {
-		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, "port ") {
-			continue
-		}
-		line = strings.TrimPrefix(line, "port ")
-		portStr, banner, _ := strings.Cut(line, ":")
-		portNum, err := strconv.Atoi(strings.TrimSpace(portStr))
-		if err != nil {
-			continue
-		}
-		ports = append(ports, history.PortInfo{Port: portNum, Banner: strings.TrimSpace(banner)})
+	for _, p := range h.Ports {
+		ports = append(ports, history.PortInfo{Port: p.Port, Banner: p.Banner})
 	}
 
 	return history.HostResult{
 		IP:           ip,
-		Hardware:     hardware,
+		Hardware:     h.Hardware,
 		Ports:        ports,
 		LastScanned:  time.Now(),
 		PortsScanned: portsScanned,
 	}
 }
 
-func PersistAndReload(historyPath string, hostStr string, hostIdx int, portsScanned []int, hosts []history.HostResult) (history.ScanHistory, error) {
+func PersistAndReload(historyPath string, host *shared.HostResult, hostIdx int, portsScanned []int, hosts []history.HostResult) (history.ScanHistory, error) {
 	if hostIdx < len(hosts) {
 		scannedHost := hosts[hostIdx]
-		newHost := ParseHost(hostStr, scannedHost.IP, portsScanned)
-		if hostStr == "" {
+		newHost := toHistoryHost(host, scannedHost.IP, portsScanned)
+		if host == nil {
 			newHost = history.HostResult{
 				IP:           scannedHost.IP,
 				Hardware:     scannedHost.Hardware,

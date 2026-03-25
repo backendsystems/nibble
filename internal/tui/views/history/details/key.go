@@ -40,7 +40,7 @@ func handleKeyMsg(m Model, key tea.KeyPressMsg) UpdateResult {
 		if m.Scanning {
 			result.Model.Scanning = false
 			result.Model.ProgressChan = nil
-			result.Model.ScannedHostStr = ""
+			result.Model.ScannedHost = nil
 			result.Cmd = tea.Batch(
 				m.Stopwatch.Stop(),
 				drainProgressChan(m.ProgressChan),

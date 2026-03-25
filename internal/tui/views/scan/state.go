@@ -16,14 +16,12 @@ type Model struct {
 	Scanning          bool
 	ScanComplete      bool
 	ShouldPrintFinal  bool
-	FoundHosts        []string
-	FinalHosts        []string
-	FoundHostsData    []shared.HostResult // Structured data for history
-	FinalHostsData    []shared.HostResult // Structured data for history
-	TargetCIDR        string              // The CIDR being scanned
-	PortsScanned      []int               // Ports that were scanned
-	IsRescan          bool                // True if rescanning from history
-	RescanHistoryPath string              // Path to history file to update
+	FoundHosts        []shared.HostResult
+	FinalHosts        []shared.HostResult
+	TargetCIDR        string // The CIDR being scanned
+	PortsScanned      []int  // Ports that were scanned
+	IsRescan          bool   // True if rescanning from history
+	RescanHistoryPath string // Path to history file to update
 	ScannedCount      int
 	TotalHosts        int
 	NeighborSeen      int

@@ -31,24 +31,25 @@ type portResult struct {
 	banner string
 }
 
-func scanHost(ifaceName, ip string, ports []int) string {
+func scanHost(ifaceName, ip string, ports []int) *shared.HostResult {
 	return scanHostMac(ifaceName, ip, "", ports)
 }
 
-func scanHostMac(ifaceName, ip, knownMAC string, ports []int) string {
+func scanHostMac(ifaceName, ip, knownMAC string, ports []int) *shared.HostResult {
 	if len(ports) == 0 {
 		// Host-only mode: ARP to check liveness (requires CAP_NET_RAW).
 		// For neighbors knownMAC is already set so no ARP request is made.
 		hardware := resolveHardware(net.ParseIP(ip), knownMAC)
 		if knownMAC == "" && hardware == "" {
-			return ""
+			return nil
 		}
-		return shared.FormatHost(shared.HostResult{IP: ip, Hardware: hardware})
+		h := shared.HostResult{IP: ip, Hardware: hardware}
+		return &h
 	}
 
 	results := scanOpenPorts(ip, ports)
 	if len(results) == 0 {
-		return ""
+		return nil
 	}
 
 	sort.Slice(results, func(i, j int) bool {
@@ -65,7 +66,8 @@ func scanHostMac(ifaceName, ip, knownMAC string, ports []int) string {
 		host.Ports = append(host.Ports, shared.PortInfo{Port: result.port, Banner: result.banner})
 	}
 
-	return shared.FormatHost(host)
+	shared.EnrichPorts(&host)
+	return &host
 }
 
 func scanOpenPorts(ip string, ports []int) []portResult {

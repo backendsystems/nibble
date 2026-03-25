@@ -2,7 +2,6 @@ package scanview
 
 import (
 	"net"
-	"strings"
 	"time"
 
 	"charm.land/bubbles/v2/stopwatch"
@@ -21,22 +20,16 @@ type CompleteMsg struct{}
 type QuitMsg struct{}
 
 // appendIfNew appends host to hosts only if no existing entry has the same IP.
-func appendIfNew(hosts []string, host string) []string {
-	newIP := hostIP(host)
+func appendIfNew(hosts []shared.HostResult, host *shared.HostResult) []shared.HostResult {
+	if host == nil {
+		return hosts
+	}
 	for _, h := range hosts {
-		if hostIP(h) == newIP {
+		if h.IP == host.IP {
 			return hosts
 		}
 	}
-	return append(hosts, host)
-}
-
-// hostIP extracts the IP address from the first line of a host string.
-// Host format is "IP - vendor" or just "IP".
-func hostIP(host string) string {
-	line, _, _ := strings.Cut(host, "\n")
-	ip, _, _ := strings.Cut(line, " - ")
-	return strings.TrimSpace(ip)
+	return append(hosts, *host)
 }
 
 func ListenForProgress(progressChan <-chan shared.ProgressUpdate) tea.Cmd {
@@ -70,8 +63,6 @@ func (m Model) Start(iface net.Interface, addrs []net.Addr, totalHosts int, targ
 	m.ShouldPrintFinal = false
 	m.FoundHosts = nil
 	m.FinalHosts = nil
-	m.FoundHostsData = nil
-	m.FinalHostsData = nil
 	m.ScannedCount = 0
 	m.NeighborSeen = 0
 	m.NeighborTotal = 0
@@ -92,7 +83,8 @@ func sendQuitMsg() tea.Cmd {
 func prepareForExit(m Model, shouldPrint bool) Model {
 	m.ShouldPrintFinal = shouldPrint
 	if len(m.FinalHosts) == 0 && len(m.FoundHosts) > 0 {
-		m.FinalHosts = append([]string(nil), m.FoundHosts...)
+		m.FinalHosts = make([]shared.HostResult, len(m.FoundHosts))
+		copy(m.FinalHosts, m.FoundHosts)
 	}
 	m.FoundHosts = nil
 	m.Results.SetContent("")

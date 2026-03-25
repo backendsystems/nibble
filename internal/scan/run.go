@@ -13,9 +13,9 @@ import (
 )
 
 type result struct {
-	CIDR         string            `json:"cidr"`
-	PortsScanned []int             `json:"ports_scanned"`
-	Duration     float64           `json:"duration_seconds"`
+	CIDR         string              `json:"cidr"`
+	PortsScanned []int               `json:"ports_scanned"`
+	Duration     float64             `json:"duration_seconds"`
 	Hosts        []shared.HostResult `json:"hosts"`
 }
 
@@ -41,25 +41,21 @@ func Run(cidr string, customPorts []int, demoMode bool) error {
 	seen := make(map[string]struct{})
 
 	for update := range progressChan {
-		var hostStr string
+		var host *shared.HostResult
 		switch u := update.(type) {
 		case shared.NeighborProgress:
-			hostStr = u.Host
+			host = u.Host
 		case shared.SweepProgress:
-			hostStr = u.Host
+			host = u.Host
 		}
-		if hostStr == "" {
+		if host == nil {
 			continue
 		}
-		h := shared.ParseHost(hostStr)
-		if h.IP == "" {
+		if _, dup := seen[host.IP]; dup {
 			continue
 		}
-		if _, dup := seen[h.IP]; dup {
-			continue
-		}
-		seen[h.IP] = struct{}{}
-		hosts = append(hosts, h)
+		seen[host.IP] = struct{}{}
+		hosts = append(hosts, *host)
 	}
 
 	duration := time.Since(start).Seconds()

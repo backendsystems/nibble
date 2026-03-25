@@ -27,6 +27,6 @@ type Model struct {
 	NewPortsByHost   map[string]map[int]bool // Track newly found ports per host IP
 	ScannedCount     int
 	TotalHosts       int
-	ScannedHostStr   string // Last host string from scanner for the scanned host
-	ScanPortsScanned []int  // Ports that were scanned in the current rescan
+	ScannedHost      *shared.HostResult // Last host result from scanner for the scanned host
+	ScanPortsScanned []int              // Ports that were scanned in the current rescan
 }

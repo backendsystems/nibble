@@ -20,7 +20,7 @@ type UpdateInput struct {
 	NewPortsByHost   map[string]map[int]bool
 	TotalHosts       int
 	ScannedCount     int
-	ScannedHostStr   string
+	ScannedHost      *shared.HostResult
 }
 
 type UpdateResult struct {
@@ -28,7 +28,7 @@ type UpdateResult struct {
 	NewPortsByHost map[string]map[int]bool
 	TotalHosts     int
 	ScannedCount   int
-	ScannedHostStr string
+	ScannedHost    *shared.HostResult
 }
 
 func ApplyProgressUpdate(in UpdateInput) UpdateResult {
@@ -37,7 +37,7 @@ func ApplyProgressUpdate(in UpdateInput) UpdateResult {
 		NewPortsByHost: in.NewPortsByHost,
 		TotalHosts:     in.TotalHosts,
 		ScannedCount:   in.ScannedCount,
-		ScannedHostStr: in.ScannedHostStr,
+		ScannedHost:    in.ScannedHost,
 	}
 
 	if p, ok := in.Update.(shared.SweepProgress); ok {
@@ -45,14 +45,14 @@ func ApplyProgressUpdate(in UpdateInput) UpdateResult {
 			result.TotalHosts = p.TotalHosts
 		}
 		result.ScannedCount = p.Scanned
-		if p.Host != "" {
-			result.ScannedHostStr = p.Host
+		if p.Host != nil {
+			result.ScannedHost = p.Host
 			live := ApplyLiveHostUpdate(LiveUpdateInput{
 				History:          result.History,
 				ScanningHostIdx:  in.ScanningHostIdx,
 				ScanPortsScanned: in.ScanPortsScanned,
 				NewPortsByHost:   result.NewPortsByHost,
-				HostStr:          p.Host,
+				Host:             p.Host,
 			})
 			if live.Updated {
 				result.History = live.History
