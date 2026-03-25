@@ -6,9 +6,9 @@ import (
 
 // PortInfo holds a port number and its service banner
 type PortInfo struct {
-	Port   int    `json:"port"`
+	Port    int    `json:"port"`
 	Service string `json:"service,omitempty"`
-	Source string `json:"source,omitempty"`
+	Source  string `json:"source,omitempty"`
 }
 
 // HostResult holds all scan info for a single host

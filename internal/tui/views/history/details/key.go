@@ -84,4 +84,3 @@ func drainProgressChan(ch <-chan shared.ProgressUpdate) tea.Cmd {
 		return nil
 	}
 }
-

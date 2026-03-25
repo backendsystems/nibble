@@ -56,7 +56,7 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 					continue
 				}
 				pi := shared.PortInfo{
-					Port:   p.Port,
+					Port:    p.Port,
 					Service: p.Banner,
 				}
 				if p.Banner != "" {
