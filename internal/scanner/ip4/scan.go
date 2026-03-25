@@ -14,6 +14,8 @@ type Scanner struct {
 
 // ScanNetwork scans a real subnet with controlled concurrency for smooth progress
 func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shared.ProgressUpdate) {
+	defer close(progressChan)
+
 	_, ipnet, err := net.ParseCIDR(subnet)
 	if err != nil {
 		return
@@ -30,8 +32,6 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 	}
 
 	s.subnetSweep(ifaceName, ipnet, totalHosts, skipIPs, progressChan)
-
-	close(progressChan)
 }
 
 func (s *Scanner) ports() (out []int) {

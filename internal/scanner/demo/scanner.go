@@ -19,9 +19,10 @@ const (
 )
 
 func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shared.ProgressUpdate) {
+	defer close(progressChan)
+
 	_, ipnet, err := net.ParseCIDR(subnet)
 	if err != nil {
-		close(progressChan)
 		return
 	}
 
@@ -131,7 +132,6 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 		}
 	}
 
-	close(progressChan)
 }
 
 func demoPortDelay(selectedPorts int, hostOnly bool) time.Duration {
