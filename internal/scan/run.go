@@ -6,28 +6,30 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
-// TargetResult holds scan results for a single CIDR target.
-type TargetResult struct {
-	CIDR  string              `json:"cidr"`
-	Hosts []shared.HostResult `json:"hosts"`
-}
-
-// Run scans the given targets and returns results per target.
-func Run(targets []string, customPorts []int, demoMode bool) []TargetResult {
+// Run scans the given targets and returns a flat list of discovered hosts.
+func Run(targets []string, customPorts []int, demoMode bool) []shared.HostResult {
 	s := scanner.New(demoMode)
 	if customPorts != nil {
 		config.SetPorts(s, customPorts)
 	}
 
-	var results []TargetResult
+	var hosts []shared.HostResult
+	seen := make(map[string]struct{})
+
 	for _, cidr := range targets {
-		hosts := scanTarget(s, cidr)
-		results = append(results, TargetResult{
-			CIDR:  cidr,
-			Hosts: hosts,
-		})
+		for _, h := range scanTarget(s, cidr) {
+			if _, dup := seen[h.IP]; dup {
+				continue
+			}
+			seen[h.IP] = struct{}{}
+			hosts = append(hosts, h)
+		}
 	}
-	return results
+
+	if hosts == nil {
+		hosts = []shared.HostResult{}
+	}
+	return hosts
 }
 
 func scanTarget(s shared.Scanner, cidr string) []shared.HostResult {
@@ -56,8 +58,5 @@ func scanTarget(s shared.Scanner, cidr string) []shared.HostResult {
 		hosts = append(hosts, *host)
 	}
 
-	if hosts == nil {
-		hosts = []shared.HostResult{}
-	}
 	return hosts
 }

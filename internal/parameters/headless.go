@@ -9,20 +9,22 @@ import (
 
 	"github.com/backendsystems/nibble/internal/ports"
 	"github.com/backendsystems/nibble/internal/scan"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
 type headlessOutput struct {
-	Meta    headlessMeta        `json:"meta"`
-	Targets []scan.TargetResult `json:"targets"`
+	Meta  headlessMeta        `json:"meta"`
+	Hosts []shared.HostResult `json:"hosts"`
 }
 
 type headlessMeta struct {
-	Scanner    string `json:"scanner"`
-	Version    string `json:"version"`
-	Ports      string `json:"ports"`
-	PortCount  int    `json:"port_count"`
-	StartedAt  string `json:"started_at"`
-	DurationMs int64  `json:"duration_ms"`
+	Scanner    string   `json:"scanner"`
+	Version    string   `json:"version"`
+	Targets    []string `json:"targets"`
+	Ports      string   `json:"ports"`
+	PortCount  int      `json:"port_count"`
+	StartedAt  string   `json:"started_at"`
+	DurationMs int64    `json:"duration_ms"`
 }
 
 // RunHeadless executes a headless scan and writes JSON output.
@@ -38,19 +40,20 @@ func RunHeadless(p Params) {
 	}
 
 	start := time.Now()
-	results := scan.Run(p.Targets, p.Ports, p.DemoMode)
+	hosts := scan.Run(p.Targets, p.Ports, p.DemoMode)
 	duration := time.Since(start)
 
 	out := headlessOutput{
 		Meta: headlessMeta{
-			Scanner: "nibble",
-			Version: p.Version,
+			Scanner:    "nibble",
+			Version:    p.Version,
+			Targets:    p.Targets,
 			Ports:      portsRaw,
 			PortCount:  portCount,
 			StartedAt:  start.UTC().Format(time.RFC3339),
 			DurationMs: duration.Milliseconds(),
 		},
-		Targets: results,
+		Hosts: hosts,
 	}
 
 	var w io.Writer = os.Stdout
@@ -71,11 +74,7 @@ func RunHeadless(p Params) {
 		os.Exit(1)
 	}
 
-	totalHosts := 0
-	for _, t := range results {
-		totalHosts += len(t.Hosts)
-	}
-	if totalHosts == 0 {
+	if len(hosts) == 0 {
 		os.Exit(2)
 	}
 }
