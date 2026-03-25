@@ -17,10 +17,12 @@ type headlessOutput struct {
 }
 
 type headlessMeta struct {
-	Ports      string    `json:"ports"`
-	PortCount  int       `json:"port_count"`
-	StartedAt  string    `json:"started_at"`
-	DurationMs int64     `json:"duration_ms"`
+	Scanner    string `json:"scanner"`
+	Version    string `json:"version"`
+	Ports      string `json:"ports"`
+	PortCount  int    `json:"port_count"`
+	StartedAt  string `json:"started_at"`
+	DurationMs int64  `json:"duration_ms"`
 }
 
 // RunHeadless executes a headless scan and writes JSON output.
@@ -41,6 +43,8 @@ func RunHeadless(p Params) {
 
 	out := headlessOutput{
 		Meta: headlessMeta{
+			Scanner: "nibble",
+			Version: p.Version,
 			Ports:      portsRaw,
 			PortCount:  portCount,
 			StartedAt:  start.UTC().Format(time.RFC3339),

@@ -64,6 +64,7 @@ func Parse(version string) Params {
 
 		p := Params{
 			Mode:     ModeHeadless,
+			Version:  version,
 			DemoMode: demoMode,
 			Targets:  targets,
 			Output:   output,
