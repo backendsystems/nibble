@@ -25,6 +25,7 @@ type Params struct {
 	DemoMode bool
 	Targets  []string
 	Ports    []int
+	PortsRaw string
 	Output   string
 }
 
@@ -64,8 +65,10 @@ func Parse(version string) Params {
 		}
 
 		if portsRaw != "" {
-			if strings.TrimSpace(portsRaw) == "-" {
+			p.PortsRaw = strings.TrimSpace(portsRaw)
+			if p.PortsRaw == "-" {
 				p.Ports = ports.AllPorts()
+				p.PortsRaw = "1-65535"
 			} else {
 				parsed, err := ports.ParseList(portsRaw)
 				if err != nil {

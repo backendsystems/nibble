@@ -19,7 +19,8 @@ type output struct {
 }
 
 type meta struct {
-	Ports      []int     `json:"ports"`
+	Ports      string    `json:"ports"`
+	PortCount  int       `json:"port_count"`
 	StartedAt  time.Time `json:"started_at"`
 	DurationMs int64     `json:"duration_ms"`
 }
@@ -35,7 +36,7 @@ var ErrNoHosts = fmt.Errorf("no hosts found")
 // Run performs a headless scan of the given targets and writes JSON output.
 // If outputPath is empty, writes to stdout. Otherwise writes to the specified file.
 // Returns nil on success, ErrNoHosts if no hosts were found, or another error on failure.
-func Run(targets []string, customPorts []int, demoMode bool, outputPath string) error {
+func Run(targets []string, customPorts []int, portsRaw string, demoMode bool, outputPath string) error {
 	s := scanner.New(demoMode)
 	if customPorts != nil {
 		config.SetPorts(s, customPorts)
@@ -44,6 +45,10 @@ func Run(targets []string, customPorts []int, demoMode bool, outputPath string) 
 	scanPorts := customPorts
 	if scanPorts == nil {
 		scanPorts = ports.DefaultPorts()
+	}
+
+	if portsRaw == "" {
+		portsRaw = ports.FormatDefault()
 	}
 
 	start := time.Now()
@@ -61,7 +66,8 @@ func Run(targets []string, customPorts []int, demoMode bool, outputPath string) 
 
 	out := output{
 		Meta: meta{
-			Ports:      scanPorts,
+			Ports:      portsRaw,
+			PortCount:  len(scanPorts),
 			StartedAt:  start.UTC(),
 			DurationMs: duration.Milliseconds(),
 		},

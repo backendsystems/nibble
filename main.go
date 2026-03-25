@@ -20,7 +20,7 @@ func main() {
 		fmt.Println(version)
 
 	case parameters.ModeHeadless:
-		if err := scan.Run(p.Targets, p.Ports, p.DemoMode, p.Output); err != nil {
+		if err := scan.Run(p.Targets, p.Ports, p.PortsRaw, p.DemoMode, p.Output); err != nil {
 			if err == scan.ErrNoHosts {
 				os.Exit(2)
 			}
