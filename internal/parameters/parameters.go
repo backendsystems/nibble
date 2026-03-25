@@ -25,14 +25,16 @@ type Params struct {
 	DemoMode bool
 	Targets  []string
 	Ports    []int
+	Output   string
 }
 
 func Parse(version string) Params {
 	var (
 		demoMode    bool
 		showVersion bool
-		input       string
-		portsRaw    string
+		input    string
+		portsRaw string
+		output   string
 	)
 
 	flag.BoolVar(&demoMode, "demo", false, "use demo interfaces")
@@ -40,6 +42,7 @@ func Parse(version string) Params {
 	flag.BoolVar(&showVersion, "version", false, "print version and exit")
 	flag.StringVar(&input, "i", "", "scan target IP/CIDR or file with targets (e.g. 192.168.0.0/24 or targets.txt)")
 	flag.StringVar(&portsRaw, "p", "", "custom ports to scan, used with -i (e.g. 22,80,8000-8100 or - for all)")
+	flag.StringVar(&output, "o", "", "write JSON output to file (default: stdout)")
 	flag.Parse()
 
 	if showVersion {
@@ -57,6 +60,7 @@ func Parse(version string) Params {
 			Mode:     ModeHeadless,
 			DemoMode: demoMode,
 			Targets:  targets,
+			Output:   output,
 		}
 
 		if portsRaw != "" {
@@ -77,6 +81,11 @@ func Parse(version string) Params {
 
 	if portsRaw != "" {
 		fmt.Fprintln(os.Stderr, "-p can only be used with -i")
+		os.Exit(1)
+	}
+
+	if output != "" {
+		fmt.Fprintln(os.Stderr, "-o can only be used with -i")
 		os.Exit(1)
 	}
 

@@ -3,6 +3,7 @@ package scan
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -12,10 +13,15 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
-type result struct {
-	Targets      []targetResult `json:"targets"`
-	PortsScanned []int          `json:"ports_scanned"`
-	Duration     float64        `json:"duration_seconds"`
+type output struct {
+	Meta    meta           `json:"meta"`
+	Targets []targetResult `json:"targets"`
+}
+
+type meta struct {
+	Ports      []int     `json:"ports"`
+	StartedAt  time.Time `json:"started_at"`
+	DurationMs int64     `json:"duration_ms"`
 }
 
 type targetResult struct {
@@ -26,9 +32,10 @@ type targetResult struct {
 // ErrNoHosts is returned when a scan completes successfully but finds no hosts.
 var ErrNoHosts = fmt.Errorf("no hosts found")
 
-// Run performs a headless scan of the given targets and writes JSON to stdout.
+// Run performs a headless scan of the given targets and writes JSON output.
+// If outputPath is empty, writes to stdout. Otherwise writes to the specified file.
 // Returns nil on success, ErrNoHosts if no hosts were found, or another error on failure.
-func Run(targets []string, customPorts []int, demoMode bool) error {
+func Run(targets []string, customPorts []int, demoMode bool, outputPath string) error {
 	s := scanner.New(demoMode)
 	if customPorts != nil {
 		config.SetPorts(s, customPorts)
@@ -50,15 +57,28 @@ func Run(targets []string, customPorts []int, demoMode bool) error {
 		})
 	}
 
-	duration := time.Since(start).Seconds()
+	duration := time.Since(start)
 
-	out := result{
-		Targets:      results,
-		PortsScanned: scanPorts,
-		Duration:     duration,
+	out := output{
+		Meta: meta{
+			Ports:      scanPorts,
+			StartedAt:  start.UTC(),
+			DurationMs: duration.Milliseconds(),
+		},
+		Targets: results,
 	}
 
-	enc := json.NewEncoder(os.Stdout)
+	var w io.Writer = os.Stdout
+	if outputPath != "" {
+		f, err := os.Create(outputPath)
+		if err != nil {
+			return fmt.Errorf("creating output file: %w", err)
+		}
+		defer f.Close()
+		w = f
+	}
+
+	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(out); err != nil {
 		return fmt.Errorf("encoding JSON: %w", err)
