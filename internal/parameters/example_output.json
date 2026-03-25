@@ -25,6 +25,9 @@
           "port": 443,
           "service": "HTTPS - HTTP over TLS/SSL",
           "source": "lookup"
+        },
+        {
+          "port": 8080
         }
       ]
     },
