@@ -38,6 +38,11 @@ func Render(m *Model, maxWidth int) string {
 		b.WriteString(m.Results.View() + "\n")
 	} else if !m.ScanComplete {
 		b.WriteString(common.MutedStyle.Render("Searching...") + "\n")
+		// Pad with empty lines so the helpline stays pinned to the bottom
+		// +1 for the "N active:" label line that is absent when results are empty
+		for i := 0; i < m.Results.Height()+1; i++ {
+			b.WriteString("\n")
+		}
 	}
 	if m.Scanning {
 		m.HelpLineY = strings.Count(b.String(), "\n") + 1
