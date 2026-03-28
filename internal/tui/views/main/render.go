@@ -75,10 +75,7 @@ func Render(m *Model, maxWidth int) string {
 // so Viewport.Width/Height are current for mouse hit-testing.
 func (m Model) UpdateViewport(maxWidth int) Model {
 	reserved := 4
-	vpHeight := m.WindowH - reserved
-	if vpHeight < 1 {
-		vpHeight = 1
-	}
+	vpHeight := max(m.WindowH-reserved, 1)
 	m.Viewport.SetWidth(maxWidth)
 	m.Viewport.SetHeight(vpHeight)
 	return m
@@ -87,16 +84,10 @@ func (m Model) UpdateViewport(maxWidth int) Model {
 // ScrollToSelected adjusts the viewport offset so the selected card row is
 // visible. Call this only when the cursor has moved, not on every update.
 func (m Model) ScrollToSelected() Model {
-	vpHeight := m.Viewport.Height()
-	if vpHeight < 1 {
-		vpHeight = 1
-	}
+	vpHeight := max(m.Viewport.Height(), 1)
 	totalCards := len(m.Interfaces) + 2
 	totalRows := (totalCards + m.CardsPerRow - 1) / m.CardsPerRow
-	maxOffset := totalRows*cardHeight - vpHeight
-	if maxOffset < 0 {
-		maxOffset = 0
-	}
+	maxOffset := max(totalRows*cardHeight-vpHeight, 0)
 
 	selectedRow := cursorCardRow(m.Cursor, m.CardsPerRow)
 	rowTop := selectedRow * cardHeight

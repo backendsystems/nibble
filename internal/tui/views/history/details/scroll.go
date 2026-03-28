@@ -16,10 +16,7 @@ func (m Model) ScrollToSelected() Model {
 		scanEnd := scanStart + len(scanHost.Ports)
 		bottom := m.Viewport.YOffset() + m.Viewport.Height() - 1
 		if scanEnd > bottom {
-			offset := scanEnd - m.Viewport.Height() + 1
-			if offset > scanStart {
-				offset = scanStart
-			}
+			offset := min(scanEnd-m.Viewport.Height()+1, scanStart)
 			m.Viewport.SetYOffset(offset)
 		}
 		if m.Viewport.YOffset() < 0 {
@@ -49,21 +46,12 @@ func (m Model) ScrollToSelected() Model {
 		}
 	} else if hostStart > bottom {
 		// Host IP is below viewport: scroll down just enough to show host + ports.
-		offset := hostEnd - m.Viewport.Height() + 1
-		if offset > hostStart {
-			offset = hostStart
-		}
-		if offset < 0 {
-			offset = 0
-		}
+		offset := max(min(hostEnd-m.Viewport.Height()+1, hostStart), 0)
 		m.Viewport.SetYOffset(offset)
 	} else if hostEnd > bottom {
 		// Host IP is visible but ports extend below: scroll down to show ports,
 		// but never push the host IP itself off the top.
-		offset := hostEnd - m.Viewport.Height() + 1
-		if offset > hostStart {
-			offset = hostStart
-		}
+		offset := min(hostEnd-m.Viewport.Height()+1, hostStart)
 		if offset <= top {
 			// Already showing as much as possible without losing the host line.
 			return m
@@ -88,7 +76,7 @@ func hostLineOffsetFor(m Model, idx int) int {
 	}
 	offset++ // Created/Updated line
 
-	for i := 0; i < idx; i++ {
+	for i := range idx {
 		host := m.History.ScanResults.Hosts[i]
 		offset++                  // Host line
 		offset += len(host.Ports) // Port lines

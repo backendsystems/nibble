@@ -28,11 +28,9 @@ func (m Model) SetListViewportSize(windowWidth, windowHeight int) Model {
 		if m.ErrorMsg != "" {
 			reservedHeight += 2
 		}
-		viewportHeight := windowHeight - reservedHeight
-		if viewportHeight < 3 {
+		viewportHeight := max(windowHeight-reservedHeight,
 			// Minimum 3 lines for viewport content
-			viewportHeight = 3
-		}
+			3)
 		m.Viewport.SetHeight(viewportHeight)
 	}
 
@@ -44,10 +42,7 @@ func (m Model) SetListViewportSize(windowWidth, windowHeight int) Model {
 func updateViewportContent(m Model) Model {
 	m = m.SetListViewportSize(m.WindowW, m.WindowH)
 
-	maxOffset := len(m.FlatList) - m.Viewport.Height()
-	if maxOffset < 0 {
-		maxOffset = 0
-	}
+	maxOffset := max(len(m.FlatList)-m.Viewport.Height(), 0)
 
 	// Keep cursor visible by scrolling viewport
 	cursorLine := m.Cursor

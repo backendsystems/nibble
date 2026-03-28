@@ -31,10 +31,7 @@ func ComputeCardWidth(ifaces []net.Interface, addrsByIface map[string][]net.Addr
 			}
 		}
 	}
-	width := longest + cardChrome
-	if width < minCardWidth {
-		width = minCardWidth
-	}
+	width := max(longest+cardChrome, minCardWidth)
 	return width
 }
 

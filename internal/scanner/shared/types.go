@@ -2,7 +2,7 @@ package shared
 
 import "net"
 
-type ProgressUpdate interface{}
+type ProgressUpdate any
 
 // NeighborProgress represents progress during the neighbor discovery phase
 type NeighborProgress struct {

@@ -53,7 +53,7 @@ func (m *Model) HandleMouse(msg tea.Msg, maxWidth int) (Result, tea.Cmd) {
 	}
 
 	// Stage 1: field clicks
-	for field := 0; field < fieldCount; field++ {
+	for field := range fieldCount {
 		startY := m.FieldY[field]
 		endY := startY + fieldHeights[field] - 1
 		if mouse.Y < startY || mouse.Y > endY {

@@ -19,11 +19,9 @@ func (m Model) SetViewportSize(windowWidth, windowHeight int) Model {
 		// - Help text at bottom (1)
 		// Total reserved: 3 lines
 		reservedHeight := 3
-		viewportHeight := windowHeight - reservedHeight
-		if viewportHeight < 3 {
+		viewportHeight := max(windowHeight-reservedHeight,
 			// Minimum 3 lines for viewport content
-			viewportHeight = 3
-		}
+			3)
 		m.Viewport.SetHeight(viewportHeight)
 	}
 
@@ -40,10 +38,7 @@ func (m Model) UpdateViewportContent(content string, windowWidth, windowHeight, 
 	}
 
 	if windowHeight > 0 {
-		viewportHeight := windowHeight - reservedLines
-		if viewportHeight < 3 {
-			viewportHeight = 3
-		}
+		viewportHeight := max(windowHeight-reservedLines, 3)
 		m.Viewport.SetHeight(viewportHeight)
 	}
 

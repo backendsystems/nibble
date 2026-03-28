@@ -19,18 +19,9 @@ func RenderVisibleList(flatList []*Node, tree []*Node, cursor, offset, height in
 		return "No scan history found\n"
 	}
 
-	start := offset
-	if start < 0 {
-		start = 0
-	}
-	if start > len(flatList) {
-		start = len(flatList)
-	}
+	start := min(max(offset, 0), len(flatList))
 
-	end := start + height
-	if end > len(flatList) {
-		end = len(flatList)
-	}
+	end := min(start+height, len(flatList))
 
 	var b strings.Builder
 	for i := start; i < end; i++ {

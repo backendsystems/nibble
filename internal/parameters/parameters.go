@@ -68,7 +68,7 @@ func Parse(version string) Params {
 
 	if input != "" {
 		var targets []string
-		for _, part := range strings.Split(input, ",") {
+		for part := range strings.SplitSeq(input, ",") {
 			part = strings.TrimSpace(part)
 			if part == "" {
 				continue

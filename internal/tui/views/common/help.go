@@ -27,16 +27,10 @@ func RenderHelpOverlay(view string, config HelpConfig) string {
 		viewHeight = lipgloss.Height(view)
 	}
 
-	// Calculate help box width: use 80% of window width with min 56, max 80
+	// Calculate help box width: use 80% of window width with min 46, max 80
 	width := config.Width
 	if width == 0 {
-		width = int(float64(viewWidth) * 0.8)
-		if width < 46 {
-			width = 46
-		}
-		if width > 80 {
-			width = 80
-		}
+		width = min(80, max(46, int(float64(viewWidth)*0.8)))
 	}
 
 	titleRow := renderHelpTitle(config.Title, width-4) // -4 for border (2) + padding (2)
@@ -58,10 +52,7 @@ func RenderHelpOverlay(view string, config HelpConfig) string {
 func renderHelpTitle(title string, width int) string {
 	styledTitle := HelpTitleStyle.Render(title)
 	icon := HelpIconStyle.Render("❓")
-	gap := width - lipgloss.Width(styledTitle) - lipgloss.Width(icon)
-	if gap < 1 {
-		gap = 1
-	}
+	gap := max(width-lipgloss.Width(styledTitle)-lipgloss.Width(icon), 1)
 	spacer := strings.Repeat(" ", gap)
 	return styledTitle + spacer + icon
 }

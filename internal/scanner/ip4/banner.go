@@ -146,7 +146,7 @@ func returnByte(b []byte) int {
 
 // parseHTTPServer extracts the Server header from an HTTP response
 func parseHTTPServer(response string) string {
-	for _, line := range strings.Split(response, "\r\n") {
+	for line := range strings.SplitSeq(response, "\r\n") {
 		if strings.HasPrefix(strings.ToLower(line), "server:") {
 			return cleanBanner([]byte(strings.TrimSpace(line[7:])))
 		}

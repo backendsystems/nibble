@@ -44,13 +44,11 @@ func (s *Scanner) neighborDiscovery(ifaceName string, subnet *net.IPNet, totalHo
 	var seenCount atomic.Int64
 
 	for range workerCount {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for neighbor := range jobs {
 				processNeighborJob(ifaceName, neighbor, ports, totalHosts, len(neighbors), &seenCount, progressChan)
 			}
-		}()
+		})
 	}
 
 	for _, neighbor := range neighbors {
@@ -71,13 +69,11 @@ func (s *Scanner) subnetSweep(ifaceName string, subnet *net.IPNet, totalHosts in
 	var scanned atomic.Int64
 
 	for range workerCount {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for currentIP := range jobs {
 				processSweepJob(ifaceName, currentIP, ports, skipIPs, totalHosts, &scanned, progressChan)
 			}
-		}()
+		})
 	}
 
 	for ip := subnet.IP.Mask(subnet.Mask); subnet.Contains(ip); incrementIP(ip) {

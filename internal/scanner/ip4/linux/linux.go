@@ -18,7 +18,7 @@ func LookupMAC(ip string) string {
 		return ""
 	}
 
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		fields := strings.Fields(line)
 		if len(fields) >= 4 && fields[0] == ip && fields[3] != "00:00:00:00:00:00" {
 			return shared.NormalizeMAC(fields[3])
@@ -35,7 +35,7 @@ func Neighbors(ifaceName string) []Neighbor {
 	}
 
 	rows := make([]Neighbor, 0)
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		fields := strings.Fields(line)
 		if len(fields) < 6 {
 			continue

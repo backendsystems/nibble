@@ -96,10 +96,7 @@ func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 		return result
 	}
 
-	titleLines := m.HelpLineY - m.Viewport.Height()
-	if titleLines < 1 {
-		titleLines = 1
-	}
+	titleLines := max(m.HelpLineY-m.Viewport.Height(), 1)
 	contentY := mouse.Y - titleLines
 	if contentY < 0 {
 		return result

@@ -14,7 +14,7 @@ func StartDetailRescan(m Model, baseScanner shared.Scanner, hostIP string) (Mode
 	targetCIDR := hostIP + "/32"
 
 	allPorts := make([]int, 65535)
-	for i := 0; i < 65535; i++ {
+	for i := range 65535 {
 		allPorts[i] = i + 1
 	}
 
