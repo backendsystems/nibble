@@ -1,4 +1,4 @@
-.PHONY: all build demo history update run pip npm goreleaser apt fix
+.PHONY: all build demo history vhs update run pip npm goreleaser apt fix
 
 all: run
 
@@ -11,19 +11,17 @@ nibble: build
 run: nibble
 	@./nibble
 
-demo: nibble
+vhs:
 	@if ! command -v vhs >/dev/null 2>&1; then \
 		echo "vhs not found. Install it from https://github.com/charmbracelet/vhs"; \
 		exit 1; \
 	fi
+
+demo: vhs nibble
 	@TERM=xterm-256color COLORTERM=truecolor VHS_NO_SANDBOX=1 vhs demo.tape
 	@echo "Generated demo.gif"
 
-history: nibble
-	@if ! command -v vhs >/dev/null 2>&1; then \
-		echo "vhs not found. Install it from https://github.com/charmbracelet/vhs"; \
-		exit 1; \
-	fi
+history: vhs nibble
 	@TERM=xterm-256color COLORTERM=truecolor VHS_NO_SANDBOX=1 vhs history.tape
 	@echo "Generated history.gif"
 
