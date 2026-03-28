@@ -127,9 +127,9 @@ func cursorCardRow(cursor, cardsPerRow int) int {
 
 func renderInterfaceCard(m Model, icons map[string]string, index int, iface net.Interface) string {
 	isSelected := index == m.Cursor
-	style := cardStyle
+	style := cardStyle(m.CardWidth)
 	if isSelected {
-		style = selectedCardStyle
+		style = selectedCardStyle(m.CardWidth)
 	}
 
 	var cardContent strings.Builder
@@ -158,9 +158,9 @@ func renderInterfaceCard(m Model, icons map[string]string, index int, iface net.
 
 func renderTargetCard(m Model, index int) string {
 	isSelected := index == m.Cursor
-	style := cardStyle
+	style := cardStyle(m.CardWidth)
 	if isSelected {
-		style = selectedCardStyle
+		style = selectedCardStyle(m.CardWidth)
 	}
 
 	var cardContent strings.Builder
@@ -180,9 +180,9 @@ func renderTargetCard(m Model, index int) string {
 
 func renderHistoryCard(m Model, index int) string {
 	isSelected := index == m.Cursor
-	style := cardStyle
+	style := cardStyle(m.CardWidth)
 	if isSelected {
-		style = selectedCardStyle
+		style = selectedCardStyle(m.CardWidth)
 	}
 
 	var cardContent strings.Builder

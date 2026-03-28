@@ -11,7 +11,7 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 	}{
 		{name: "eth0", cidr: "192.168.1.100/24"},
 		{name: "wlan0", cidr: "10.0.0.50/24"},
-		{name: "docker0", cidr: "172.17.0.1/16"},
+		{name: "docker0", cidr: "172.168.100.199/16"},
 		{name: "wg0", cidr: "10.8.0.2/24"},
 	}
 

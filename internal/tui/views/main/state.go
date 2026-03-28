@@ -11,6 +11,7 @@ type Model struct {
 	InterfaceMap    map[string][]net.Addr
 	Cursor          int
 	CardsPerRow     int
+	CardWidth       int // computed from content; includes border+padding
 	ShowHelp        bool
 	ErrorMsg        string
 	Viewport        viewport.Model

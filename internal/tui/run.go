@@ -29,7 +29,8 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 	targetCfg, _ := ports.LoadConfig("target")
 	targetPack := targetCfg.Mode
 
-	initialWindowW, initialWindowH, initialCardsPerRow := initialLayoutMetrics()
+	cardWidth := mainview.ComputeCardWidth(ifaces, addrsByIface)
+	initialWindowW, initialWindowH, initialCardsPerRow := initialLayoutMetrics(cardWidth)
 	portsModel, _ := portsview.Init(portsview.Model{
 		PortPack:        cfg.Mode,
 		CustomPorts:     cfg.Custom,
@@ -45,6 +46,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 			Interfaces:      ifaces,
 			InterfaceMap:    addrsByIface,
 			CardsPerRow:     initialCardsPerRow,
+			CardWidth:       cardWidth,
 			WindowH:         initialWindowH,
 			HoveredHelpItem: -1,
 		},
@@ -82,7 +84,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 	return nil
 }
 
-func initialLayoutMetrics() (windowW int, windowH int, cardsPerRow int) {
+func initialLayoutMetrics(cardWidth int) (windowW int, windowH int, cardsPerRow int) {
 	cardsPerRow = 1
 	fd := os.Stdout.Fd()
 	if !term.IsTerminal(fd) {
@@ -94,7 +96,7 @@ func initialLayoutMetrics() (windowW int, windowH int, cardsPerRow int) {
 		return 0, 0, cardsPerRow
 	}
 
-	return width, height, mainview.CardsPerRow(scanViewWidth(width))
+	return width, height, mainview.CardsPerRow(scanViewWidth(width), cardWidth)
 }
 
 func resolvePortsConfig(cfg ports.Config) ([]int, error) {
