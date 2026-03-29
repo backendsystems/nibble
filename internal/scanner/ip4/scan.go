@@ -9,7 +9,8 @@ import (
 
 // Scanner performs real network scanning (TCP connect, ARP, banner grab)
 type Scanner struct {
-	Ports []int
+	Ports        []int
+	dockerIfaces map[string]struct{} // display names of Docker network interfaces
 }
 
 // ScanNetwork scans a real subnet with controlled concurrency for smooth progress
@@ -25,10 +26,18 @@ func (s *Scanner) ScanNetwork(ifaceName, subnet string, progressChan chan<- shar
 
 	// Skip neighbor discovery for target scans (when no interface specified)
 	var skipIPs map[string]struct{}
+	var exhaustive bool
 	if ifaceName != "" {
-		skipIPs = s.neighborDiscovery(ifaceName, ipnet, totalHosts, progressChan)
+		skipIPs, exhaustive = s.neighborDiscovery(ifaceName, ipnet, totalHosts, progressChan)
 	} else {
 		skipIPs = make(map[string]struct{})
+	}
+
+	if exhaustive {
+		// Docker socket gave us the complete container list — no sweep needed.
+		// Emit a final SweepProgress so the progress bar reaches 100%.
+		progressChan <- shared.SweepProgress{TotalHosts: totalHosts, Scanned: totalHosts}
+		return
 	}
 
 	s.subnetSweep(ifaceName, ipnet, totalHosts, skipIPs, progressChan)

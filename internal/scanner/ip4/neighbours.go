@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/backendsystems/nibble/internal/scanner/ip4/wsl"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
@@ -22,6 +23,9 @@ var dialExtra = func() time.Duration {
 	case "windows":
 		return 50 * time.Millisecond
 	default:
+		if wsl.IsWSL() {
+			return 50 * time.Millisecond
+		}
 		return 0
 	}
 }()

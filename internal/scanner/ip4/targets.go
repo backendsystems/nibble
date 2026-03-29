@@ -26,14 +26,15 @@ func newMaxWorkers() int {
 	}
 }
 
-// neighborDiscovery emits hosts already visible in neighbor tables
-// and returns IPs that should be skipped in the full sweep
-func (s *Scanner) neighborDiscovery(ifaceName string, subnet *net.IPNet, totalHosts int, progressChan chan<- shared.ProgressUpdate) map[string]struct{} {
-	neighbors := visibleNeighbors(ifaceName, subnet)
+// neighborDiscovery emits hosts already visible in neighbor tables.
+// Returns the set of IPs to skip in the sweep, and whether discovery was
+// exhaustive (true when the Docker socket was used and no sweep is needed).
+func (s *Scanner) neighborDiscovery(ifaceName string, subnet *net.IPNet, totalHosts int, progressChan chan<- shared.ProgressUpdate) (map[string]struct{}, bool) {
+	neighbors, exhaustive := s.visibleNeighbors(ifaceName, subnet)
 	skipIPs := buildSkipMap(neighbors)
 	if len(neighbors) == 0 {
 		emitNeighborProgress(progressChan, shared.NeighborProgress{TotalHosts: totalHosts})
-		return skipIPs
+		return skipIPs, exhaustive
 	}
 
 	ports := s.ports()
@@ -57,7 +58,7 @@ func (s *Scanner) neighborDiscovery(ifaceName string, subnet *net.IPNet, totalHo
 	close(jobs)
 
 	wg.Wait()
-	return skipIPs
+	return skipIPs, exhaustive
 }
 
 // subnetSweep scans the subnet and skips hosts found in neighbor discovery
