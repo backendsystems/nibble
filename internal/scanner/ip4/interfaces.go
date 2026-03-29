@@ -32,7 +32,7 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 			continue
 		}
 
-		if hasIp4(addrs) {
+		if hasIp4(addrs) && !wsl.IsWSLVirtualIface(iface.Name) {
 			ifaces = append(ifaces, iface)
 			addrsByIface[iface.Name] = addrs
 		}
