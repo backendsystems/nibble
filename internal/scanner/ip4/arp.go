@@ -8,6 +8,7 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/ip4/linux"
 	"github.com/backendsystems/nibble/internal/scanner/ip4/macos"
 	"github.com/backendsystems/nibble/internal/scanner/ip4/windows"
+	"github.com/backendsystems/nibble/internal/scanner/ip4/wsl"
 )
 
 // lookupMacFromCache reads the OS ARP cache to find a MAC without needing root
@@ -18,6 +19,11 @@ func lookupMacFromCache(ip string) string {
 	}
 	if runtime.GOOS == "darwin" {
 		return macos.LookupMAC(ip)
+	}
+	if wsl.IsWSL() {
+		if mac := wsl.LookupMAC(ip); mac != "" {
+			return mac
+		}
 	}
 	return linux.LookupMAC(ip)
 }
@@ -42,8 +48,15 @@ func visibleNeighbors(ifaceName string, subnet *net.IPNet) []NeighborEntry {
 			rows = append(rows, NeighborEntry{IP: row.IP, MAC: row.MAC})
 		}
 	default:
-		for _, row := range linux.Neighbors(ifaceName) {
-			rows = append(rows, NeighborEntry{IP: row.IP, MAC: row.MAC})
+		if strings.HasPrefix(ifaceName, "win:") {
+			// WSL: scan Windows host interface via interop
+			for _, row := range wsl.Neighbors(ifaceName) {
+				rows = append(rows, NeighborEntry{IP: row.IP, MAC: row.MAC})
+			}
+		} else {
+			for _, row := range linux.Neighbors(ifaceName) {
+				rows = append(rows, NeighborEntry{IP: row.IP, MAC: row.MAC})
+			}
 		}
 	}
 

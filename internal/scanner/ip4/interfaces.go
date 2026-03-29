@@ -3,9 +3,12 @@ package ip4
 import (
 	"net"
 	"net/netip"
+
+	"github.com/backendsystems/nibble/internal/scanner/ip4/wsl"
 )
 
 // GetInterfaces returns active non-loopback interfaces with at least one IPv4 address.
+// When running inside WSL, Windows host interfaces are also included via interop.
 func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error) {
 	sysIfaces, err := net.Interfaces()
 	if err != nil {
@@ -32,6 +35,19 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 		if hasIp4(addrs) {
 			ifaces = append(ifaces, iface)
 			addrsByIface[iface.Name] = addrs
+		}
+	}
+
+	// In WSL, also include Windows host interfaces via interop.
+	if wsl.IsWSL() {
+		for _, wiface := range wsl.Interfaces() {
+			ifaces = append(ifaces, net.Interface{
+				Index:        wiface.Index,
+				Name:         wiface.Name,
+				HardwareAddr: wiface.HWAddr,
+				Flags:        net.FlagUp | net.FlagBroadcast | net.FlagMulticast,
+			})
+			addrsByIface[wiface.Name] = wiface.Addrs
 		}
 	}
 
