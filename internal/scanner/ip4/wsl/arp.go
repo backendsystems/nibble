@@ -14,27 +14,19 @@ type Neighbor struct {
 }
 
 // Neighbors returns ARP entries from the Windows ARP table via arp.exe.
-func Neighbors(winIfaceName string) []Neighbor {
-	alias := strings.TrimPrefix(winIfaceName, "win:")
-
+// winIfaceName is accepted for API compatibility but unused: arp.exe sections
+// are identified by IP address, not interface name, and visibleNeighbors
+// already filters entries to the correct subnet.
+func Neighbors(_ string) []Neighbor {
 	out, err := runWinCmd("arp.exe", "-a")
 	if err != nil {
 		return nil
 	}
 
 	var rows []Neighbor
-	inSection := alias == "" // if no alias filter, include all
 	for line := range strings.SplitSeq(out, "\n") {
 		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		// Section headers look like: "Interface: 192.168.1.5 --- 0x4"
-		if strings.HasPrefix(line, "Interface:") {
-			inSection = alias == ""
-			continue
-		}
-		if !inSection {
+		if line == "" || strings.HasPrefix(line, "Interface:") {
 			continue
 		}
 		fields := strings.Fields(line)

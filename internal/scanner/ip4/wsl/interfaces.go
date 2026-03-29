@@ -29,17 +29,19 @@ func Interfaces() []Interface {
 func parseIpconfig(out string) []Interface {
 	var result []Interface
 	var cur *Interface
+	var pendingIP net.IP
 	var curMask net.IP
 
 	commit := func() {
 		if cur == nil {
 			return
 		}
-		// apply any pending mask to the last address added
-		if curMask != nil && len(cur.Addrs) > 0 {
-			cur.Addrs[len(cur.Addrs)-1] = applyMask(cur.Addrs[len(cur.Addrs)-1], curMask)
-			curMask = nil
+		// flush any IP that never got its mask
+		if pendingIP != nil {
+			cur.Addrs = append(cur.Addrs, &net.IPNet{IP: pendingIP, Mask: net.CIDRMask(32, 32)})
+			pendingIP = nil
 		}
+		curMask = nil
 		if len(cur.Addrs) > 0 {
 			result = append(result, *cur)
 		}
@@ -55,7 +57,7 @@ func parseIpconfig(out string) []Interface {
 			commit()
 			name := strings.TrimSuffix(strings.TrimSpace(line), ":")
 			lower := strings.ToLower(name)
-			if strings.Contains(lower, "loopback") || strings.Contains(lower, "tunnel") || strings.Contains(lower, "teredo") {
+			if strings.Contains(lower, "loopback") || strings.Contains(lower, "tunnel") || strings.Contains(lower, "teredo") || strings.Contains(lower, "vethernet") {
 				continue
 			}
 			cur = &Interface{Name: "win:" + adapterShortName(name)}
@@ -80,25 +82,31 @@ func parseIpconfig(out string) []Interface {
 
 		case strings.Contains(key, "IPv4 Address"):
 			// value may be "192.168.1.5(Preferred)" or "192.168.1.5"
-			ip := strings.TrimSuffix(strings.TrimSuffix(val, "(Preferred)"), "(Duplicate)")
-			parsed := net.ParseIP(ip)
+			ipStr := strings.TrimSuffix(strings.TrimSuffix(val, "(Preferred)"), "(Duplicate)")
+			parsed := net.ParseIP(ipStr).To4()
 			if parsed == nil || parsed.IsLinkLocalUnicast() || parsed.IsLoopback() {
 				continue
 			}
-			// push a placeholder addr; mask comes on the next line
-			if curMask != nil && len(cur.Addrs) > 0 {
-				cur.Addrs[len(cur.Addrs)-1] = applyMask(cur.Addrs[len(cur.Addrs)-1], curMask)
-				curMask = nil
+			// flush any previous pending IP that never got a mask
+			if pendingIP != nil {
+				cur.Addrs = append(cur.Addrs, &net.IPNet{IP: pendingIP, Mask: net.CIDRMask(32, 32)})
 			}
-			cur.Addrs = append(cur.Addrs, cidrAddr{cidr: ip + "/32"}) // placeholder until mask
+			if curMask != nil {
+				cur.Addrs = append(cur.Addrs, &net.IPNet{IP: parsed, Mask: net.IPMask(curMask.To4())})
+				pendingIP = nil
+				curMask = nil
+			} else {
+				pendingIP = parsed
+			}
 
 		case strings.Contains(key, "Subnet Mask"):
-			mask := net.ParseIP(val)
+			mask := net.ParseIP(val).To4()
 			if mask == nil {
 				continue
 			}
-			if len(cur.Addrs) > 0 {
-				cur.Addrs[len(cur.Addrs)-1] = applyMask(cur.Addrs[len(cur.Addrs)-1], mask)
+			if pendingIP != nil {
+				cur.Addrs = append(cur.Addrs, &net.IPNet{IP: pendingIP, Mask: net.IPMask(mask)})
+				pendingIP = nil
 			} else {
 				curMask = mask
 			}
@@ -138,18 +146,3 @@ func adapterShortName(header string) string {
 	return header
 }
 
-// applyMask converts a placeholder cidrAddr (IP/32) into a proper CIDR using the subnet mask.
-func applyMask(addr net.Addr, mask net.IP) net.Addr {
-	ca, ok := addr.(cidrAddr)
-	if !ok {
-		return addr
-	}
-	ipStr := strings.TrimSuffix(ca.cidr, "/32")
-	ip := net.ParseIP(ipStr).To4()
-	m := net.IPMask(mask.To4())
-	if ip == nil || m == nil {
-		return addr
-	}
-	ones, _ := m.Size()
-	return cidrAddr{cidr: ip.String() + "/" + itoa(ones)}
-}
