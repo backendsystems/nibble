@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/backendsystems/nibble/internal/scanner/ip4/docker"
 	"github.com/backendsystems/nibble/internal/scanner/ip4/linux"
 	"github.com/backendsystems/nibble/internal/scanner/ip4/macos"
 	"github.com/backendsystems/nibble/internal/scanner/ip4/windows"
@@ -36,7 +37,22 @@ type NeighborEntry struct {
 
 // visibleNeighbors returns neighbors currently visible in the OS ARP
 // table for the selected interface and subnet
-func visibleNeighbors(ifaceName string, subnet *net.IPNet) []NeighborEntry {
+// visibleNeighbors returns neighbors from the OS ARP table or Docker daemon.
+// The second return value is true when the result is exhaustive — i.e. came
+// from the Docker socket — meaning no subnet sweep is needed.
+func (s *Scanner) visibleNeighbors(ifaceName string, subnet *net.IPNet) ([]NeighborEntry, bool) {
+	// For Docker bridge interfaces, the daemon knows exactly which containers
+	// are running — skip the ARP table entirely.
+	if _, ok := s.dockerIfaces[ifaceName]; ok {
+		if dockerNeighbors := docker.ContainerNeighbors(ifaceName, subnet); len(dockerNeighbors) > 0 {
+			out := make([]NeighborEntry, len(dockerNeighbors))
+			for i, n := range dockerNeighbors {
+				out[i] = NeighborEntry{IP: n.IP, MAC: n.MAC}
+			}
+			return out, true
+		}
+	}
+
 	var rows []NeighborEntry
 	switch runtime.GOOS {
 	case "windows":
@@ -49,7 +65,6 @@ func visibleNeighbors(ifaceName string, subnet *net.IPNet) []NeighborEntry {
 		}
 	default:
 		if strings.HasPrefix(ifaceName, "win:") {
-			// WSL: scan Windows host interface via interop
 			for _, row := range wsl.Neighbors(ifaceName) {
 				rows = append(rows, NeighborEntry{IP: row.IP, MAC: row.MAC})
 			}
@@ -82,7 +97,7 @@ func visibleNeighbors(ifaceName string, subnet *net.IPNet) []NeighborEntry {
 		seen[row.IP] = struct{}{}
 		out = append(out, row)
 	}
-	return out
+	return out, false
 }
 
 func isSubnetBroadcastIpv4(ip net.IP, subnet *net.IPNet) bool {

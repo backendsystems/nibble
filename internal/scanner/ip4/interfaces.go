@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/netip"
 
+	"github.com/backendsystems/nibble/internal/scanner/ip4/docker"
 	"github.com/backendsystems/nibble/internal/scanner/ip4/wsl"
 )
 
@@ -15,14 +16,15 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 		return nil, nil, err
 	}
 
+	// Fetch Docker network info once — used for detection, clamping, and renaming.
+	dockerNetworks := docker.Networks()
+
 	ifaces := make([]net.Interface, 0, len(sysIfaces))
 	addrsByIface := make(map[string][]net.Addr, len(sysIfaces))
 	for _, iface := range sysIfaces {
-		// Skip loopback interfaces.
 		if iface.Flags&net.FlagLoopback != 0 {
 			continue
 		}
-		// Skip interfaces that are down.
 		if iface.Flags&net.FlagUp == 0 {
 			continue
 		}
@@ -32,10 +34,19 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 			continue
 		}
 
-		if hasIp4(addrs) && !wsl.IsWSLVirtualIface(iface.Name) {
-			ifaces = append(ifaces, iface)
-			addrsByIface[iface.Name] = addrs
+		if !hasIp4(addrs) || wsl.IsWSLVirtualIface(iface.Name) {
+			continue
 		}
+
+		if docker.IsBridgeIface(iface.Name, dockerNetworks) {
+			if !docker.BridgeHasPeers(iface.Name) {
+				continue
+			}
+			addrs = docker.ClampToCIDR(addrs, 24)
+		}
+
+		ifaces = append(ifaces, iface)
+		addrsByIface[iface.Name] = addrs
 	}
 
 	// In WSL, also include Windows host interfaces via interop.
@@ -51,7 +62,62 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 		}
 	}
 
+	ifaces, addrsByIface = deduplicateSubnets(ifaces, addrsByIface)
+	s.dockerIfaces = docker.ApplyNetworkNames(ifaces, addrsByIface, dockerNetworks)
+
 	return ifaces, addrsByIface, nil
+}
+
+// deduplicateSubnets removes interfaces whose IPv4 address is already contained
+// within another interface's subnet. This prevents showing redundant cards when
+// multiple interfaces share the same network (e.g. eth0/24 and services1/32 on
+// the same 192.168.65.0/24).
+func deduplicateSubnets(ifaces []net.Interface, addrsByIface map[string][]net.Addr) ([]net.Interface, map[string][]net.Addr) {
+	// Collect all subnets with their prefix length so we prefer the broader one.
+	type ifaceSubnet struct {
+		ones int
+		net  *net.IPNet
+	}
+	var subnets []ifaceSubnet
+	for _, iface := range ifaces {
+		for _, addr := range addrsByIface[iface.Name] {
+			ipnet, ok := addr.(*net.IPNet)
+			if ok && ipnet.IP.To4() != nil {
+				ones, _ := ipnet.Mask.Size()
+				subnets = append(subnets, ifaceSubnet{ones: ones, net: ipnet})
+			}
+		}
+	}
+
+	out := make([]net.Interface, 0, len(ifaces))
+	outAddrs := make(map[string][]net.Addr, len(ifaces))
+	for _, iface := range ifaces {
+		covered := false
+		for _, addr := range addrsByIface[iface.Name] {
+			ipnet, ok := addr.(*net.IPNet)
+			if !ok || ipnet.IP.To4() == nil {
+				continue
+			}
+			ones, _ := ipnet.Mask.Size()
+			for _, s := range subnets {
+				if s.net == ipnet {
+					continue // skip self
+				}
+				if s.ones < ones && s.net.Contains(ipnet.IP) {
+					covered = true
+					break
+				}
+			}
+			if covered {
+				break
+			}
+		}
+		if !covered {
+			out = append(out, iface)
+			outAddrs[iface.Name] = addrsByIface[iface.Name]
+		}
+	}
+	return out, outAddrs
 }
 
 func hasIp4(addrs []net.Addr) bool {
@@ -65,17 +131,13 @@ func hasIp4(addrs []net.Addr) bool {
 }
 
 func parseAddr(s string) (netip.Addr, bool) {
-	// addresses may be CIDR "192.168.1.10/24"
 	prefix, err := netip.ParsePrefix(s)
 	if err == nil {
 		return prefix.Addr(), true
 	}
-
-	// or plain "192.168.1.10"
 	ip, err := netip.ParseAddr(s)
 	if err == nil {
 		return ip, true
 	}
-
 	return netip.Addr{}, false
 }
