@@ -25,7 +25,6 @@ func (m *Model) Init() tea.Cmd {
 	return m.focusField(m.FocusedField)
 }
 
-
 // Update handles tea.Msg and delegates to the custom inputs or port selection
 func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	result := Result{}

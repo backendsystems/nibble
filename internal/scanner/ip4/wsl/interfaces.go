@@ -119,12 +119,12 @@ func parseIpconfig(out string) []Interface {
 // splitIpconfigField splits a line like "   Physical Address. . . . . : AA-BB-CC-DD-EE-FF"
 // into key="Physical Address" and val="AA-BB-CC-DD-EE-FF".
 func splitIpconfigField(line string) (key, val string, ok bool) {
-	idx := strings.Index(line, " : ")
-	if idx < 0 {
+	before, after, ok0 := strings.Cut(line, " : ")
+	if !ok0 {
 		return
 	}
-	key = strings.TrimRight(strings.TrimSpace(line[:idx]), ". ")
-	val = strings.TrimSpace(line[idx+3:])
+	key = strings.TrimRight(strings.TrimSpace(before), ". ")
+	val = strings.TrimSpace(after)
 	ok = true
 	return
 }
@@ -139,10 +139,9 @@ func adapterShortName(header string) string {
 		"PPP adapter ",
 		"Tunnel adapter ",
 	} {
-		if strings.HasPrefix(header, prefix) {
-			return strings.TrimPrefix(header, prefix)
+		if after, ok := strings.CutPrefix(header, prefix); ok {
+			return after
 		}
 	}
 	return header
 }
-

@@ -42,4 +42,3 @@ func runWinCmd(name string, args ...string) (string, error) {
 	}
 	return buf.String(), nil
 }
-

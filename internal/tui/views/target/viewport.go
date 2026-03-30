@@ -6,10 +6,7 @@ import "charm.land/bubbles/v2/viewport"
 func (m *Model) UpdateViewport(maxWidth int) {
 	// title (1) + blank+helpline (2) = 3 reserved lines
 	const reserved = 3
-	h := m.WindowH - reserved
-	if h < 1 {
-		h = 1
-	}
+	h := max(m.WindowH-reserved, 1)
 	if m.Viewport.Height() == 0 {
 		m.Viewport = viewport.New(viewport.WithHeight(h), viewport.WithWidth(maxWidth))
 	} else {
