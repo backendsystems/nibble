@@ -10,7 +10,7 @@ func BuildFromMain(current Model, mainModel mainview.Model) Model {
 	ipInput := current.IPInput
 	cidrInput := current.CIDRInput
 	if cidrInput == "" {
-		cidrInput = "32"
+		cidrInput = "24"
 	}
 
 	if mainModel.Cursor < len(mainModel.Interfaces) {

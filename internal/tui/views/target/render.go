@@ -44,6 +44,8 @@ func Render(m *Model, maxWidth int) string {
 	} else {
 		// Stage 1: Custom fields
 		b.WriteString("\n")
+		m.FieldY[fieldInterface] = strings.Count(b.String(), "\n")
+		b.WriteString(renderInterfaceField(m))
 		m.FieldY[fieldIP] = strings.Count(b.String(), "\n")
 		b.WriteString(renderField(m, fieldIP, maxWidth))
 		m.FieldY[fieldCIDR] = strings.Count(b.String(), "\n")
@@ -82,7 +84,7 @@ func renderField(m *Model, field int, maxWidth int) string {
 	case fieldIP:
 		b.WriteString(titleStyle.Render("IP address") + "\n")
 		b.WriteString(m.IPTextInput.View() + "\n")
-		b.WriteString(fieldDescStyle.Render(ipsDescription(m.IPIndex, m.InterfaceInfos)) + "\n")
+		b.WriteString("\n")
 	case fieldCIDR:
 		b.WriteString(titleStyle.Render("CIDR (16-32)") + "\n")
 		b.WriteString(m.CIDRTextInput.View() + "\n")
@@ -119,15 +121,39 @@ func renderPortModeField(m *Model) string {
 	return b.String()
 }
 
-func ipsDescription(ipIndex int, ifaces []InterfaceInfo) string {
-	count := len(ifaces)
-	if count == 0 {
-		return "No interfaces found"
+func renderInterfaceField(m *Model) string {
+	var b strings.Builder
+	focused := m.FocusedField == fieldInterface
+
+	titleStyle := fieldTitleBlurred
+	if focused {
+		titleStyle = fieldTitleFocused
 	}
-	if ipIndex < 0 || ipIndex >= count {
-		ipIndex = 0
+
+	b.WriteString(titleStyle.Render("Interface") + "\n")
+
+	var label string
+	if m.IPIsCustom {
+		label = lipgloss.NewStyle().Foreground(common.Color.Help).Italic(true).Render("custom")
+	} else if m.IPIndex >= 0 && m.IPIndex < len(m.InterfaceInfos) {
+		info := m.InterfaceInfos[m.IPIndex]
+		label = optionSelected.Render(info.Name)
 	}
-	return fmt.Sprintf("interfaces %d/%d ←/→ [%s]", ipIndex+1, count, ifaces[ipIndex].Name)
+
+	if focused {
+		b.WriteString(selectorStyle.Render("< ") + label + selectorStyle.Render(" >") + "\n")
+	} else {
+		b.WriteString("  " + label + "\n")
+	}
+
+	count := len(m.InterfaceInfos)
+	desc := fmt.Sprintf("%d/%d — ←/→ to cycle", m.IPIndex+1, count)
+	if count == 1 {
+		desc = "1 interface"
+	}
+	b.WriteString(fieldDescStyle.Render(desc) + "\n")
+
+	return b.String()
 }
 
 func hostCountDesc(cidrStr string) string {

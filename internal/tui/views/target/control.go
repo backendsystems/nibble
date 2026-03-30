@@ -1,8 +1,6 @@
 package targetview
 
 import (
-	"strings"
-
 	tea "charm.land/bubbletea/v2"
 )
 
@@ -23,8 +21,10 @@ func (m *Model) Init() tea.Cmd {
 
 	// Ensure we start at the form view, not custom port input
 	m.InCustomPortInput = false
+
 	return m.focusField(m.FocusedField)
 }
+
 
 // Update handles tea.Msg and delegates to the custom inputs or port selection
 func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
@@ -62,9 +62,9 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			if keyMsg.String() == "enter" {
 				return m.submitForm(result)
 			}
-			// down/j/s moves through port options; tab wraps back to IP
+			// down/j/s moves through port options; tab wraps back to first field
 			if keyMsg.String() == "tab" {
-				cmd := m.focusField(fieldIP)
+				cmd := m.focusField((fieldPortMode + 1) % fieldCount)
 				return result, cmd
 			}
 			if m.PortModeIndex < len(portModeOptions)-1 {
@@ -88,17 +88,26 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 			}
 			return result, nil
 		}
-		// Move to previous field (wrap from IP to port mode)
+		// Move to previous field
 		prev := (m.FocusedField - 1 + fieldCount) % fieldCount
 		cmd := m.focusField(prev)
 		return result, cmd
+	case "h", "a":
+		msg = tea.KeyPressMsg(tea.Key{Code: tea.KeyLeft})
+		keyMsg = msg.(tea.KeyPressMsg)
+	case "l", "d":
+		msg = tea.KeyPressMsg(tea.Key{Code: tea.KeyRight})
+		keyMsg = msg.(tea.KeyPressMsg)
+	}
+
+	switch keyMsg.String() {
 	case "left":
-		if m.FocusedField == fieldIP {
+		if m.FocusedField == fieldInterface {
 			m.CycleInterfaceIP(false)
 			return result, nil
 		}
 	case "right":
-		if m.FocusedField == fieldIP {
+		if m.FocusedField == fieldInterface {
 			m.CycleInterfaceIP(true)
 			return result, nil
 		}
@@ -107,14 +116,7 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 	// Delegate to focused textinput with character filtering
 	switch m.FocusedField {
 	case fieldIP:
-		if keyMsg.Code == tea.KeyBackspace {
-			// Block backspace if cursor is at or before the first dot
-			val := m.IPTextInput.Value()
-			firstDotPos := strings.Index(val, ".")
-			if firstDotPos >= 0 && len(val) <= firstDotPos+1 {
-				return result, nil
-			}
-		} else if keyMsg.Text != "" {
+		if keyMsg.Text != "" {
 			ch := []rune(keyMsg.Text)[0]
 			if !((ch >= '0' && ch <= '9') || ch == '.') {
 				return result, nil
@@ -123,6 +125,17 @@ func (m *Model) Update(msg tea.Msg) (Result, tea.Cmd) {
 		var cmd tea.Cmd
 		m.IPTextInput, cmd = m.IPTextInput.Update(msg)
 		m.IPInput = m.IPTextInput.Value()
+		m.IPIsCustom = !m.ipMatchesInterface(m.IPInput)
+		if !m.IPIsCustom {
+			// Sync IPIndex to the interface whose prefix matches
+			prefix := ipPrefix(m.IPInput)
+			for i, info := range m.InterfaceInfos {
+				if ipPrefix(info.IP) == prefix {
+					m.IPIndex = i
+					break
+				}
+			}
+		}
 		result.Cmd = cmd
 		return result, cmd
 	case fieldCIDR:

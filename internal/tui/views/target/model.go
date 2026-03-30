@@ -19,6 +19,7 @@ func (m *Model) CycleInterfaceIP(forward bool) {
 	} else {
 		m.IPIndex = (m.IPIndex - 1 + len(m.InterfaceInfos)) % len(m.InterfaceInfos)
 	}
+	m.IPIsCustom = false
 	m.IPInput = m.InterfaceInfos[m.IPIndex].IP
 	m.IPTextInput.SetValue(m.IPInput)
 	m.IPTextInput.CursorEnd()
@@ -42,9 +43,12 @@ func (m *Model) initializeInputs() {
 		if m.IPInput == "" {
 			m.IPInput = m.InterfaceInfos[m.IPIndex].IP
 		}
+		if m.IPInput != "" {
+			m.IPIsCustom = !m.ipMatchesInterface(m.IPInput)
+		}
 	}
 	if m.CIDRInput == "" {
-		m.CIDRInput = "32"
+		m.CIDRInput = "24"
 	}
 	if m.PortPack == "" {
 		m.PortPack = "default"
@@ -67,7 +71,7 @@ func (m *Model) initializeInputs() {
 
 	// Build CIDR textinput
 	m.CIDRTextInput = newFieldInput(2)
-	m.CIDRTextInput.Placeholder = "32"
+	m.CIDRTextInput.Placeholder = "24"
 	m.CIDRTextInput.SetValue(m.CIDRInput)
 	m.CIDRTextInput.CursorEnd()
 }
@@ -107,6 +111,9 @@ func (m *Model) focusField(field int) tea.Cmd {
 	m.FocusedField = field
 	var cmd tea.Cmd
 	switch field {
+	case fieldInterface:
+		m.IPTextInput.Blur()
+		m.CIDRTextInput.Blur()
 	case fieldIP:
 		cmd = m.IPTextInput.Focus()
 		m.CIDRTextInput.Blur()
