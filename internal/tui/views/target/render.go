@@ -42,16 +42,31 @@ func Render(m *Model, maxWidth int) string {
 		guide := "  • " + common.CustomPortsDescription
 		b.WriteString(common.ItalicHelpStyle.Render(guide) + "\n")
 	} else {
-		// Stage 1: Custom fields
-		b.WriteString("\n")
-		m.FieldY[fieldInterface] = strings.Count(b.String(), "\n")
-		b.WriteString(renderInterfaceField(m))
-		m.FieldY[fieldIP] = strings.Count(b.String(), "\n")
-		b.WriteString(renderField(m, fieldIP, maxWidth))
-		m.FieldY[fieldCIDR] = strings.Count(b.String(), "\n")
-		b.WriteString(renderField(m, fieldCIDR, maxWidth))
-		m.FieldY[fieldPortMode] = strings.Count(b.String(), "\n")
-		b.WriteString(renderPortModeField(m))
+		// Stage 1: render all fields into viewport content.
+		content := renderInterfaceField(m) +
+			renderField(m, fieldIP, maxWidth) +
+			renderField(m, fieldCIDR, maxWidth) +
+			renderPortModeField(m)
+
+		absRow := 0
+		if m.WindowH > 0 {
+			m.UpdateViewport(maxWidth)
+			m.Viewport.SetContent(content)
+			m.scrollToFocused()
+			// FieldY = on-screen row: title(1) + fieldAbsRow - YOffset
+			for f := range fieldCount {
+				m.FieldY[f] = 1 + absRow - m.Viewport.YOffset()
+				absRow += fieldHeights[f]
+			}
+			b.WriteString(m.Viewport.View())
+		} else {
+			// WindowH not yet known, render all fields directly
+			for f := range fieldCount {
+				m.FieldY[f] = 1 + absRow
+				absRow += fieldHeights[f]
+			}
+			b.WriteString(content)
+		}
 	}
 
 	// Error message (if any)
@@ -84,7 +99,6 @@ func renderField(m *Model, field int, maxWidth int) string {
 	case fieldIP:
 		b.WriteString(titleStyle.Render("IP address") + "\n")
 		b.WriteString(m.IPTextInput.View() + "\n")
-		b.WriteString("\n")
 	case fieldCIDR:
 		b.WriteString(titleStyle.Render("CIDR (16-32)") + "\n")
 		b.WriteString(m.CIDRTextInput.View() + "\n")

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
 	"github.com/backendsystems/nibble/internal/scanner/shared"
 	"github.com/backendsystems/nibble/internal/tui/views/common"
 )
@@ -50,6 +51,8 @@ type Model struct {
 	InterfaceIPs      []string        // Available interface IPs (deprecated, use InterfaceInfos)
 	InterfaceInfos    []InterfaceInfo // Available interfaces with names and IPs
 	IPIndex           int             // Current index in InterfaceInfos
+	WindowH           int             // terminal height, for viewport sizing
+	Viewport          viewport.Model  // scrollable area for fields
 	HoveredHelpItem   int             // -1 means no hover, otherwise index of helpline item
 	HelpLineY         int             // Y row where the helpline starts, set during render
 	FieldY            [fieldCount]int // Y row where each field starts, set during render

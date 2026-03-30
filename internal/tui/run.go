@@ -62,6 +62,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 			CustomPorts:     targetCfg.Custom,
 			InterfaceInfos:  targetview.BuildInterfaceInfos(ifaces, addrsByIface),
 			HoveredHelpItem: -1,
+			WindowH:         initialWindowH,
 		},
 	}
 	initialModel.scan = initialModel.scan.SetViewportSize(scanViewWidth(initialModel.windowW), initialModel.windowH)

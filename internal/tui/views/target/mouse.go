@@ -7,7 +7,7 @@ import (
 
 // fieldHeights returns the number of lines each field occupies.
 // Interface: title + selector + desc = 3, IP: title + input + blank = 3, CIDR: same = 3, PortMode: title + 3 options = 4.
-var fieldHeights = [fieldCount]int{3, 3, 3, 4}
+var fieldHeights = [fieldCount]int{3, 2, 3, 4}
 
 func (m *Model) HandleMouse(msg tea.Msg, maxWidth int) (Result, tea.Cmd) {
 	mouse, ok := common.MouseXY(msg)
