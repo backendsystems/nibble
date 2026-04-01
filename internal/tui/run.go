@@ -60,6 +60,8 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 			NetworkScan:     networkScanner,
 			PortPack:        targetPack,
 			CustomPorts:     targetCfg.Custom,
+			IPInput:         targetCfg.IP,
+			CIDRInput:       targetCfg.CIDR,
 			InterfaceInfos:  targetview.BuildInterfaceInfos(ifaces, addrsByIface),
 			HoveredHelpItem: -1,
 			WindowH:         initialWindowH,

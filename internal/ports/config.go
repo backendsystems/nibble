@@ -10,6 +10,8 @@ import (
 type Config struct {
 	Mode   string `json:"mode"`
 	Custom string `json:"custom"`
+	IP     string `json:"ip,omitempty"`
+	CIDR   string `json:"cidr,omitempty"`
 }
 
 // configPath returns the path to a config file with the given name

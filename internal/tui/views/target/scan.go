@@ -21,7 +21,7 @@ func (m *Model) finalizeScan(result Result) (Result, tea.Cmd) {
 		cmd := m.focusField(m.FocusedField)
 		return result, cmd
 	}
-	if err := ports.SaveConfig("target", ports.Config{Mode: m.PortPack, Custom: m.CustomPorts}); err != nil {
+	if err := ports.SaveConfig("target", ports.Config{Mode: m.PortPack, Custom: m.CustomPorts, IP: m.IPInput, CIDR: m.CIDRInput}); err != nil {
 		m.ErrorMsg = err.Error()
 		return result, nil
 	}
