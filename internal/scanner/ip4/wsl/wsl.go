@@ -1,6 +1,7 @@
 package wsl
 
 import (
+	"bytes"
 	"os"
 )
 
@@ -22,4 +23,22 @@ func IsWSLVirtualIface(name string) bool {
 func IsWSL() bool {
 	_, err := os.Stat("/proc/sys/fs/binfmt_misc/WSLInterop")
 	return err == nil
+}
+
+// IsDockerOnWSL returns true when running inside a Docker container on a WSL2
+// kernel. These environments have no WSLInterop file but still route traffic
+// through the WSL2 hypervisor, so they need the same dial timeout boost.
+func IsDockerOnWSL() bool {
+	version, err := os.ReadFile("/proc/version")
+	if err != nil {
+		return false
+	}
+	if !bytes.Contains(bytes.ToLower(version), []byte("microsoft")) {
+		return false
+	}
+	cgroup, err := os.ReadFile("/proc/1/cgroup")
+	if err != nil {
+		return false
+	}
+	return bytes.Contains(cgroup, []byte("docker"))
 }

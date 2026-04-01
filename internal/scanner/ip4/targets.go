@@ -90,7 +90,7 @@ func (s *Scanner) subnetSweep(ifaceName string, subnet *net.IPNet, totalHosts in
 }
 
 func processNeighborJob(ifaceName string, neighbor NeighborEntry, ports []int, totalHosts, totalNeighbors int, seenCount *atomic.Int64, progressChan chan<- shared.ProgressUpdate) {
-	host := scanHostMac(ifaceName, neighbor.IP, neighbor.MAC, ports)
+	host := scanHostMac(neighbor.IP, neighbor.MAC, ports)
 	if host == nil {
 		host = neighborToHost(neighbor)
 	}
@@ -117,7 +117,7 @@ func processSweepJob(ifaceName, currentIP string, ports []int, skipIPs map[strin
 	var host *shared.HostResult
 	if len(ports) > 0 {
 		if _, alreadyFound := skipIPs[currentIP]; !alreadyFound {
-			host = scanHost(ifaceName, currentIP, ports)
+			host = scanHost(currentIP, ports)
 		}
 	}
 

@@ -2,7 +2,6 @@ package ip4
 
 import (
 	"fmt"
-	"math/rand"
 	"net"
 	"runtime"
 	"sort"
@@ -14,8 +13,7 @@ import (
 )
 
 const (
-	dialTimeout = 100 * time.Millisecond
-	dialStagger = 30 * time.Millisecond
+	dialTimeout = 150 * time.Millisecond
 )
 
 var dialExtra = func() time.Duration {
@@ -23,7 +21,7 @@ var dialExtra = func() time.Duration {
 	case "windows":
 		return 50 * time.Millisecond
 	default:
-		if wsl.IsWSL() {
+		if wsl.IsWSL() || wsl.IsDockerOnWSL() {
 			return 50 * time.Millisecond
 		}
 		return 0
@@ -35,11 +33,11 @@ type portResult struct {
 	banner string
 }
 
-func scanHost(ifaceName, ip string, ports []int) *shared.HostResult {
-	return scanHostMac(ifaceName, ip, "", ports)
+func scanHost(ip string, ports []int) *shared.HostResult {
+	return scanHostMac(ip, "", ports)
 }
 
-func scanHostMac(ifaceName, ip, knownMAC string, ports []int) *shared.HostResult {
+func scanHostMac(ip, knownMAC string, ports []int) *shared.HostResult {
 	if len(ports) == 0 {
 		// Host-only mode: ARP to check liveness (requires CAP_NET_RAW).
 		// For neighbors knownMAC is already set so no ARP request is made.
@@ -108,8 +106,7 @@ func scanOpenPorts(ip string, ports []int) []portResult {
 }
 
 func dialAndRecord(ip string, port int, mu *sync.Mutex, results *[]portResult) {
-	jitter := time.Duration(rand.Intn(int(dialStagger)))
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), dialTimeout+dialExtra+jitter)
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), dialTimeout+dialExtra)
 	if err != nil {
 		return
 	}
