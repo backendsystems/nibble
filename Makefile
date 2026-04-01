@@ -1,10 +1,19 @@
-.PHONY: all build demo history vhs update run pip npm goreleaser apt fix
+.PHONY: all build demo history vhs update run pip npm goreleaser apt fix signing
 
 all: run
 
 build:
 	@go build -o nibble .
 	@echo "Built nibble binary"
+
+signing:
+	@git config --global gpg.format ssh
+	@git config --global user.signingkey "$$(ssh-add -L)"
+	@git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
+	@git config --global commit.gpgsign true
+	@mkdir -p ~/.ssh
+	@echo "$$(git config user.email) $$(ssh-add -L)" > ~/.ssh/allowed_signers
+	@echo "SSH commit signing enabled"
 
 nibble: build
 

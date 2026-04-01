@@ -54,10 +54,6 @@ Hold `Shift` and drag to select text.
 ![Nibble click interface](click.gif "Clickable interface with mouse support")
 
 ## Installation
-#### Manual download:
-Pre-built binaries for Linux, macOS and Windows (amd64/arm64) are available on the [Releases](https://github.com/backendsystems/nibble/releases) page.
-
-#### Package managers:
 <a id="install-go"></a>
 <img src="https://cdn.simpleicons.org/go/00ADD8" width="16" style="vertical-align:middle"> go (https://go.dev/):
 ```bash
@@ -104,6 +100,9 @@ or run without install
 ```bash
 npx @backendsystems/nibble
 ```
+
+#### Manual download:
+Pre-built binaries for Linux, macOS and Windows (amd64/arm64) are available on the [Releases](https://github.com/backendsystems/nibble/releases) page.
 
 ## Usage
 Run the CLI with `nibble`, select a network interface.  
