@@ -1,4 +1,4 @@
-.PHONY: all build demo history vhs update run pip npm goreleaser apt fix signing
+.PHONY: all build demo history vhs update run pip npm goreleaser apt fix signing bench
 
 all: run
 
@@ -86,6 +86,18 @@ fix:
 	@go vet ./...
 	@go fix ./...
 	@echo "Code formatted, vetted and fixed"
+
+bench: nibble
+	@if [ -z "$(ip)" ]; then echo "Usage: make bench ip=<ip>"; exit 1; fi
+	@if ! command -v nmap >/dev/null 2>&1; then echo "nmap not found. Install with: sudo apt install nmap"; exit 1; fi
+	@echo "=== nibble (all ports, TCP connect) ==="
+	@bash -c 'time ./nibble -i $(ip) -p -'
+	@echo ""
+	@echo "=== nmap (all ports, TCP connect) ==="
+	@bash -c 'time nmap -sT -p - $(ip)'
+	@echo ""
+	@echo "=== nmap (all ports, SYN scan, sudo) ==="
+	@bash -c 'time sudo nmap -sS -p - $(ip)'
 
 move: build
 	@sudo cp nibble /usr/local/bin/
