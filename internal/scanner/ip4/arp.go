@@ -31,8 +31,7 @@ func lookupMacFromCache(ip string) string {
 }
 
 // NeighborEntry is a visible L2/L3 neighbor from the host ARP/neighbor table.
-// Ports is non-nil only for Docker Desktop containers where TCP probing is
-// impossible (containers live in a VM); the ports come directly from the API.
+// For Docker containers, Ports and Hardware come from the API instead of TCP probing.
 // Hardware overrides MAC-based vendor lookup when set (used for Docker image names).
 type NeighborEntry struct {
 	IP       string
@@ -41,33 +40,22 @@ type NeighborEntry struct {
 	Ports    []shared.PortInfo
 }
 
-// visibleNeighbors returns neighbors from the OS ARP table or Docker daemon.
-// The second return value is true when the result is exhaustive — i.e. came
-// from the Docker socket — meaning no subnet sweep is needed.
+// visibleNeighbors returns neighbors from the Docker daemon or OS ARP table.
+// Returns true when the result is exhaustive (Docker socket), meaning no subnet sweep is needed.
 func (s *Scanner) visibleNeighbors(ifaceName string, subnet *net.IPNet) ([]NeighborEntry, bool) {
 	// For Docker bridge interfaces, the daemon knows exactly which containers
 	// are running — skip the ARP table entirely.
 	if _, ok := s.dockerIfaces[ifaceName]; ok {
-		if dockerNeighbors := docker.ContainerNeighbors(ifaceName, subnet); len(dockerNeighbors) > 0 {
-			_, isDesktop := s.desktopIfaces[ifaceName]
-			out := make([]NeighborEntry, 0, len(dockerNeighbors))
-			for _, n := range dockerNeighbors {
-				entry := NeighborEntry{IP: n.IP, MAC: n.MAC}
-				if isDesktop {
-					// Containers aren't reachable from host — show container
-					// name/image instead of meaningless IP/MAC.
-					entry.IP = n.Name
-					entry.Hardware = n.Image
-					for _, p := range n.Ports {
-						if p.PublicPort > 0 {
-							entry.Ports = append(entry.Ports, shared.PortInfo{Port: p.PublicPort})
-						}
-					}
-				}
-				out = append(out, entry)
+		dockerNeighbors := docker.ContainerNeighbors(ifaceName, subnet)
+		out := make([]NeighborEntry, 0, len(dockerNeighbors))
+		for _, n := range dockerNeighbors {
+			entry := NeighborEntry{IP: n.Name, MAC: n.MAC, Hardware: n.Image}
+			for _, p := range n.Ports {
+				entry.Ports = append(entry.Ports, shared.PortInfo{Port: p.PublicPort})
 			}
-			return out, true
+			out = append(out, entry)
 		}
+		return out, true
 	}
 
 	var rows []NeighborEntry

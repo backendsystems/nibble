@@ -69,9 +69,8 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 	// on the host. Synthesize interface entries from the Docker API so the TUI
 	// can show and scan each Docker network.
 	if docker.IsDesktop(dockerNetworks) {
-		s.desktopIfaces = make(map[string]struct{})
 		for i, dn := range docker.DesktopNetworks() {
-			displayName := docker.DisplayName(dn.Name)
+			displayName := dn.Name
 			synth := net.Interface{
 				Index: 10000 + i,
 				Name:  displayName,
@@ -84,7 +83,6 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 			ifaces = append(ifaces, synth)
 			addrsByIface[displayName] = []net.Addr{addr}
 			s.dockerIfaces[displayName] = struct{}{}
-			s.desktopIfaces[displayName] = struct{}{}
 		}
 	}
 

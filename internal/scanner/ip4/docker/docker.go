@@ -105,12 +105,6 @@ func DesktopNetworks() []DesktopNetwork {
 	return out
 }
 
-// DisplayName trims the "_default" suffix that Docker Compose appends to
-// default network names, keeping the card label concise.
-func DisplayName(name string) string {
-	return strings.TrimSuffix(name, "_default")
-}
-
 // IsDesktop returns true when Docker is reachable via socket but no kernel
 // bridge interfaces exist (i.e. Docker Desktop running in a VM).
 func IsDesktop(networks map[string]string) bool {
@@ -153,12 +147,11 @@ func ApplyNetworkNames(ifaces []net.Interface, addrsByIface map[string][]net.Add
 			}
 			continue
 		}
-		displayName := DisplayName(dockerName)
 		addrs := addrsByIface[iface.Name]
 		delete(addrsByIface, iface.Name)
-		addrsByIface[displayName] = addrs
-		ifaces[i].Name = displayName
-		dockerDisplayNames[displayName] = struct{}{}
+		addrsByIface[dockerName] = addrs
+		ifaces[i].Name = dockerName
+		dockerDisplayNames[dockerName] = struct{}{}
 	}
 	return dockerDisplayNames
 }
@@ -195,7 +188,7 @@ func ContainerNeighbors(networkName string, subnet *net.IPNet) []Neighbor {
 	var out []Neighbor
 	for _, c := range containers {
 		for netName, ns := range c.NetworkSettings.Networks {
-			if netName != networkName && DisplayName(netName) != networkName {
+			if netName != networkName {
 				continue
 			}
 			ip := net.ParseIP(ns.IPAddress)
@@ -209,14 +202,13 @@ func ContainerNeighbors(networkName string, subnet *net.IPNet) []Neighbor {
 			n := Neighbor{IP: ns.IPAddress, MAC: ns.MacAddress, Name: cName, Image: c.Image}
 			seen := make(map[int]struct{})
 			for _, p := range c.Ports {
-				if p.Type != "tcp" {
+				if p.Type != "tcp" || p.PublicPort == 0 {
 					continue
 				}
-				port := p.PrivatePort
-				if _, ok := seen[port]; ok {
+				if _, ok := seen[p.PublicPort]; ok {
 					continue
 				}
-				seen[port] = struct{}{}
+				seen[p.PublicPort] = struct{}{}
 				n.Ports = append(n.Ports, Port{
 					PrivatePort: p.PrivatePort,
 					PublicPort:  p.PublicPort,

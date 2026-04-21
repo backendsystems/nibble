@@ -10,8 +10,7 @@ import (
 // Scanner performs real network scanning (TCP connect, ARP, banner grab)
 type Scanner struct {
 	Ports         []int
-	dockerIfaces  map[string]struct{} // display names of Docker network interfaces
-	desktopIfaces map[string]struct{} // subset of dockerIfaces that are Docker Desktop (VM-backed)
+	dockerIfaces map[string]struct{} // display names of Docker network interfaces
 }
 
 // DockerIfaces returns the set of interface display names that correspond to
