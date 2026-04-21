@@ -65,6 +65,29 @@ func (s *Scanner) GetInterfaces() ([]net.Interface, map[string][]net.Addr, error
 	ifaces, addrsByIface = deduplicateSubnets(ifaces, addrsByIface)
 	s.dockerIfaces = docker.ApplyNetworkNames(ifaces, addrsByIface, dockerNetworks)
 
+	// Docker Desktop runs containers in a VM — no kernel bridge interfaces exist
+	// on the host. Synthesize interface entries from the Docker API so the TUI
+	// can show and scan each Docker network.
+	if docker.IsDesktop(dockerNetworks) {
+		s.desktopIfaces = make(map[string]struct{})
+		for i, dn := range docker.DesktopNetworks() {
+			displayName := docker.DisplayName(dn.Name)
+			synth := net.Interface{
+				Index: 10000 + i,
+				Name:  displayName,
+				Flags: net.FlagUp | net.FlagBroadcast | net.FlagMulticast,
+			}
+			addr := &net.IPNet{
+				IP:   dn.Subnet.IP,
+				Mask: dn.Subnet.Mask,
+			}
+			ifaces = append(ifaces, synth)
+			addrsByIface[displayName] = []net.Addr{addr}
+			s.dockerIfaces[displayName] = struct{}{}
+			s.desktopIfaces[displayName] = struct{}{}
+		}
+	}
+
 	return ifaces, addrsByIface, nil
 }
 

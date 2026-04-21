@@ -20,7 +20,7 @@ import (
 	"github.com/charmbracelet/x/term"
 )
 
-func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map[string][]net.Addr) error {
+func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map[string][]net.Addr, dockerIfaces map[string]struct{}) error {
 	cfg, _ := ports.LoadConfig("ports")
 	if resolvedPorts, err := resolvePortsConfig(cfg); err == nil {
 		scannerconfig.SetPorts(networkScanner, resolvedPorts)
@@ -45,6 +45,7 @@ func Run(networkScanner shared.Scanner, ifaces []net.Interface, addrsByIface map
 		main: mainview.Model{
 			Interfaces:      ifaces,
 			InterfaceMap:    addrsByIface,
+			DockerIfaces:    dockerIfaces,
 			CardsPerRow:     initialCardsPerRow,
 			CardWidth:       cardWidth,
 			WindowH:         initialWindowH,

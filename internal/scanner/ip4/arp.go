@@ -10,6 +10,7 @@ import (
 	"github.com/backendsystems/nibble/internal/scanner/ip4/macos"
 	"github.com/backendsystems/nibble/internal/scanner/ip4/windows"
 	"github.com/backendsystems/nibble/internal/scanner/ip4/wsl"
+	"github.com/backendsystems/nibble/internal/scanner/shared"
 )
 
 // lookupMacFromCache reads the OS ARP cache to find a MAC without needing root
@@ -29,14 +30,17 @@ func lookupMacFromCache(ip string) string {
 	return linux.LookupMAC(ip)
 }
 
-// NeighborEntry is a visible L2/L3 neighbor from the host ARP/neighbor table
+// NeighborEntry is a visible L2/L3 neighbor from the host ARP/neighbor table.
+// Ports is non-nil only for Docker Desktop containers where TCP probing is
+// impossible (containers live in a VM); the ports come directly from the API.
+// Hardware overrides MAC-based vendor lookup when set (used for Docker image names).
 type NeighborEntry struct {
-	IP  string
-	MAC string
+	IP       string
+	MAC      string
+	Hardware string
+	Ports    []shared.PortInfo
 }
 
-// visibleNeighbors returns neighbors currently visible in the OS ARP
-// table for the selected interface and subnet
 // visibleNeighbors returns neighbors from the OS ARP table or Docker daemon.
 // The second return value is true when the result is exhaustive — i.e. came
 // from the Docker socket — meaning no subnet sweep is needed.
@@ -45,9 +49,22 @@ func (s *Scanner) visibleNeighbors(ifaceName string, subnet *net.IPNet) ([]Neigh
 	// are running — skip the ARP table entirely.
 	if _, ok := s.dockerIfaces[ifaceName]; ok {
 		if dockerNeighbors := docker.ContainerNeighbors(ifaceName, subnet); len(dockerNeighbors) > 0 {
-			out := make([]NeighborEntry, len(dockerNeighbors))
-			for i, n := range dockerNeighbors {
-				out[i] = NeighborEntry{IP: n.IP, MAC: n.MAC}
+			_, isDesktop := s.desktopIfaces[ifaceName]
+			out := make([]NeighborEntry, 0, len(dockerNeighbors))
+			for _, n := range dockerNeighbors {
+				entry := NeighborEntry{IP: n.IP, MAC: n.MAC}
+				if isDesktop {
+					// Containers aren't reachable from host — show container
+					// name/image instead of meaningless IP/MAC.
+					entry.IP = n.Name
+					entry.Hardware = n.Image
+					for _, p := range n.Ports {
+						if p.PublicPort > 0 {
+							entry.Ports = append(entry.Ports, shared.PortInfo{Port: p.PublicPort})
+						}
+					}
+				}
+				out = append(out, entry)
 			}
 			return out, true
 		}

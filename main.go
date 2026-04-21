@@ -35,7 +35,12 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err := tui.Run(s, ifaces, addrsByIface); err != nil {
+		var dockerIfaces map[string]struct{}
+		if ds, ok := s.(interface{ DockerIfaces() map[string]struct{} }); ok {
+			dockerIfaces = ds.DockerIfaces()
+		}
+
+		if err := tui.Run(s, ifaces, addrsByIface, dockerIfaces); err != nil {
 			fmt.Printf("Error starting the program: %v", err)
 			os.Exit(1)
 		}

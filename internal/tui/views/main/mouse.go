@@ -6,19 +6,37 @@ import (
 )
 
 const (
-	cardHeight      = 4 // top border + 2 content lines + bottom border
+	cardHeight      = 4 // top border + 2 content lines + bottom border; used as fallback
 	cardTitleOffset = 1 // title line before cards
 )
 
 // CardIndexAt returns the card index at the given terminal (x, y) position
 // accounting for the viewport scroll offset, or -1 if the position misses all cards.
-func CardIndexAt(x, y, yOffset, cardsPerRow, totalCards, cardWidth int) int {
+// rowHeights holds the actual rendered line-height of each card row; when nil
+// the fixed cardHeight constant is used as a fallback.
+func CardIndexAt(x, y, yOffset, cardsPerRow, totalCards, cardWidth int, rowHeights []int) int {
 	if y < cardTitleOffset {
 		return -1
 	}
-	// Convert screen Y to content Y by adding the viewport scroll offset.
 	contentY := (y - cardTitleOffset) + yOffset
-	row := contentY / cardHeight
+
+	row := -1
+	if len(rowHeights) > 0 {
+		offset := 0
+		for i, h := range rowHeights {
+			if contentY < offset+h {
+				row = i
+				break
+			}
+			offset += h
+		}
+	} else {
+		row = contentY / cardHeight
+	}
+	if row < 0 {
+		return -1
+	}
+
 	col := x / cardWidth
 	if col >= cardsPerRow {
 		return -1
@@ -28,6 +46,19 @@ func CardIndexAt(x, y, yOffset, cardsPerRow, totalCards, cardWidth int) int {
 		return -1
 	}
 	return index
+}
+
+// rowScrollMetrics returns a scroll step and total content height from row heights.
+// Falls back to cardHeight when rowHeights is empty.
+func rowScrollMetrics(rowHeights []int) (step, total int) {
+	if len(rowHeights) == 0 {
+		return cardHeight, 0
+	}
+	step = rowHeights[0]
+	for _, h := range rowHeights {
+		total += h
+	}
+	return step, total
 }
 
 func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
@@ -52,15 +83,14 @@ func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 
 	switch msg.(type) {
 	case tea.MouseWheelMsg:
+		step, totalH := rowScrollMetrics(m.RowHeights)
 		if mouse.Button == tea.MouseWheelUp {
-			result.Model.Viewport.SetYOffset(max(0, result.Model.Viewport.YOffset()-cardHeight))
+			result.Model.Viewport.SetYOffset(max(0, result.Model.Viewport.YOffset()-step))
 			return result
 		}
 		if mouse.Button == tea.MouseWheelDown {
-			totalCards := len(m.Interfaces) + 2
-			totalRows := (totalCards + m.CardsPerRow - 1) / m.CardsPerRow
-			maxOffset := max(0, totalRows*cardHeight-m.Viewport.Height())
-			result.Model.Viewport.SetYOffset(min(result.Model.Viewport.YOffset()+cardHeight, maxOffset))
+			maxOffset := max(0, totalH-m.Viewport.Height())
+			result.Model.Viewport.SetYOffset(min(result.Model.Viewport.YOffset()+step, maxOffset))
 			return result
 		}
 	}
@@ -86,7 +116,7 @@ func (m Model) HandleMouse(msg tea.Msg) UpdateResult {
 	}
 
 	totalCards := len(m.Interfaces) + 2
-	index := CardIndexAt(mouse.X, mouse.Y, m.Viewport.YOffset(), m.CardsPerRow, totalCards, m.CardWidth)
+	index := CardIndexAt(mouse.X, mouse.Y, m.Viewport.YOffset(), m.CardsPerRow, totalCards, m.CardWidth, m.RowHeights)
 	if index < 0 {
 		return result
 	}

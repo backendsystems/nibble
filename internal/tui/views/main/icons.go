@@ -4,7 +4,11 @@ import (
 	"strings"
 )
 
-func interfaceIcon(name string) string {
+func interfaceIcon(name string, isDocker bool) string {
+	if isDocker {
+		return "📦"
+	}
+
 	lower := strings.ToLower(name)
 
 	if strings.HasPrefix(lower, "docker") ||

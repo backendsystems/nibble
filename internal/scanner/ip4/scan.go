@@ -9,8 +9,15 @@ import (
 
 // Scanner performs real network scanning (TCP connect, ARP, banner grab)
 type Scanner struct {
-	Ports        []int
-	dockerIfaces map[string]struct{} // display names of Docker network interfaces
+	Ports         []int
+	dockerIfaces  map[string]struct{} // display names of Docker network interfaces
+	desktopIfaces map[string]struct{} // subset of dockerIfaces that are Docker Desktop (VM-backed)
+}
+
+// DockerIfaces returns the set of interface display names that correspond to
+// Docker networks. Only populated after GetInterfaces has been called.
+func (s *Scanner) DockerIfaces() map[string]struct{} {
+	return s.dockerIfaces
 }
 
 // ScanNetwork scans a real subnet with controlled concurrency for smooth progress

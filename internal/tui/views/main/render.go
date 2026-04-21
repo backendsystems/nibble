@@ -17,35 +17,42 @@ func Render(m *Model, maxWidth int) string {
 
 	icons := make(map[string]string, len(m.Interfaces))
 	for _, iface := range m.Interfaces {
-		icons[iface.Name] = interfaceIcon(iface.Name)
+		_, isDocker := m.DockerIfaces[iface.Name]
+		icons[iface.Name] = interfaceIcon(iface.Name, isDocker)
 	}
 
 	var rows []string
 	var currentRow []string
+	var rowHeights []int
+
+	flushRow := func() {
+		joined := lipgloss.JoinHorizontal(lipgloss.Top, currentRow...)
+		rows = append(rows, joined)
+		rowHeights = append(rowHeights, strings.Count(joined, "\n")+1)
+		currentRow = nil
+	}
 
 	for i, iface := range m.Interfaces {
 		card := renderInterfaceCard(*m, icons, i, iface)
 		currentRow = append(currentRow, card)
 		if len(currentRow) == cardsPerRow {
-			rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
-			currentRow = nil
+			flushRow()
 		}
 	}
 
-	targetCardIndex := len(m.Interfaces)
-	targetCard := renderTargetCard(*m, targetCardIndex)
+	targetCard := renderTargetCard(*m, len(m.Interfaces))
 	currentRow = append(currentRow, targetCard)
 	if len(currentRow) == cardsPerRow {
-		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
-		currentRow = nil
+		flushRow()
 	}
 
-	historyCardIndex := len(m.Interfaces) + 1
-	historyCard := renderHistoryCard(*m, historyCardIndex)
+	historyCard := renderHistoryCard(*m, len(m.Interfaces)+1)
 	currentRow = append(currentRow, historyCard)
 	if len(currentRow) > 0 {
-		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
+		flushRow()
 	}
+
+	m.RowHeights = rowHeights
 
 	cardContent := lipgloss.JoinVertical(lipgloss.Left, rows...)
 
@@ -85,13 +92,27 @@ func (m Model) UpdateViewport(maxWidth int) Model {
 // visible. Call this only when the cursor has moved, not on every update.
 func (m Model) ScrollToSelected() Model {
 	vpHeight := max(m.Viewport.Height(), 1)
-	totalCards := len(m.Interfaces) + 2
-	totalRows := (totalCards + m.CardsPerRow - 1) / m.CardsPerRow
-	maxOffset := max(totalRows*cardHeight-vpHeight, 0)
 
 	selectedRow := cursorCardRow(m.Cursor, m.CardsPerRow)
-	rowTop := selectedRow * cardHeight
-	rowBottom := rowTop + cardHeight - 1
+
+	rowTop, rowBottom, totalH := 0, cardHeight-1, 0
+	if len(m.RowHeights) > 0 {
+		acc := 0
+		for i, h := range m.RowHeights {
+			totalH += h
+			if i < selectedRow {
+				acc += h
+			} else if i == selectedRow {
+				rowTop = acc
+				rowBottom = acc + h - 1
+			}
+		}
+	} else {
+		rowTop = selectedRow * cardHeight
+		rowBottom = rowTop + cardHeight - 1
+		totalH = ((len(m.Interfaces) + 2 + m.CardsPerRow - 1) / m.CardsPerRow) * cardHeight
+	}
+	maxOffset := max(totalH-vpHeight, 0)
 
 	offset := m.Viewport.YOffset()
 	if rowTop < offset {

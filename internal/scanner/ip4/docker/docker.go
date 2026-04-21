@@ -1,32 +1,38 @@
 package docker
 
 import (
-	"context"
 	"encoding/json"
 	"net"
-	"net/http"
 	"os"
 	"strings"
-	"time"
 )
 
-const socketPath = "/var/run/docker.sock"
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+// Port is a published port binding from a Docker container.
+type Port struct {
+	PrivatePort int
+	PublicPort  int
+	Type        string
+}
 
 // Neighbor is a container visible on a Docker bridge network.
 type Neighbor struct {
-	IP  string
-	MAC string
+	IP    string
+	MAC   string
+	Name  string
+	Image string
+	Ports []Port
 }
 
-func client() *http.Client {
-	return &http.Client{
-		Timeout: 2 * time.Second,
-		Transport: &http.Transport{
-			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-				return (&net.Dialer{}).DialContext(ctx, "unix", socketPath)
-			},
-		},
-	}
+// DesktopNetwork is a Docker network returned by DesktopNetworks, carrying
+// its subnet so a synthetic interface can be constructed for Docker Desktop.
+type DesktopNetwork struct {
+	Name   string
+	Subnet *net.IPNet
 }
 
 // Networks queries the Docker daemon and returns a map of kernel bridge interface
@@ -54,6 +60,64 @@ func Networks() map[string]string {
 		}
 	}
 	return result
+}
+
+// DesktopNetworks queries the Docker daemon and returns bridge networks with
+// their subnets. Used on Docker Desktop (Linux/Mac) where the bridge interfaces
+// don't exist as kernel interfaces on the host. Returns nil if unavailable.
+func DesktopNetworks() []DesktopNetwork {
+	resp, err := client().Get("http://localhost/networks")
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	var raw []struct {
+		Name   string `json:"Name"`
+		Driver string `json:"Driver"`
+		IPAM   struct {
+			Config []struct {
+				Subnet string `json:"Subnet"`
+			} `json:"Config"`
+		} `json:"IPAM"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		return nil
+	}
+
+	var out []DesktopNetwork
+	for _, n := range raw {
+		if n.Driver != "bridge" || n.Name == "bridge" {
+			continue
+		}
+		for _, cfg := range n.IPAM.Config {
+			if cfg.Subnet == "" {
+				continue
+			}
+			_, ipnet, err := net.ParseCIDR(cfg.Subnet)
+			if err != nil || ipnet.IP.To4() == nil {
+				continue
+			}
+			out = append(out, DesktopNetwork{Name: n.Name, Subnet: ipnet})
+			break
+		}
+	}
+	return out
+}
+
+// DisplayName trims the "_default" suffix that Docker Compose appends to
+// default network names, keeping the card label concise.
+func DisplayName(name string) string {
+	return strings.TrimSuffix(name, "_default")
+}
+
+// IsDesktop returns true when Docker is reachable via socket but no kernel
+// bridge interfaces exist (i.e. Docker Desktop running in a VM).
+func IsDesktop(networks map[string]string) bool {
+	if len(networks) == 0 {
+		return false
+	}
+	return isDesktop(networks)
 }
 
 // IsBridgeIface returns true if the kernel interface name belongs to a Docker
@@ -89,18 +153,19 @@ func ApplyNetworkNames(ifaces []net.Interface, addrsByIface map[string][]net.Add
 			}
 			continue
 		}
+		displayName := DisplayName(dockerName)
 		addrs := addrsByIface[iface.Name]
 		delete(addrsByIface, iface.Name)
-		addrsByIface[dockerName] = addrs
-		ifaces[i].Name = dockerName
-		dockerDisplayNames[dockerName] = struct{}{}
+		addrsByIface[displayName] = addrs
+		ifaces[i].Name = displayName
+		dockerDisplayNames[displayName] = struct{}{}
 	}
 	return dockerDisplayNames
 }
 
-// ContainerNeighbors queries the Docker daemon and returns the IP and MAC of
-// every running container attached to networkName that falls within subnet.
-// Returns nil if the socket is unavailable.
+// ContainerNeighbors queries the Docker daemon and returns the IP, MAC, and
+// published ports of every running container attached to networkName that falls
+// within subnet. Returns nil if the socket is unavailable.
 func ContainerNeighbors(networkName string, subnet *net.IPNet) []Neighbor {
 	resp, err := client().Get("http://localhost/containers/json")
 	if err != nil {
@@ -109,6 +174,13 @@ func ContainerNeighbors(networkName string, subnet *net.IPNet) []Neighbor {
 	defer resp.Body.Close()
 
 	var containers []struct {
+		Names []string `json:"Names"`
+		Image string   `json:"Image"`
+		Ports []struct {
+			PrivatePort int    `json:"PrivatePort"`
+			PublicPort  int    `json:"PublicPort"`
+			Type        string `json:"Type"`
+		} `json:"Ports"`
 		NetworkSettings struct {
 			Networks map[string]struct {
 				IPAddress  string `json:"IPAddress"`
@@ -122,15 +194,36 @@ func ContainerNeighbors(networkName string, subnet *net.IPNet) []Neighbor {
 
 	var out []Neighbor
 	for _, c := range containers {
-		for name, ns := range c.NetworkSettings.Networks {
-			if name != networkName {
+		for netName, ns := range c.NetworkSettings.Networks {
+			if netName != networkName && DisplayName(netName) != networkName {
 				continue
 			}
 			ip := net.ParseIP(ns.IPAddress)
 			if ip == nil || !subnet.Contains(ip) {
 				continue
 			}
-			out = append(out, Neighbor{IP: ns.IPAddress, MAC: ns.MacAddress})
+			cName := ""
+			if len(c.Names) > 0 {
+				cName = strings.TrimPrefix(c.Names[0], "/")
+			}
+			n := Neighbor{IP: ns.IPAddress, MAC: ns.MacAddress, Name: cName, Image: c.Image}
+			seen := make(map[int]struct{})
+			for _, p := range c.Ports {
+				if p.Type != "tcp" {
+					continue
+				}
+				port := p.PrivatePort
+				if _, ok := seen[port]; ok {
+					continue
+				}
+				seen[port] = struct{}{}
+				n.Ports = append(n.Ports, Port{
+					PrivatePort: p.PrivatePort,
+					PublicPort:  p.PublicPort,
+					Type:        p.Type,
+				})
+			}
+			out = append(out, n)
 		}
 	}
 	return out

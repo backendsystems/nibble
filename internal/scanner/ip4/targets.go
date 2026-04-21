@@ -90,9 +90,15 @@ func (s *Scanner) subnetSweep(ifaceName string, subnet *net.IPNet, totalHosts in
 }
 
 func processNeighborJob(ifaceName string, neighbor NeighborEntry, ports []int, totalHosts, totalNeighbors int, seenCount *atomic.Int64, progressChan chan<- shared.ProgressUpdate) {
-	host := scanHostMac(neighbor.IP, neighbor.MAC, ports)
-	if host == nil {
+	var host *shared.HostResult
+	if neighbor.Ports != nil {
+		// Ports came from Docker API — containers not TCP-reachable from host.
 		host = neighborToHost(neighbor)
+	} else {
+		host = scanHostMac(neighbor.IP, neighbor.MAC, ports)
+		if host == nil {
+			host = neighborToHost(neighbor)
+		}
 	}
 
 	currentSeen := int(seenCount.Add(1))
@@ -150,11 +156,20 @@ func buildSkipMap(neighbors []NeighborEntry) map[string]struct{} {
 }
 
 func neighborToHost(neighbor NeighborEntry) *shared.HostResult {
-	return &shared.HostResult{
+	hardware := neighbor.Hardware
+	if hardware == "" {
+		hardware = shared.VendorFromMac(neighbor.MAC)
+	}
+	h := &shared.HostResult{
 		IP:       neighbor.IP,
 		MAC:      neighbor.MAC,
-		Hardware: shared.VendorFromMac(neighbor.MAC),
+		Hardware: hardware,
 	}
+	if len(neighbor.Ports) > 0 {
+		h.Ports = neighbor.Ports
+		shared.EnrichPorts(h)
+	}
+	return h
 }
 
 func emitNeighborProgress(progressChan chan<- shared.ProgressUpdate, progress shared.NeighborProgress) {
