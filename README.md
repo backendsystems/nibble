@@ -24,6 +24,8 @@ Lists hosts, hardware manufacturer, open ports and their services.
 - 🔒 Safe, does not need admin access or special privileges 
 - 🥷 Stealthy, emits no network signals before a scan is started 
 - Clickable interface, use your mouse to navigate and scan 🖱️
+  - or navigate with `↑/↓/←/→`, `w/s/a/d` or `h/j/k/l`
+  - context aware help screens, hotkey: `?`
 - Docker networks and WSL support 📦
   - instant docker network scans when a docker socket is detected
   - can scan windows interfaces from inside wsl
@@ -43,73 +45,35 @@ History remembers your position between sessions, so jump right back in to your 
 
 ![Nibble history](history.gif "Made with Bubble Tea VHS")
 
-## Hotkeys
-- `↑/↓/←/→`, `w/s/a/d`, `h/j/k/l`: selection
-- `enter`: confirm
-- `p`: select ports
-- `r`: history
-- `t`: target mode
-- `q`: cancel
-- `ctrl+c`: quit
-- `?`: help
+## Easy Installation
 
-## Installation
-<a id="install-go"></a>
-<img src="https://cdn.simpleicons.org/go/00ADD8" width="16" style="vertical-align:middle"> go (https://go.dev/):
-```bash
-go install github.com/backendsystems/nibble@latest
-```
-<a id="install-apt"></a>
-<img src="https://cdn.simpleicons.org/ubuntu/E95420" width="16" style="vertical-align:middle"> apt (Ubuntu, Mint, Pop!_OS, Zorin, Elementary, KDE Neon):
-```bash
-sudo add-apt-repository ppa:backendsystems/ppa
-sudo apt install nibble
-```
-<a id="install-dnf"></a>
-<img src="https://cdn.simpleicons.org/fedora/51A2DA" width="16" style="vertical-align:middle"> dnf (Fedora, RHEL, CentOS Stream):
-```bash
-sudo dnf copr enable @backendsystems/nibble
-sudo dnf install nibble
-```
-<a id="install-aur"></a>
-<img src="https://cdn.simpleicons.org/archlinux/1793D1" width="16" style="vertical-align:middle"> aur (Arch Linux):
-```bash
-yay -S nibble-bin
-```
-<a id="install-brew"></a>
-<img src="https://cdn.simpleicons.org/homebrew/FBB040" width="16" style="vertical-align:middle"> brew (macOS):
-```bash
-brew install backendsystems/tap/nibble
-```
-<a id="install-winget"></a>
-🪟 winget (Windows):
-```bash
-winget install backendsystems.nibble
-```
-<a id="install-pip"></a>
-<img src="https://cdn.simpleicons.org/python/3776AB" width="16" style="vertical-align:middle"> pip:
-```bash
-pipx install nibble-cli
-```
-<a id="install-npm"></a>
-<img src="https://cdn.simpleicons.org/npm/CB3837" width="16" style="vertical-align:middle"> npm:
-```bash
-npm install -g @backendsystems/nibble
-```
-or run without install
-```bash
-npx @backendsystems/nibble
-```
+| Platform | Manager | Command |
+|---|---|---|
+| <a id="install-apt">
+  <img src="https://cdn.simpleicons.org/ubuntu/E95420" width="16" style="vertical-align:middle"> Ubuntu <br> *or* Mint, Pop!\_OS, Zorin, ... | apt | `sudo add-apt-repository ppa:backendsystems/ppa` <br> `sudo apt install nibble`
+| <a id="install-dnf">
+  <img src="https://cdn.simpleicons.org/fedora/51A2DA" width="16" style="vertical-align:middle"> Fedora <br> *or* RHEL, CentOS Stream, ... | dnf | `sudo dnf copr enable @backendsystems/nibble` <br> `sudo dnf install nibble`
+| <a id="install-aur">
+  <img src="https://cdn.simpleicons.org/archlinux/1793D1" width="16" style="vertical-align:middle"> Arch Linux | aur | `yay -S nibble-bin` |
+| <a id="install-brew"></a>
+  <img src="https://cdn.simpleicons.org/homebrew/FBB040" width="16" style="vertical-align:middle"> macOS | brew | `brew install backendsystems/tap/nibble`
+| <a id="install-winget"></a>
+  🪟 Windows | winget | `winget install backendsystems.nibble`
+| <a id="install-npm"></a>
+  <img src="https://cdn.simpleicons.org/npm/CB3837" width="16" style="vertical-align:middle"> Any | npm | `npm install -g @backendsystems/nibble` <br> *or* `npx @backendsystems/nibble`
+| <a id="install-pip">
+  <img src="https://cdn.simpleicons.org/python/3776AB" width="16" style="vertical-align:middle"> Any | pip | `pipx install nibble-cli`
+| <a id="install-go">
+  <img src="https://cdn.simpleicons.org/go/00ADD8" width="16" style="vertical-align:middle"> Any | go | `go install github.com/backendsystems/nibble@latest`
 
-#### Manual download:
 Pre-built binaries for Linux, macOS and Windows (amd64/arm64) are available on the [Releases](https://github.com/backendsystems/nibble/releases) page.
 
 ## Usage
-Run the CLI with `nibble`, select a network interface.  
-Interface icons: `🔌`Ethernet, `📶`Wi-Fi, `📦`Container, `🔒`VPN.
+Run the CLI with the `nibble` command, select a network interface.  
+Interface icons:  `🔌`Ethernet, `📶`Wi-Fi, `📦`Container, `🔒`VPN.
 
 ## Headless Mode
-Run scans without the TUI. Outputs JSON.  
+Run scans without the TUI. Outputs JSON. Activated by the `-i` input flag.  
 Headless scans are not saved in history.
 
 `-i` scan target(s), comma-separated or a file ([example_input](internal/parameters/example_input.txt))  
