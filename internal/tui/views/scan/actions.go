@@ -2,6 +2,7 @@ package scanview
 
 import (
 	"net"
+	"sort"
 	"time"
 
 	"charm.land/bubbles/v2/stopwatch"
@@ -19,7 +20,24 @@ type ProgressMsg struct {
 type CompleteMsg struct{}
 type QuitMsg struct{}
 
-// appendIfNew appends host to hosts only if no existing entry has the same IP.
+func sortHosts(hosts []shared.HostResult) {
+	sort.Slice(hosts, func(i, j int) bool {
+		a := net.ParseIP(hosts[i].IP).To4()
+		b := net.ParseIP(hosts[j].IP).To4()
+		if a == nil || b == nil {
+			return hosts[i].IP < hosts[j].IP
+		}
+		for k := range a {
+			if a[k] != b[k] {
+				return a[k] < b[k]
+			}
+		}
+		return false
+	})
+}
+
+// appendIfNew appends host to hosts only if no existing entry has the same IP,
+// keeping the slice sorted by IP.
 func appendIfNew(hosts []shared.HostResult, host *shared.HostResult) []shared.HostResult {
 	if host == nil {
 		return hosts
@@ -29,7 +47,9 @@ func appendIfNew(hosts []shared.HostResult, host *shared.HostResult) []shared.Ho
 			return hosts
 		}
 	}
-	return append(hosts, *host)
+	hosts = append(hosts, *host)
+	sortHosts(hosts)
+	return hosts
 }
 
 func ListenForProgress(progressChan <-chan shared.ProgressUpdate) tea.Cmd {
@@ -85,6 +105,7 @@ func prepareForExit(m Model, shouldPrint bool) Model {
 	if len(m.FinalHosts) == 0 && len(m.FoundHosts) > 0 {
 		m.FinalHosts = make([]shared.HostResult, len(m.FoundHosts))
 		copy(m.FinalHosts, m.FoundHosts)
+		sortHosts(m.FinalHosts)
 	}
 	m.FoundHosts = nil
 	m.Results.SetContent("")

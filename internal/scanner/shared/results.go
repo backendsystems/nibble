@@ -1,6 +1,8 @@
 package shared
 
 import (
+	"sort"
+
 	"github.com/backendsystems/nibble/internal/ports/services"
 )
 
@@ -19,9 +21,10 @@ type HostResult struct {
 	Ports    []PortInfo `json:"ports,omitempty"`
 }
 
-// EnrichPorts fills in service names for ports that have no banner.
+// EnrichPorts fills in service names for ports that have no banner and sorts by port number.
 // This keeps the data layer consistent for both TUI and JSON output.
 func EnrichPorts(h *HostResult) {
+	sort.Slice(h.Ports, func(i, j int) bool { return h.Ports[i].Port < h.Ports[j].Port })
 	for i := range h.Ports {
 		if h.Ports[i].Service == "" {
 			if info := services.Lookup(h.Ports[i].Port); info != nil {
