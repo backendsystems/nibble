@@ -15,21 +15,27 @@
 
 Nibble is a CLI tool for local network scanning that focuses on speed and ease of use.
 
-Select a network interface, and Nibble scans your local subnet. Lists hosts, hardware manufacturer, open ports and their services.
+Select a network interface, and it scans your local subnet.  
+Lists hosts, hardware manufacturer, open ports and their services.
 
-![Nibble demo](demo.gif "Made with Bubble Tea VHS")
+[![Clickable interface with mouse support](click.gif)](click.gif)
 
-- Lightning fast scans using lightweight threads
-- Stealthy, emits no network signals before a scan is started
-- Colors uses your terminal theme colors
-- Skips loopback and irrelevant adapters
-- Defaults to SSH, Telnet, HTTP, HTTPS, SMB, RDP, and more
-- Can be set to a list of custom ports that are stored for future use
-- Target mode for targeted network scans
-- Reads service banners on open ports (for example, OpenSSH or nginx versions)
-- Looks up hardware vendors:
+- ⚡ Lightning fast, scans using lightweight threads
+- 🔒 Safe, does not need admin access or special privileges 
+- 🥷 Stealthy, emits no network signals before a scan is started 
+- Clickable interface, use your mouse to navigate and scan 🖱️
+- Docker networks and WSL support 📦
+  - instant docker network scans when a docker socket is detected
+  - can scan windows interfaces from inside wsl
+- Shows detected hardware makers: 📙
   - Raspberry Pi, Ubiquiti, Apple and 40,000 other vendor ids
-- [Headless mode](#headless-mode) with JSON output for scripting and automation
+  - Reads service banners on open ports (for example, ssh or nginx)
+- Colors matches your terminal theme automatically 🌈
+- Defaults to SSH, Telnet, HTTP, HTTPS, SMB, RDP, and more
+  - Can be set to a list of custom ports that are stored for future use
+  - Target mode for targeted network scans
+- [History mode](#history) for past scans lookup 📜
+- [Headless mode](#headless-mode) with JSON output for scripting and automation 🤖
 
 ## History
 See past scans, the found hosts and re-scan all hosts ports. hotkey: `r`  
@@ -38,20 +44,14 @@ History remembers your position between sessions, so jump right back in to your 
 ![Nibble history](history.gif "Made with Bubble Tea VHS")
 
 ## Hotkeys
-`↑/↓/←/→`, `w/s/a/d`, `h/j/k/l`: selection
-`Enter`: confirm
-`p`: select ports
-`r`: history
-`t`: target mode
-`q`: cancel
-`Ctrl+C`: quit
-`?`: help
-
-## Mouse
-Full mouse support. Click to select, click again to confirm. Scroll to navigate lists.
-Hold `Shift` and drag to select text.
-
-![Nibble click interface](click.gif "Clickable interface with mouse support")
+- `↑/↓/←/→`, `w/s/a/d`, `h/j/k/l`: selection
+- `enter`: confirm
+- `p`: select ports
+- `r`: history
+- `t`: target mode
+- `q`: cancel
+- `ctrl+c`: quit
+- `?`: help
 
 ## Installation
 <a id="install-go"></a>
@@ -124,10 +124,10 @@ nibble -i targets.txt -p 22,80,443,8000-8100
 
 Exit codes: `0` success, `1` error, `2` invalid usage.
 
-Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea)
-
 ## License
 
 This project is MIT licensed. See the [LICENSE](LICENSE) file for details.
 
 Note: The "nibble" name and branding assets are excluded from this license, see the separate [LICENSE](assets/LICENSE) for branding terms.
+
+Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea)
