@@ -6,7 +6,6 @@
 [![winget](https://img.shields.io/badge/winget-package-0078D4?logo=windows&logoColor=white)](#install-winget)
 [![npm](https://img.shields.io/npm/v/@backendsystems/nibble)](#install-npm)
 [![PyPI](https://img.shields.io/pypi/v/nibble-cli)](#install-pip)
-[![Go Report Card](https://goreportcard.com/badge/github.com/backendsystems/nibble)](https://goreportcard.com/report/github.com/backendsystems/nibble)
 
 <div align="center">
   <img src="assets/nibble.svg" alt="Nibble" width="200">
